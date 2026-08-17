@@ -16,7 +16,6 @@ import time
 import logging
 import webbrowser
 import gradio as gr
-import jieba
 from typing import List, Tuple, Optional
 from datetime import datetime
 
@@ -32,7 +31,7 @@ from core.document_loader import extract_text
 from core.text_splitter import split_text
 from core.embeddings import encode_texts
 from core.vector_store import vector_store
-from core.bm25_index import bm25_manager
+from core.bm25_index import bm25_manager, tokenize_vietnamese
 from core.generator import query_answer
 from llm_provider import call_llm, get_provider_config, get_provider_name
 
@@ -129,7 +128,7 @@ def get_document_chunks(progress=gr.Progress()):
                 "source": meta.get("source", "未知来源"), "content": content,
                 "preview": content[:200] + "..." if len(content) > 200 else content,
                 "char_count": len(content),
-                "token_count": len(list(jieba.cut(content)))
+                "token_count": len(tokenize_vietnamese(content))
             }
             chunk_data_cache[idx] = chunk_data
             table_data.append([
@@ -173,7 +172,7 @@ def get_system_models_info():
         "Model SiliconFlow": SILICONFLOW_MODEL_NAME,
         "Model OpenAI": OPENAI_MODEL_NAME,
         "Model Gemini": GEMINI_MODEL_NAME,
-        "分词工具": "jieba (中文分词)"
+        "Công cụ tách từ": "Underthesea (tiếng Việt)"
     }
 
 

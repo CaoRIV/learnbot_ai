@@ -25,7 +25,7 @@ Local PDF Chat RAG 面向希望理解检索增强生成完整链路的开发者�
 - **链路透明**：核心步骤按 RAG 执行顺序拆分，便于学习和调试。
 - **混合检索**：结合 FAISS 向量检索和 BM25 关键词检索。
 - **可选重排序**：支持 CrossEncoder 或基于模型的相关性评分。
-- **多模型后端**：支持本地 Ollama、SiliconFlow 以及 OpenAI-compatible API。
+- **多模型后端**：通过 `LLM_PROVIDER` 选择 SiliconFlow、OpenAI 或 Gemini API。
 - **多种文档格式**：支持 PDF、TXT、Markdown、DOCX、XLS/XLSX 和 PPTX。
 - **双入口**：提供 Gradio Web UI 和 FastAPI REST API。
 - **可验证维护**：包含自动化测试、GitHub Actions CI、贡献指南和安全报告流程。
@@ -67,11 +67,11 @@ pip install -r requirements.txt
 cp example.env .env
 ```
 
-编辑 `.env`，至少完成下面一种配置：
+编辑 `.env`，将 `LLM_PROVIDER` 设置为 `siliconflow`、`openai` 或 `gemini`，并配置对应的 API Key：
 
-- 设置 `SILICONFLOW_API_KEY`；
-- 设置 `MAGICK_API_KEY`、服务地址和模型名称；
-- 本地启动 Ollama，并拉取 `.env` 中配置的模型。
+- SiliconFlow：`SILICONFLOW_API_KEY`；
+- OpenAI：`OPENAI_API_KEY`；
+- Gemini：`GEMINI_API_KEY`。
 
 密钥只保存在本地 `.env` 中。请勿提交真实密钥；示例配置中的 `Your_...` 占位符不会被识别为有效密钥。
 
@@ -101,6 +101,7 @@ python api_router.py
 ├── config.py                  # 环境变量、模型与 RAG 参数
 ├── rag_demo.py                # Gradio Web UI
 ├── api_router.py              # FastAPI 接口
+├── llm_provider.py            # SiliconFlow/OpenAI/Gemini API 适配层
 ├── core/
 │   ├── document_loader.py     # 文档解析
 │   ├── text_splitter.py       # 文本分块
@@ -139,10 +140,13 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest
 | --- | --- |
 | `SILICONFLOW_API_KEY` | SiliconFlow API 密钥 |
 | `SILICONFLOW_MODEL_NAME` | SiliconFlow 模型 ID |
-| `MAGICK_API_KEY` | OpenAI-compatible 服务密钥 |
-| `MAGICK_API_URL` | 服务 base URL 或完整 Chat Completions URL |
-| `MAGICK_MODEL_NAME` | 服务端模型 ID |
-| `OLLAMA_MODEL_NAME` | 本地 Ollama 模型名称 |
+| `OPENAI_API_KEY` | OpenAI API 密钥 |
+| `OPENAI_API_URL` | OpenAI Chat Completions URL |
+| `OPENAI_MODEL_NAME` | OpenAI 模型 ID |
+| `GEMINI_API_KEY` | Gemini API 密钥 |
+| `GEMINI_API_URL` | Gemini API base URL |
+| `GEMINI_MODEL_NAME` | Gemini 模型 ID |
+| `LLM_PROVIDER` | `siliconflow`、`openai` 或 `gemini` |
 | `SERPAPI_KEY` | 可选联网搜索密钥 |
 | `RERANK_METHOD` | `cross_encoder` 或 `llm` |
 

@@ -25,7 +25,7 @@ Local PDF Chat RAG is an educational and reference implementation for developers
 - **Inspectable pipeline**: core modules follow the order in which a RAG request is processed.
 - **Hybrid retrieval**: combines FAISS dense retrieval with BM25 keyword retrieval.
 - **Optional reranking**: supports a CrossEncoder or model-based relevance scoring.
-- **Multiple model backends**: local Ollama, SiliconFlow, and OpenAI-compatible APIs.
+- **Multiple API providers**: select SiliconFlow, OpenAI, or Gemini with `LLM_PROVIDER`.
 - **Document support**: PDF, TXT, Markdown, DOCX, XLS/XLSX, and PPTX.
 - **Two interfaces**: a Gradio web application and a FastAPI REST API.
 - **Verifiable maintenance**: automated tests, GitHub Actions CI, contribution guidance, and a security-reporting process.
@@ -67,11 +67,11 @@ pip install -r requirements.txt
 cp example.env .env
 ```
 
-Edit `.env` and choose at least one option:
+Edit `.env`, set `LLM_PROVIDER` to `siliconflow`, `openai`, or `gemini`, and configure its API key:
 
-- set `SILICONFLOW_API_KEY`;
-- set `MAGICK_API_KEY`, its endpoint, and model name; or
-- start Ollama locally and pull the model configured in `.env`.
+- SiliconFlow: `SILICONFLOW_API_KEY`;
+- OpenAI: `OPENAI_API_KEY`;
+- Gemini: `GEMINI_API_KEY`.
 
 Keep real credentials in your local `.env` file. Values beginning with `Your_` are treated as placeholders and are not valid credentials.
 
@@ -101,6 +101,7 @@ Main endpoints:
 ├── config.py                  # Environment, model, and RAG settings
 ├── rag_demo.py                # Gradio web UI
 ├── api_router.py              # FastAPI interface
+├── llm_provider.py            # SiliconFlow/OpenAI/Gemini API abstraction
 ├── core/
 │   ├── document_loader.py     # Document extraction
 │   ├── text_splitter.py       # Text chunking
@@ -139,10 +140,13 @@ See [`example.env`](example.env) for the complete example. Common variables incl
 | --- | --- |
 | `SILICONFLOW_API_KEY` | SiliconFlow API credential |
 | `SILICONFLOW_MODEL_NAME` | SiliconFlow model ID |
-| `MAGICK_API_KEY` | OpenAI-compatible provider credential |
-| `MAGICK_API_URL` | Provider base URL or full Chat Completions URL |
-| `MAGICK_MODEL_NAME` | Provider model ID |
-| `OLLAMA_MODEL_NAME` | Local Ollama model name |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `OPENAI_API_URL` | OpenAI Chat Completions URL |
+| `OPENAI_MODEL_NAME` | OpenAI model ID |
+| `GEMINI_API_KEY` | Gemini API key |
+| `GEMINI_API_URL` | Gemini API base URL |
+| `GEMINI_MODEL_NAME` | Gemini model ID |
+| `LLM_PROVIDER` | `siliconflow`, `openai`, or `gemini` |
 | `SERPAPI_KEY` | Optional web-search credential |
 | `RERANK_METHOD` | `cross_encoder` or `llm` |
 

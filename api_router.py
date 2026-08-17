@@ -14,7 +14,13 @@ from contextlib import asynccontextmanager
 from version import __version__
 
 # 从重构后的模块导入
-from config import SILICONFLOW_API_KEY, MAGICK_API_KEY, is_configured_api_key
+from config import (
+    GEMINI_API_KEY,
+    LLM_PROVIDER,
+    OPENAI_API_KEY,
+    SILICONFLOW_API_KEY,
+    is_configured_api_key,
+)
 from core.generator import query_answer
 from core.vector_store import vector_store
 from features.web_search import check_serpapi_key
@@ -43,8 +49,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="本地RAG API服务",
-    description="提供基于本地大模型、云端模型服务和SERPAPI的文档问答API接口",
+    title="learnbot_ai API",
+    description="API hỏi đáp tài liệu tiếng Việt bằng RAG và LLM qua API bên ngoài",
     version=__version__,
     lifespan=lifespan
 )
@@ -59,7 +65,7 @@ app.add_middleware(
 class QuestionRequest(BaseModel):
     question: str
     enable_web_search: bool = False
-    model_choice: str = "siliconflow"
+    model_choice: Optional[str] = None
 
 
 class AnswerResponse(BaseModel):
@@ -115,13 +121,19 @@ async def ask_question(req: QuestionRequest):
     try:
         answer = await asyncio.to_thread(query_answer, req.question, req.enable_web_search, req.model_choice)
         sources = []
-        url_matches = re.findall(r'\[(网络来源|本地文档):[^\]]+\]\s*(?:\(URL:\s*([^)]+)\))?', answer)
+        url_matches = re.findall(
+            r'\[(Nguồn web|Tài liệu cục bộ):[^\]]+\]\s*(?:\(URL:\s*([^)]+)\))?',
+            answer,
+        )
         for source_type, url in url_matches:
             sources.append({"type": source_type, "url": url} if url else {"type": source_type})
 
         return {
             "answer": answer, "sources": sources,
-            "metadata": {"enable_web_search": req.enable_web_search, "model": req.model_choice}
+            "metadata": {
+                "enable_web_search": req.enable_web_search,
+                "model": req.model_choice or LLM_PROVIDER,
+            }
         }
     except Exception as e:
         logger.error(f"问答失败: {str(e)}")
@@ -133,7 +145,9 @@ async def check_status():
     return {
         "status": "healthy",
         "siliconflow_configured": is_configured_api_key(SILICONFLOW_API_KEY),
-        "magick_configured": is_configured_api_key(MAGICK_API_KEY),
+        "openai_configured": is_configured_api_key(OPENAI_API_KEY),
+        "gemini_configured": is_configured_api_key(GEMINI_API_KEY),
+        "llm_provider": LLM_PROVIDER,
         "serpapi_configured": check_serpapi_key(),
         "vector_store_ready": vector_store.is_ready,
         "total_chunks": vector_store.total_chunks,

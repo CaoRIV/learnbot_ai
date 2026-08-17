@@ -22,8 +22,8 @@ from datetime import datetime
 
 # 导入配置
 from config import (
-    DEFAULT_MODEL_CHOICE, SILICONFLOW_API_KEY, MAGICK_API_KEY,
-    OLLAMA_MODEL_NAME, SILICONFLOW_MODEL_NAME, MAGICK_MODEL_NAME,
+    DEFAULT_MODEL_CHOICE, GEMINI_MODEL_NAME, OPENAI_MODEL_NAME,
+    SILICONFLOW_MODEL_NAME,
     MODEL_CHOICES, MODEL_DISPLAY_NAMES, is_configured_api_key
 )
 
@@ -33,7 +33,8 @@ from core.text_splitter import split_text
 from core.embeddings import encode_texts
 from core.vector_store import vector_store
 from core.bm25_index import bm25_manager
-from core.generator import query_answer, call_siliconflow_api, call_magick_api
+from core.generator import query_answer
+from llm_provider import call_llm, get_provider_config, get_provider_name
 
 # 导入工具
 from utils.network import is_port_available
@@ -168,9 +169,10 @@ def get_system_models_info():
         "分块方法": "RecursiveCharacterTextSplitter (chunk_size=400, overlap=40)",
         "检索方法": "向量检索 + BM25混合检索 (α=0.7)",
         "重排序模型": "交叉编码器 (distiluse-base-multilingual-cased-v2)",
-        "生成模型(Ollama)": OLLAMA_MODEL_NAME,
-        "生成模型(SiliconFlow)": SILICONFLOW_MODEL_NAME,
-        "生成模型(Magick API)": MAGICK_MODEL_NAME,
+        "Provider LLM mặc định": get_model_display_name(DEFAULT_MODEL_CHOICE),
+        "Model SiliconFlow": SILICONFLOW_MODEL_NAME,
+        "Model OpenAI": OPENAI_MODEL_NAME,
+        "Model Gemini": GEMINI_MODEL_NAME,
         "分词工具": "jieba (中文分词)"
     }
 
@@ -252,7 +254,7 @@ with gr.Blocks(title="本地RAG问答系统") as demo:
                             model_choice = gr.Dropdown(
                                 choices=MODEL_CHOICES,
                                 value=DEFAULT_MODEL_CHOICE,
-                                label="模型选择", info="选择使用本地模型或云端模型"
+                                label="Provider LLM", info="Chọn dịch vụ LLM API bên ngoài"
                             )
                         with gr.Row():
                             ask_btn = gr.Button("🔍 开始提问", variant="primary", scale=2)
@@ -436,45 +438,26 @@ with gr.Blocks(title="本地RAG问答系统") as demo:
 
 
 def check_environment():
-    """环境依赖检查"""
-    if is_configured_api_key(SILICONFLOW_API_KEY):
-        print("✅ SiliconFlow API 密钥已配置")
-        try:
-            result = call_siliconflow_api("你好，请回复'连接成功'", temperature=0.1, max_tokens=50)
-            if isinstance(result, str) and ("连接成功" in result or "你好" in result):
-                print("✅ SiliconFlow API 连接测试成功")
-            else:
-                print("⚠️ SiliconFlow API 响应异常，但继续运行")
-            return True
-        except Exception as e:
-            print(f"⚠️ SiliconFlow API 测试失败: {e}")
-            return True
+    """Kiểm tra provider LLM API đã chọn và API key tương ứng."""
+    provider = get_provider_name()
+    provider_config = get_provider_config(provider)
+    if not is_configured_api_key(provider_config.api_key):
+        print(f"❌ Chưa cấu hình API key cho provider {provider}.")
+        print("   Hãy cập nhật file .env rồi khởi động lại ứng dụng.")
+        return False
 
-    if is_configured_api_key(MAGICK_API_KEY):
-        print("✅ Magick API 密钥已配置")
-        try:
-            result = call_magick_api("你好，请回复'连接成功'", temperature=0.1, max_tokens=50)
-            if isinstance(result, str) and ("连接成功" in result or "你好" in result):
-                print("✅ Magick API 连接测试成功")
-            else:
-                print("⚠️ Magick API 响应异常，但继续运行")
-            return True
-        except Exception as e:
-            print(f"⚠️ Magick API 测试失败: {e}")
-            return True
-
-    print("⚠️ 未配置云端 API 密钥，将尝试使用本地 Ollama")
-    try:
-        import requests
-        resp = requests.get("http://localhost:11434/api/tags", timeout=3)
-        if resp.status_code == 200:
-            print("✅ 本地 Ollama 服务可用")
-            return True
-    except Exception:
-        pass
-    print("❌ 未找到任何可用的 LLM 后端")
-    print("   请在 .env 中配置 SILICONFLOW_API_KEY / MAGICK_API_KEY 或启动 Ollama 服务")
-    return False
+    print(f"✅ Đã cấu hình API key cho provider {provider}.")
+    result = call_llm(
+        "Chỉ trả lời đúng hai từ: kết nối thành công",
+        provider=provider,
+        temperature=0.1,
+        max_tokens=20,
+    )
+    if result.startswith(("Lỗi", "Không thể", "Phản hồi")):
+        print(f"❌ Kiểm tra kết nối {provider} thất bại: {result}")
+        return False
+    print(f"✅ Kết nối {provider} thành công.")
+    return True
 
 
 if __name__ == "__main__":

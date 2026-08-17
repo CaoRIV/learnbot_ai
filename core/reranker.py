@@ -12,7 +12,8 @@ import logging
 import re
 import threading
 from functools import lru_cache
-from config import OLLAMA_MODEL_NAME, RERANK_METHOD
+from config import RERANK_METHOD
+from llm_provider import call_llm
 
 # 交叉编码器（懒加载 + 线程安全）
 _cross_encoder = None
@@ -63,23 +64,17 @@ def rerank_with_cross_encoder(query, docs, doc_ids, metadata_list, top_k=5):
 
 @lru_cache(maxsize=32)
 def get_llm_relevance_score(query, doc):
-    """使用 LLM 对查询和文档的相关性进行评分（带缓存）"""
-    from utils.network import get_session
+    """Dùng provider LLM qua API để chấm độ liên quan, có cache."""
     try:
-        prompt = f"""给定以下查询和文档片段，评估它们的相关性。
-        评分标准：0分表示完全不相关，10分表示高度相关。
-        只需返回一个0-10之间的整数分数，不要有任何其他解释。
+        prompt = f"""Hãy đánh giá độ liên quan giữa truy vấn và đoạn tài liệu dưới đây.
+        Điểm 0 nghĩa là hoàn toàn không liên quan, điểm 10 nghĩa là rất liên quan.
+        Chỉ trả về một số nguyên từ 0 đến 10, không giải thích.
 
-        查询: {query}
-        文档片段: {doc}
-        相关性分数(0-10):"""
+        Truy vấn: {query}
+        Đoạn tài liệu: {doc}
+        Điểm liên quan (0-10):"""
 
-        response = get_session().post(
-            "http://localhost:11434/api/generate",
-            json={"model": OLLAMA_MODEL_NAME, "prompt": prompt, "stream": False},
-            timeout=180
-        )
-        result = response.json().get("response", "").strip()
+        result = call_llm(prompt, temperature=0.0, max_tokens=16).strip()
         try:
             return max(0, min(10, float(result)))
         except ValueError:

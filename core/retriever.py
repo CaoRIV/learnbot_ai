@@ -76,7 +76,7 @@ def hybrid_merge(semantic_results, bm25_results, alpha=None):
     return sorted(merged_dict.items(), key=lambda x: x[1]['score'], reverse=True)
 
 
-def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=False, model_choice="siliconflow"):
+def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=False, model_choice=None):
     """
     递归检索与查询优化
 
@@ -160,23 +160,23 @@ def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=Fa
         # LLM 判断是否需要继续
         if current_contexts:
             summary = "\n".join(current_contexts[:3])
-            prompt = f"""你是一个查询优化助手。根据以下信息判断是否需要新的查询。
+            prompt = f"""Bạn là trợ lý tối ưu truy vấn. Hãy xác định có cần tạo truy vấn mới hay không.
 
-[初始问题]
+[Câu hỏi ban đầu]
 {initial_query}
 
-[检索结果摘要]
+[Tóm tắt kết quả truy xuất]
 {summary}
 
-要求：
-1. 如果信息已足够，直接回复：不需要进一步查询
-2. 否则返回一个更精准的新查询，仅包含查询词
+Yêu cầu:
+1. Nếu thông tin đã đủ, chỉ trả lời: KHÔNG CẦN TRUY VẤN THÊM
+2. Nếu chưa đủ, chỉ trả về một truy vấn mới chính xác hơn
 """
             try:
                 from core.generator import call_llm_simple
                 next_query = call_llm_simple(prompt, model_choice)
-                if "不需要" in next_query:
-                    logging.info("LLM 判断无需更多查询")
+                if "KHÔNG CẦN" in next_query.upper():
+                    logging.info("LLM xác định không cần truy vấn thêm")
                     break
                 if len(next_query) > 100:
                     logging.warning("生成内容过长，不视为有效查询")

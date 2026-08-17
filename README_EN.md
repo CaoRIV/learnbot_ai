@@ -4,7 +4,7 @@
 
 A transparent, runnable Python implementation for learning and inspecting RAG
 
-English | [简体中文](README.md)
+English | [Tiếng Việt](README.md)
 
 [![CI](https://github.com/weiwill88/Local_Pdf_Chat_RAG/actions/workflows/ci.yml/badge.svg)](https://github.com/weiwill88/Local_Pdf_Chat_RAG/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)

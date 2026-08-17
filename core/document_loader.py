@@ -1,78 +1,90 @@
-"""
-文档加载器 —— 多格式文档文本提取
+"""Trích xuất văn bản và metadata trang từ tài liệu."""
 
-学习要点：
-- 了解不同文档格式（PDF、Word、Excel、PPT）的解析方式
-- 理解 RAG 第一步：将非结构化文档转换为纯文本
-"""
-
-import os
 import logging
-from io import StringIO
+import os
+
+
+def _extract_pdf_pages(filepath):
+    """Trích xuất từng trang PDF để giữ số trang cho phần trích dẫn."""
+    from pdfminer.high_level import extract_pages
+    from pdfminer.layout import LTTextContainer
+
+    pages = []
+    for page_number, page_layout in enumerate(extract_pages(filepath), start=1):
+        text = "".join(
+            element.get_text()
+            for element in page_layout
+            if isinstance(element, LTTextContainer)
+        ).strip()
+        if text:
+            pages.append({"page": page_number, "text": text})
+    return pages
+
+
+def extract_text_by_page(filepath):
+    """Trả về danh sách ``{"page": số_trang, "text": nội_dung}``.
+
+    PDF được tách theo trang. Các định dạng không có khái niệm trang được trả về
+    như một phần tử duy nhất với ``page=None``.
+    """
+    if os.path.splitext(filepath)[1].lower() == ".pdf":
+        return _extract_pdf_pages(filepath)
+
+    text = extract_text(filepath)
+    return [{"page": None, "text": text}] if text else []
 
 
 def extract_text(filepath):
-    """
-    从文件中提取纯文本内容
-
-    支持格式：PDF / Word / Excel / PPT / 纯文本 / Markdown
-
-    Args:
-        filepath: 文件路径
-
-    Returns:
-        提取的文本内容字符串
-    """
+    """Trích xuất văn bản từ PDF, Word, Excel, PowerPoint, TXT hoặc Markdown."""
     file_ext = os.path.splitext(filepath)[1].lower()
 
-    if file_ext == '.pdf':
-        from pdfminer.high_level import extract_text_to_fp
-        output = StringIO()
-        with open(filepath, 'rb') as file:
-            extract_text_to_fp(file, output)
-        return output.getvalue()
+    if file_ext == ".pdf":
+        return "\n\n".join(page["text"] for page in _extract_pdf_pages(filepath))
 
-    elif file_ext in ['.txt', '.md']:
-        with open(filepath, 'r', encoding='utf-8') as file:
+    if file_ext in (".txt", ".md"):
+        with open(filepath, "r", encoding="utf-8") as file:
             return file.read()
 
-    elif file_ext == '.docx':
+    if file_ext == ".docx":
         try:
             from docx import Document
-            doc = Document(filepath)
-            return "\n".join([para.text for para in doc.paragraphs])
+
+            document = Document(filepath)
+            return "\n".join(paragraph.text for paragraph in document.paragraphs)
         except ImportError:
-            logging.error("处理Word文档需要安装python-docx库")
+            logging.error("Cần cài python-docx để đọc tài liệu Word")
             return ""
 
-    elif file_ext in ['.xlsx', '.xls']:
+    if file_ext in (".xlsx", ".xls"):
         try:
             import pandas as pd
-            text = ""
-            xl = pd.ExcelFile(filepath)
-            for sheet_name in xl.sheet_names:
-                df = xl.parse(sheet_name)
-                text += f"工作表: {sheet_name}\n"
-                text += df.to_string(index=False) + "\n\n"
-            return text
+
+            text_parts = []
+            workbook = pd.ExcelFile(filepath)
+            for sheet_name in workbook.sheet_names:
+                dataframe = workbook.parse(sheet_name)
+                text_parts.append(f"Trang tính: {sheet_name}\n")
+                text_parts.append(dataframe.to_string(index=False))
+            return "\n\n".join(text_parts)
         except ImportError:
-            logging.error("处理Excel文件需要安装pandas库")
+            logging.error("Cần cài pandas để đọc bảng tính Excel")
             return ""
 
-    elif file_ext == '.pptx':
+    if file_ext == ".pptx":
         try:
             from pptx import Presentation
-            prs = Presentation(filepath)
-            text = ""
-            for slide in prs.slides:
-                for shape in slide.shapes:
-                    if hasattr(shape, "text"):
-                        text += shape.text + "\n"
-            return text
+
+            presentation = Presentation(filepath)
+            text_parts = []
+            for slide_number, slide in enumerate(presentation.slides, start=1):
+                text_parts.append(f"Trang chiếu {slide_number}")
+                text_parts.extend(
+                    shape.text for shape in slide.shapes if hasattr(shape, "text")
+                )
+            return "\n".join(text_parts)
         except ImportError:
-            logging.error("处理PPT文件需要安装python-pptx库")
+            logging.error("Cần cài python-pptx để đọc tệp PowerPoint")
             return ""
 
-    else:
-        logging.warning(f"不支持的文件格式: {file_ext}")
-        return ""
+    logging.warning("Định dạng tệp chưa được hỗ trợ: %s", file_ext)
+    return ""

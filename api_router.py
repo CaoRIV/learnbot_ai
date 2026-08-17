@@ -43,9 +43,9 @@ class ProgressCallback:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("API 服务启动")
+    logger.info("API đã khởi động")
     yield
-    logger.info("API 服务已关闭")
+    logger.info("API đã dừng")
 
 
 app = FastAPI(
@@ -82,7 +82,7 @@ class FileProcessResult(BaseModel):
 
 @app.post("/api/upload", response_model=FileProcessResult)
 async def upload_file(file: UploadFile = File(...)):
-    """处理文档并存入向量数据库"""
+    """Xử lý tài liệu và đưa các phân đoạn vào kho vector."""
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
             content = await file.read()
@@ -100,24 +100,25 @@ async def upload_file(file: UploadFile = File(...)):
 
         os.unlink(tmp_path)
         result = result_text[0] if isinstance(result_text, tuple) else result_text
-        chunk_match = re.search(r'(\d+) 个文本块', result)
+        chunk_match = re.search(r'(\d+) phân đoạn', result)
         chunks = int(chunk_match.group(1)) if chunk_match else 0
+        has_error = "thất bại" in result or "Không thể" in result
 
         return {
-            "status": "success" if "成功" in result else "error",
+            "status": "error" if has_error else "success",
             "message": result,
             "file_info": {"filename": file.filename, "chunks": chunks}
         }
     except Exception as e:
-        logger.error(f"文件处理失败: {str(e)}")
-        raise HTTPException(500, f"文档处理失败: {str(e)}") from e
+        logger.error("Không thể xử lý tài liệu: %s", e)
+        raise HTTPException(500, f"Không thể xử lý tài liệu: {e}") from e
 
 
 @app.post("/api/ask", response_model=AnswerResponse)
 async def ask_question(req: QuestionRequest):
-    """问答接口"""
+    """Trả lời câu hỏi dựa trên kho tài liệu."""
     if not req.question:
-        raise HTTPException(400, "问题不能为空")
+        raise HTTPException(400, "Câu hỏi không được để trống")
     try:
         answer = await asyncio.to_thread(query_answer, req.question, req.enable_web_search, req.model_choice)
         sources = []
@@ -127,6 +128,18 @@ async def ask_question(req: QuestionRequest):
         )
         for source_type, url in url_matches:
             sources.append({"type": source_type, "url": url} if url else {"type": source_type})
+        for source, page in re.findall(
+            r'\[([^\],\n]+),\s*trang\s*(\d+)\]',
+            answer,
+            flags=re.IGNORECASE,
+        ):
+            citation = {
+                "type": "Tài liệu cục bộ",
+                "source": source.strip(),
+                "page": int(page),
+            }
+            if citation not in sources:
+                sources.append(citation)
 
         return {
             "answer": answer, "sources": sources,
@@ -136,8 +149,8 @@ async def ask_question(req: QuestionRequest):
             }
         }
     except Exception as e:
-        logger.error(f"问答失败: {str(e)}")
-        raise HTTPException(500, f"问答处理失败: {str(e)}") from e
+        logger.error("Quá trình hỏi đáp gặp lỗi: %s", e)
+        raise HTTPException(500, f"Không thể xử lý câu hỏi: {e}") from e
 
 
 @app.get("/api/status")
@@ -158,5 +171,5 @@ async def check_status():
 if __name__ == "__main__":
     import uvicorn
     port = next((p for p in [17995, 17996, 17997, 17998, 17999] if is_port_available(p)), 17995)
-    logger.info(f"启动API服务，端口: {port}")
+    logger.info("Khởi động API trên cổng %s", port)
     uvicorn.run(app, host="0.0.0.0", port=port)

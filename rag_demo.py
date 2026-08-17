@@ -1,14 +1,7 @@
-"""
-🧠 本地化智能问答系统（FAISS版）—— 主入口
+"""Điểm khởi chạy giao diện Gradio của learnbot_ai.
 
-本文件职责：
-- Gradio Web UI 的布局与事件绑定
-- 文档处理的编排（调用 core/ 模块完成各步骤）
-- 系统监控面板
-- 应用启动
-
-核心 RAG 逻辑已拆分到 core/ 和 features/ 模块中，
-请按照 core/__init__.py 中的学习路线逐模块阅读。
+Module này định nghĩa bố cục, liên kết sự kiện, điều phối xử lý tài liệu và
+hiển thị số liệu hệ thống. Logic RAG chính nằm trong ``core`` và ``features``.
 """
 
 import os
@@ -19,15 +12,15 @@ import gradio as gr
 from typing import List, Tuple, Optional
 from datetime import datetime
 
-# 导入配置
+# Cấu hình
 from config import (
     DEFAULT_MODEL_CHOICE, GEMINI_MODEL_NAME, OPENAI_MODEL_NAME,
     SILICONFLOW_MODEL_NAME,
     MODEL_CHOICES, MODEL_DISPLAY_NAMES, is_configured_api_key
 )
 
-# 导入核心模块
-from core.document_loader import extract_text
+# Các module RAG chính
+from core.document_loader import extract_text_by_page
 from core.text_splitter import split_text
 from core.embeddings import encode_texts
 from core.vector_store import vector_store
@@ -35,23 +28,23 @@ from core.bm25_index import bm25_manager, tokenize_vietnamese
 from core.generator import query_answer
 from llm_provider import call_llm, get_provider_config, get_provider_name
 
-# 导入工具
+# Tiện ích
 from utils.network import is_port_available
 
 logging.basicConfig(level=logging.INFO)
-print("Gradio version:", gr.__version__)
+print("Phiên bản Gradio:", gr.__version__)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 文档处理
+# Xử lý tài liệu
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 def process_multiple_files(files, progress=gr.Progress()):
-    """处理多个文件：提取文本 → 分块 → 向量化 → 构建索引"""
+    """Xử lý tài liệu: trích xuất → phân đoạn → embedding → lập chỉ mục."""
     if not files:
-        return "请选择要上传的文件(支持PDF, Word, Excel, PPT, TXT, Markdown等)", []
+        return "Vui lòng chọn ít nhất một tài liệu để xử lý.", []
 
     try:
-        progress(0.1, desc="清理历史数据...")
+        progress(0.1, desc="Đang xóa dữ liệu cũ...")
         vector_store.clear()
         bm25_manager.clear()
 
@@ -62,60 +55,81 @@ def process_multiple_files(files, progress=gr.Progress()):
         for idx, file in enumerate(files, 1):
             try:
                 file_name = os.path.basename(file.name)
-                progress((idx - 1) / total_files, desc=f"处理文件 {idx}/{total_files}: {file_name}")
+                progress(
+                    (idx - 1) / total_files,
+                    desc=f"Đang xử lý tài liệu {idx}/{total_files}: {file_name}",
+                )
 
-                text = extract_text(file.name)
-                if not text:
-                    raise ValueError("文档内容为空或无法提取文本")
+                pages = extract_text_by_page(file.name)
+                if not pages:
+                    raise ValueError("Tài liệu trống hoặc không thể trích xuất văn bản")
 
-                chunks = split_text(text)
                 doc_id = f"doc_{int(time.time())}_{idx}"
-                metadatas = [{"source": file_name, "doc_id": doc_id} for _ in chunks]
+                chunks = []
+                metadatas = []
+                for page_data in pages:
+                    page_chunks = split_text(page_data["text"])
+                    chunks.extend(page_chunks)
+                    metadatas.extend(
+                        {
+                            "source": file_name,
+                            "doc_id": doc_id,
+                            "page": page_data["page"],
+                        }
+                        for _ in page_chunks
+                    )
                 chunk_ids = [f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
 
                 all_chunks.extend(chunks)
                 all_metadatas.extend(metadatas)
                 all_ids.extend(chunk_ids)
-                processed_results.append(f"✅ {file_name}: 成功处理 {len(chunks)} 个文本块")
+                page_summary = (
+                    f" từ {len(pages)} trang" if pages[0]["page"] is not None else ""
+                )
+                processed_results.append(
+                    f"{file_name}: đã tạo {len(chunks)} phân đoạn{page_summary}."
+                )
 
             except Exception as e:
-                logging.error(f"处理文件 {file_name} 时出错: {str(e)}")
-                processed_results.append(f"❌ {file_name}: 处理失败 - {str(e)}")
+                logging.error("Không thể xử lý %s: %s", file_name, e)
+                processed_results.append(f"{file_name}: xử lý thất bại – {e}")
 
         if all_chunks:
-            progress(0.8, desc="生成文本嵌入...")
+            progress(0.8, desc="Đang tạo embedding...")
             embeddings = encode_texts(all_chunks, show_progress=True)
 
-            progress(0.9, desc="构建FAISS索引...")
+            progress(0.9, desc="Đang xây chỉ mục FAISS...")
             vector_store.build_index(all_chunks, all_ids, all_metadatas, embeddings)
 
-        progress(0.95, desc="构建BM25检索索引...")
+        progress(0.95, desc="Đang xây chỉ mục BM25...")
         bm25_manager.build_index(all_chunks, all_ids)
 
-        summary = f"\n总计处理 {total_files} 个文件，{len(all_chunks)} 个文本块"
+        summary = (
+            f"\nHoàn tất: {total_files} tài liệu, {len(all_chunks)} phân đoạn."
+        )
         processed_results.append(summary)
-        return "\n".join(processed_results), [f"📄 {os.path.basename(f.name)}" for f in files]
+        return "\n".join(processed_results), [os.path.basename(f.name) for f in files]
 
     except Exception as e:
-        logging.error(f"处理过程出错: {str(e)}")
-        return f"处理过程出错: {str(e)}", []
+        logging.error("Quá trình xử lý tài liệu gặp lỗi: %s", e)
+        return f"Không thể xử lý tài liệu: {e}", []
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 分块可视化
+# Hiển thị phân đoạn
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 chunk_data_cache = {}
 
 
 def get_document_chunks(progress=gr.Progress()):
-    """获取文档分块结果用于可视化"""
+    """Chuẩn bị dữ liệu phân đoạn để hiển thị trên giao diện."""
     global chunk_data_cache
     try:
-        progress(0.1, desc="加载数据...")
+        progress(0.1, desc="Đang tải dữ liệu...")
         chunk_data_cache.clear()
 
         if not vector_store.id_order:
-            return [], "知识库中没有文档，请先上传并处理文档。"
+            return [], "Kho tri thức chưa có dữ liệu. Hãy tải và xử lý tài liệu trước."
 
         table_data = []
         for idx, chunk_id in enumerate(vector_store.id_order):
@@ -125,50 +139,56 @@ def get_document_chunks(progress=gr.Progress()):
                 continue
             chunk_data = {
                 "row_id": idx, "chunk_id": chunk_id,
-                "source": meta.get("source", "未知来源"), "content": content,
+                "source": meta.get("source", "Không rõ nguồn"),
+                "page": meta.get("page"),
+                "content": content,
                 "preview": content[:200] + "..." if len(content) > 200 else content,
                 "char_count": len(content),
                 "token_count": len(tokenize_vietnamese(content))
             }
             chunk_data_cache[idx] = chunk_data
             table_data.append([
-                chunk_data["source"], f"{idx + 1}/{len(vector_store.id_order)}",
+                chunk_data["source"],
+                chunk_data["page"] if chunk_data["page"] is not None else "—",
+                f"{idx + 1}/{len(vector_store.id_order)}",
                 chunk_data["char_count"], chunk_data["token_count"], chunk_data["preview"]
             ])
 
-        progress(1.0, desc="完成!")
-        return table_data, f"共 {len(table_data)} 个文本块"
+        progress(1.0, desc="Hoàn tất")
+        return table_data, f"Có {len(table_data)} phân đoạn."
     except Exception as e:
         chunk_data_cache.clear()
-        return [], f"获取分块数据失败: {str(e)}"
+        return [], f"Không thể tải dữ liệu phân đoạn: {e}"
 
 
 def show_chunk_details(evt: gr.SelectData):
-    """显示选中分块的详细内容"""
+    """Hiển thị nội dung đầy đủ của phân đoạn được chọn."""
     try:
         if not evt.index or evt.index[0] is None:
-            return "未选择有效行"
+            return "Vui lòng chọn một hàng hợp lệ."
         selected = chunk_data_cache.get(evt.index[0])
         if not selected:
-            return "未找到对应的分块数据"
-        return f"""[来源] {selected['source']}
-[ID] {selected['chunk_id']}
-[字符数] {selected['char_count']}
-[分词数] {selected['token_count']}
+            return "Không tìm thấy dữ liệu của phân đoạn này."
+        page = selected["page"] if selected["page"] is not None else "Không áp dụng"
+        return f"""[Nguồn] {selected['source']}
+[Trang] {page}
+[Mã phân đoạn] {selected['chunk_id']}
+[Số ký tự] {selected['char_count']}
+[Số từ] {selected['token_count']}
 ----------------------------
 {selected['content']}"""
     except Exception as e:
-        return f"加载失败: {str(e)}"
+        return f"Không thể hiển thị phân đoạn: {e}"
 
 
 def get_system_models_info():
-    """返回系统使用的各种模型信息"""
+    """Trả về thông tin mô hình và kỹ thuật đang sử dụng."""
     return {
-        "嵌入模型": "all-MiniLM-L6-v2",
-        "分块方法": "RecursiveCharacterTextSplitter (chunk_size=400, overlap=40)",
-        "检索方法": "向量检索 + BM25混合检索 (α=0.7)",
-        "重排序模型": "交叉编码器 (distiluse-base-multilingual-cased-v2)",
-        "Provider LLM mặc định": get_model_display_name(DEFAULT_MODEL_CHOICE),
+        "Mô hình embedding": "all-MiniLM-L6-v2",
+        "Cách phân đoạn": "RecursiveCharacterTextSplitter (400 ký tự, chồng lấn 40)",
+        "Phương pháp truy xuất": "Tìm kiếm vector + BM25 kết hợp (α=0,7)",
+        "Mô hình xếp hạng lại": "CrossEncoder đa ngôn ngữ",
+        "Dịch vụ LLM mặc định": get_model_display_name(DEFAULT_MODEL_CHOICE),
         "Model SiliconFlow": SILICONFLOW_MODEL_NAME,
         "Model OpenAI": OPENAI_MODEL_NAME,
         "Model Gemini": GEMINI_MODEL_NAME,
@@ -177,15 +197,18 @@ def get_system_models_info():
 
 
 def get_model_display_name(model_choice_val):
-    """返回 UI 中展示的模型服务名称。"""
-    return MODEL_DISPLAY_NAMES.get(model_choice_val, f"未知模型服务({model_choice_val})")
+    """Tên provider hiển thị trên giao diện."""
+    return MODEL_DISPLAY_NAMES.get(
+        model_choice_val,
+        f"Dịch vụ không xác định ({model_choice_val})",
+    )
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# Gradio UI（Gradio 6.x 兼容）
+# Giao diện Gradio 6.x
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CSS = """
-/* 补充性样式 —— 不覆盖 Gradio 6 核心组件，只做细节增强 */
+/* Chỉ bổ sung chi tiết, không ghi đè hành vi cốt lõi của Gradio. */
 .gradio-container { max-width:100%!important; width:100%!important; }
 .left-panel { padding:16px; border-radius:12px; }
 .right-panel { border-radius:12px; }
@@ -204,10 +227,10 @@ CSS = """
 .theme-toggle-btn { min-width:40px!important; font-size:20px!important; padding:4px 8px!important; }
 """
 
-# 主题切换 JS（Gradio 6 通过 body.classList.toggle('dark') 切换暗色模式）
+# Chuyển chế độ sáng/tối bằng class ``dark`` trên phần tử body.
 THEME_JS = """
 (() => {
-    // 读取上次保存的主题偏好，默认白色
+    // Khôi phục lựa chọn giao diện; mặc định là chế độ sáng.
     const saved = localStorage.getItem('rag-theme');
     if (saved === 'dark') {
         document.querySelector('body').classList.add('dark');
@@ -216,124 +239,154 @@ THEME_JS = """
 """
 
 def toggle_theme():
-    """返回切换主题的 JS 代码（通过 Gradio 的 js 参数执行）"""
+    """Để JavaScript của sự kiện nút chuyển chế độ giao diện thực thi."""
     return gr.update()
 
-with gr.Blocks(title="本地RAG问答系统") as demo:
+with gr.Blocks(title="learnbot_ai – Trợ lý hỏi đáp tài liệu") as demo:
     with gr.Row():
         with gr.Column(scale=9):
-            gr.Markdown("# 🧠 智能文档问答系统")
-        with gr.Column(scale=1, min_width=60):
-            theme_btn = gr.Button("🌓", min_width=40, elem_classes="theme-toggle-btn")
+            gr.Markdown("# Trợ lý hỏi đáp tài liệu")
+        with gr.Column(scale=2, min_width=140):
+            theme_btn = gr.Button(
+                "Chế độ sáng / tối",
+                min_width=120,
+                elem_classes="theme-toggle-btn",
+            )
 
     with gr.Tabs() as tabs:
-        # ━━━ 问答对话标签页 ━━━
-        with gr.TabItem("💬 问答对话"):
+        # Thẻ hỏi đáp
+        with gr.TabItem("Hỏi đáp"):
             with gr.Row(equal_height=True):
                 with gr.Column(scale=5, elem_classes="left-panel"):
-                    gr.Markdown("## 📂 文档处理区")
+                    gr.Markdown("## Tài liệu")
                     with gr.Group():
                         file_input = gr.File(
-                            label="上传文档 (支持PDF, Word, Excel, PPT, TXT, Markdown等)",
+                            label="Tải tài liệu",
+                            info="Hỗ trợ PDF, Word, Excel, PowerPoint, TXT và Markdown",
                             file_types=[".pdf", ".txt", ".docx", ".xlsx", ".xls", ".pptx", ".md"],
                             file_count="multiple"
                         )
-                        upload_btn = gr.Button("🚀 开始处理", variant="primary")
-                        upload_status = gr.Textbox(label="处理状态", interactive=False, lines=2)
-                        file_list = gr.Textbox(label="已处理文件", interactive=False, lines=3, elem_classes="file-list")
+                        upload_btn = gr.Button("Xử lý tài liệu", variant="primary")
+                        upload_status = gr.Textbox(
+                            label="Trạng thái xử lý",
+                            interactive=False,
+                            lines=2,
+                        )
+                        file_list = gr.Textbox(
+                            label="Tài liệu đã xử lý",
+                            interactive=False,
+                            lines=3,
+                            elem_classes="file-list",
+                        )
 
-                    gr.Markdown("## ❓ 输入问题")
+                    gr.Markdown("## Đặt câu hỏi")
                     with gr.Group():
-                        question_input = gr.Textbox(label="输入问题", lines=3, placeholder="请输入您的问题...")
+                        question_input = gr.Textbox(
+                            label="Câu hỏi",
+                            lines=3,
+                            placeholder="Ví dụ: Tài liệu nói gì về quy trình đăng ký?",
+                        )
                         with gr.Row():
                             web_search_checkbox = gr.Checkbox(
-                                label="启用联网搜索", value=False,
-                                info="打开后将同时搜索网络内容（需配置SERPAPI_KEY）"
+                                label="Tìm thêm trên web",
+                                value=False,
+                                info="Cần cấu hình SERPAPI_KEY",
                             )
                             model_choice = gr.Dropdown(
                                 choices=MODEL_CHOICES,
                                 value=DEFAULT_MODEL_CHOICE,
-                                label="Provider LLM", info="Chọn dịch vụ LLM API bên ngoài"
+                                label="Dịch vụ LLM",
+                                info="Chọn dịch vụ mô hình ngôn ngữ qua API",
                             )
                         with gr.Row():
-                            ask_btn = gr.Button("🔍 开始提问", variant="primary", scale=2)
-                            clear_btn = gr.Button("🗑️ 清空对话", variant="secondary", elem_classes="clear-button", scale=1)
+                            ask_btn = gr.Button("Gửi câu hỏi", variant="primary", scale=2)
+                            clear_btn = gr.Button(
+                                "Xóa cuộc trò chuyện",
+                                variant="secondary",
+                                elem_classes="clear-button",
+                                scale=1,
+                            )
                     api_info = gr.HTML("")
 
                 with gr.Column(scale=7, elem_classes="right-panel"):
-                    gr.Markdown("## 📝 对话记录")
-                    chatbot = gr.Chatbot(label="对话历史", height=600, elem_classes="chat-container",
+                    gr.Markdown("## Nội dung trao đổi")
+                    chatbot = gr.Chatbot(label="Lịch sử trò chuyện", height=600, elem_classes="chat-container",
                                          show_label=False)
                     status_display = gr.HTML("")
                     gr.Markdown("""<div class="footer-note">
-                        *回答生成可能需要1-2分钟，请耐心等待<br>*支持多轮对话，可基于前文继续提问
+                        Câu trả lời có thể mất một đến hai phút. Bạn có thể tiếp tục hỏi dựa trên nội dung trước đó.
                     </div>""")
 
-        # ━━━ 分块可视化标签页 ━━━
-        with gr.TabItem("📊 分块可视化"):
+        # Thẻ xem phân đoạn
+        with gr.TabItem("Xem phân đoạn"):
             with gr.Row():
                 with gr.Column(scale=1):
-                    gr.Markdown("## 💡 系统模型信息")
+                    gr.Markdown("## Cấu hình hệ thống")
                     models_info = get_system_models_info()
                     with gr.Group(elem_classes="model-card"):
-                        gr.Markdown("### 核心模型与技术")
+                        gr.Markdown("### Mô hình và kỹ thuật")
                         for key, value in models_info.items():
                             with gr.Row():
                                 gr.Markdown(f"**{key}**:")
                                 gr.Markdown(f"{value}")
                 with gr.Column(scale=2):
-                    gr.Markdown("## 📄 文档分块统计")
-                    refresh_chunks_btn = gr.Button("🔄 刷新分块数据", variant="primary")
-                    chunks_status = gr.Markdown("点击按钮查看分块统计")
+                    gr.Markdown("## Thống kê phân đoạn")
+                    refresh_chunks_btn = gr.Button("Tải dữ liệu phân đoạn", variant="primary")
+                    chunks_status = gr.Markdown("Chọn nút trên để xem các phân đoạn đã lập chỉ mục.")
             with gr.Row():
                 chunks_data = gr.Dataframe(
-                    headers=["来源", "序号", "字符数", "分词数", "内容预览"],
+                    headers=["Nguồn", "Trang", "Thứ tự", "Số ký tự", "Số từ", "Nội dung xem trước"],
                     elem_classes="chunk-table", interactive=False, wrap=True, row_count=(10, "dynamic")
                 )
             with gr.Row():
                 chunk_detail_text = gr.Textbox(
-                    label="分块详情", placeholder="点击表格中的行查看完整内容...",
+                    label="Chi tiết phân đoạn",
+                    placeholder="Chọn một hàng trong bảng để xem toàn bộ nội dung.",
                     lines=8, elem_classes="chunk-detail-box"
                 )
 
-        # ━━━ 系统监控标签页 ━━━
-        with gr.TabItem("📈 系统监控"):
+        # Thẻ giám sát hệ thống
+        with gr.TabItem("Giám sát hệ thống"):
             with gr.Column():
                 with gr.Group(elem_classes="monitor-panel"):
                     with gr.Row():
-                        gr.Markdown("## 🖥️ 系统资源监控")
-                        refresh_monitor_btn = gr.Button("🔄 刷新数据", variant="primary")
+                        gr.Markdown("## Tài nguyên hệ thống")
+                        refresh_monitor_btn = gr.Button("Cập nhật số liệu", variant="primary")
                     with gr.Row():
                         with gr.Column():
-                            gr.Markdown("CPU使用率", elem_classes="metric-title")
-                            cpu_value = gr.Markdown("加载中...", elem_classes="metric-value")
+                            gr.Markdown("Mức sử dụng CPU", elem_classes="metric-title")
+                            cpu_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
                             cpu_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="width:0%"></div></div>')
-                            cpu_info = gr.Markdown("核心数: 加载中...", elem_classes="metric-trend")
+                            cpu_info = gr.Markdown("Số lõi: đang tải...", elem_classes="metric-trend")
                         with gr.Column():
-                            gr.Markdown("内存使用", elem_classes="metric-title")
-                            memory_value = gr.Markdown("加载中...", elem_classes="metric-value")
+                            gr.Markdown("Mức sử dụng bộ nhớ", elem_classes="metric-title")
+                            memory_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
                             memory_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="width:0%"></div></div>')
-                            memory_info = gr.Markdown("总内存: 加载中...", elem_classes="metric-trend")
+                            memory_info = gr.Markdown("Tổng bộ nhớ: đang tải...", elem_classes="metric-trend")
                         with gr.Column():
-                            gr.Markdown("磁盘空间", elem_classes="metric-title")
-                            disk_value = gr.Markdown("加载中...", elem_classes="metric-value")
+                            gr.Markdown("Dung lượng ổ đĩa", elem_classes="metric-title")
+                            disk_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
                             disk_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="width:0%"></div></div>')
-                            disk_info = gr.Markdown("总空间: 加载中...", elem_classes="metric-trend")
+                            disk_info = gr.Markdown("Tổng dung lượng: đang tải...", elem_classes="metric-trend")
                         with gr.Column():
-                            gr.Markdown("向量数据库", elem_classes="metric-title")
-                            vector_db_value = gr.Markdown("分块数: 0", elem_classes="metric-value")
-                            vector_db_info = gr.Markdown("向量数: 0", elem_classes="metric-trend")
+                            gr.Markdown("Kho vector", elem_classes="metric-title")
+                            vector_db_value = gr.Markdown("Phân đoạn: 0", elem_classes="metric-value")
+                            vector_db_info = gr.Markdown("Vector: 0", elem_classes="metric-trend")
 
                 with gr.Group(elem_classes="monitor-panel"):
-                    gr.Markdown("## 📝 系统日志")
+                    gr.Markdown("## Nhật ký hệ thống")
                     with gr.Row():
-                        log_level = gr.Dropdown(choices=["所有级别", "信息", "警告", "错误"], value="所有级别", label="日志级别")
-                        clear_logs_btn = gr.Button("🗑️ 清空日志", variant="secondary")
+                        log_level = gr.Dropdown(
+                            choices=["Tất cả", "Thông tin", "Cảnh báo", "Lỗi"],
+                            value="Tất cả",
+                            label="Mức nhật ký",
+                        )
+                        clear_logs_btn = gr.Button("Xóa nhật ký", variant="secondary")
                     log_display = gr.HTML("", elem_classes="log-container")
 
-    # ━━━ 事件处理函数 ━━━
+    # Hàm xử lý sự kiện
     def clear_chat_history():
-        return [], "对话已清空"
+        return [], "Đã xóa cuộc trò chuyện."
 
     def process_chat(question, history, enable_web_search, model_choice_val):
         if history is None or not isinstance(history, list):
@@ -341,23 +394,28 @@ with gr.Blocks(title="本地RAG问答系统") as demo:
 
         api_text = """<div class="api-info" style="margin-top:10px;padding:10px;border-radius:5px;
             background:var(--panel-bg);border:1px solid var(--border-color);">
-            <p>📢 <strong>功能说明：</strong></p>
-            <p>1. <strong>联网搜索</strong>：%s</p>
-            <p>2. <strong>模型选择</strong>：当前使用 <strong>%s</strong></p>
+            <p><strong>Thiết lập câu hỏi</strong></p>
+            <p>Tìm kiếm web: <strong>%s</strong></p>
+            <p>Dịch vụ LLM: <strong>%s</strong></p>
         </div>""" % (
-            "已启用" if enable_web_search else "未启用",
+            "Đã bật" if enable_web_search else "Đã tắt",
             get_model_display_name(model_choice_val)
         )
 
         if not question or question.strip() == "":
-            history.append({"role": "assistant", "content": "问题不能为空，请输入有效问题。"})
+            history.append(
+                {
+                    "role": "assistant",
+                    "content": "Vui lòng nhập câu hỏi trước khi gửi.",
+                }
+            )
             return history, "", api_text
 
         try:
             answer = query_answer(question, enable_web_search, model_choice_val)
         except Exception as e:
-            answer = f"系统错误: {str(e)}"
-            logging.error(f"问答处理异常: {str(e)}")
+            answer = f"Không thể tạo câu trả lời: {e}"
+            logging.error("Quá trình hỏi đáp gặp lỗi: %s", e)
 
         history.append({"role": "user", "content": question})
         history.append({"role": "assistant", "content": answer})
@@ -366,16 +424,16 @@ with gr.Blocks(title="本地RAG问答系统") as demo:
     def update_api_info(enable_web_search, model_choice_val):
         return """<div class="api-info" style="margin-top:10px;padding:10px;border-radius:5px;
             background:var(--panel-bg);border:1px solid var(--border-color);">
-            <p>📢 <strong>功能说明：</strong></p>
-            <p>1. <strong>联网搜索</strong>：%s</p>
-            <p>2. <strong>模型选择</strong>：当前使用 <strong>%s</strong></p>
+            <p><strong>Thiết lập câu hỏi</strong></p>
+            <p>Tìm kiếm web: <strong>%s</strong></p>
+            <p>Dịch vụ LLM: <strong>%s</strong></p>
         </div>""" % (
-            "已启用" if enable_web_search else "未启用",
+            "Đã bật" if enable_web_search else "Đã tắt",
             get_model_display_name(model_choice_val)
         )
 
     def get_system_metrics():
-        """获取系统监控数据"""
+        """Lấy số liệu tài nguyên hệ thống."""
         try:
             import psutil
             cpu_pct = psutil.cpu_percent(interval=1)
@@ -398,20 +456,20 @@ with gr.Blocks(title="本地RAG问答系统") as demo:
             d_color = "#4CAF50" if disk.percent < 50 else "#FFC107" if disk.percent < 80 else "#f44336"
 
             now = datetime.now().strftime("%H:%M:%S")
-            log = f'<div class="log-entry"><span style="color:var(--tech-cyan)">[{now}]</span> <span style="color:#4CAF50">[INFO]</span> 监控数据已更新</div>'
+            log = f'<div class="log-entry"><span style="color:var(--tech-cyan)">[{now}]</span> <span style="color:#4CAF50">[THÔNG TIN]</span> Đã cập nhật số liệu hệ thống</div>'
 
             return (
-                f"{cpu_pct}%", bar(cpu_pct, c_color), f"物理核心: {cpu_cnt}",
-                f"{mem_used}GB / {mem_total}GB", bar(mem.percent, m_color), f"使用率: {mem.percent}%",
-                f"{disk_used}GB / {disk_total}GB", bar(disk.percent, d_color), f"使用率: {disk.percent}%",
-                f"分块数: {doc_count}", f"向量数: {vec_count}", log
+                f"{cpu_pct}%", bar(cpu_pct, c_color), f"Lõi vật lý: {cpu_cnt}",
+                f"{mem_used} GB / {mem_total} GB", bar(mem.percent, m_color), f"Đã dùng: {mem.percent}%",
+                f"{disk_used} GB / {disk_total} GB", bar(disk.percent, d_color), f"Đã dùng: {disk.percent}%",
+                f"Phân đoạn: {doc_count}", f"Vector: {vec_count}", log
             )
         except Exception as e:
-            err = f"监控错误: {str(e)}"
-            return ("错误", "", err, "错误", "", err, "错误", "", err, "错误", err,
-                    f"<div style='color:#f44336'>[ERROR] {err}</div>")
+            err = f"Không thể đọc số liệu hệ thống: {e}"
+            return ("Lỗi", "", err, "Lỗi", "", err, "Lỗi", "", err, "Lỗi", err,
+                    f"<div style='color:#f44336'>[LỖI] {err}</div>")
 
-    # ━━━ 绑定事件 ━━━
+    # Liên kết sự kiện
     upload_btn.click(process_multiple_files, inputs=[file_input], outputs=[upload_status, file_list], show_progress=True)
     ask_btn.click(process_chat, inputs=[question_input, chatbot, web_search_checkbox, model_choice],
                   outputs=[chatbot, question_input, api_info])
@@ -426,7 +484,10 @@ with gr.Blocks(title="本地RAG问答系统") as demo:
         disk_value, disk_progress, disk_info,
         vector_db_value, vector_db_info, log_display
     ])
-    clear_logs_btn.click(fn=lambda: "<div style='color:#4CAF50'>日志已清空</div>", outputs=[log_display])
+    clear_logs_btn.click(
+        fn=lambda: "<div style='color:#4CAF50'>Đã xóa nhật ký.</div>",
+        outputs=[log_display],
+    )
     theme_btn.click(fn=toggle_theme, inputs=[], outputs=[], js="""
         () => {
             document.querySelector('body').classList.toggle('dark');
@@ -441,11 +502,11 @@ def check_environment():
     provider = get_provider_name()
     provider_config = get_provider_config(provider)
     if not is_configured_api_key(provider_config.api_key):
-        print(f"❌ Chưa cấu hình API key cho provider {provider}.")
+        print(f"Chưa cấu hình API key cho provider {provider}.")
         print("   Hãy cập nhật file .env rồi khởi động lại ứng dụng.")
         return False
 
-    print(f"✅ Đã cấu hình API key cho provider {provider}.")
+    print(f"Đã cấu hình API key cho provider {provider}.")
     result = call_llm(
         "Chỉ trả lời đúng hai từ: kết nối thành công",
         provider=provider,
@@ -453,9 +514,9 @@ def check_environment():
         max_tokens=20,
     )
     if result.startswith(("Lỗi", "Không thể", "Phản hồi")):
-        print(f"❌ Kiểm tra kết nối {provider} thất bại: {result}")
+        print(f"Kiểm tra kết nối {provider} thất bại: {result}")
         return False
-    print(f"✅ Kết nối {provider} thành công.")
+    print(f"Kết nối {provider} thành công.")
     return True
 
 
@@ -467,7 +528,7 @@ if __name__ == "__main__":
     selected_port = next((p for p in ports if is_port_available(p)), None)
 
     if not selected_port:
-        print("所有端口都被占用，请手动释放端口")
+        print("Không còn cổng khả dụng trong dải 17995–17999.")
         exit(1)
 
     try:
@@ -478,4 +539,4 @@ if __name__ == "__main__":
             css=CSS, js=THEME_JS
         )
     except Exception as e:
-        print(f"启动失败: {str(e)}")
+        print(f"Không thể khởi động ứng dụng: {e}")

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from core.document_loader import extract_text
+from core.document_loader import extract_text, extract_text_by_page
 
 
 def test_extract_utf8_text_and_markdown(tmp_path: Path):
@@ -12,6 +12,9 @@ def test_extract_utf8_text_and_markdown(tmp_path: Path):
 
     assert "中文内容" in extract_text(str(text_file))
     assert "Hybrid retrieval" in extract_text(str(markdown_file))
+    assert extract_text_by_page(str(text_file)) == [
+        {"page": None, "text": "RAG combines retrieval and generation.\n中文内容。"}
+    ]
 
 
 def test_unsupported_extension_returns_empty_string(tmp_path: Path):

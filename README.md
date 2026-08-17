@@ -1,175 +1,236 @@
 <div align="center">
 
-# Local PDF Chat RAG
+# learnbot_ai
 
-一个透明、可运行的 Python RAG 学习与参考实现
+Trợ lý hỏi đáp tài liệu tiếng Việt dựa trên RAG
 
-[English](README_EN.md) | 简体中文
+Tiếng Việt | [English](README_EN.md)
 
-[![CI](https://github.com/weiwill88/Local_Pdf_Chat_RAG/actions/workflows/ci.yml/badge.svg)](https://github.com/weiwill88/Local_Pdf_Chat_RAG/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/CaoRIV/learnbot_ai/actions/workflows/ci.yml/badge.svg)](https://github.com/CaoRIV/learnbot_ai/actions/workflows/ci.yml)
+[![Giấy phép: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Release](https://img.shields.io/github/v/release/weiwill88/Local_Pdf_Chat_RAG)](https://github.com/weiwill88/Local_Pdf_Chat_RAG/releases)
-[![Stars](https://img.shields.io/github/stars/weiwill88/Local_Pdf_Chat_RAG?style=social)](https://github.com/weiwill88/Local_Pdf_Chat_RAG/stargazers)
 
 </div>
 
-Local PDF Chat RAG 面向希望理解检索增强生成完整链路的开发者。项目把文档解析、文本分块、向量化、FAISS、BM25、混合检索、重排序和回答生成拆成可以单独阅读、测试和替换的模块，并提供 Gradio 界面和 FastAPI 接口。
+`learnbot_ai` giúp người dùng đặt câu hỏi bằng tiếng Việt và nhận câu trả lời dựa trên nội dung tài liệu đã tải lên. Dự án sử dụng FAISS kết hợp BM25 để truy xuất, có bước xếp hạng lại kết quả và gọi mô hình ngôn ngữ qua API để tạo câu trả lời kèm nguồn và số trang.
 
-> 本仓库是教学与实验用途的参考实现，不是开箱即用的生产级知识库服务。用于真实业务前，请补充身份鉴权、租户隔离、持久化、评测、安全审计和部署治理。
+Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://github.com/weiwill88/Local_Pdf_Chat_RAG), sau đó được điều chỉnh cho tài liệu tiếng Việt và loại bỏ việc chạy LLM cục bộ.
 
-![Local PDF Chat RAG 当前界面](images/demo-current.png)
+> Đây là dự án phục vụ học tập và thử nghiệm, chưa phải một dịch vụ kho tri thức sẵn sàng cho môi trường vận hành thực tế. Trước khi dùng với dữ liệu thực tế, nên bổ sung xác thực, phân quyền, lưu trữ bền vững, đánh giá chất lượng, kiểm toán bảo mật và cơ chế bảo vệ dữ liệu.
 
-## 项目特点
+![Giao diện hiện tại của learnbot_ai](images/demo-current.png)
 
-- **链路透明**：核心步骤按 RAG 执行顺序拆分，便于学习和调试。
-- **混合检索**：结合 FAISS 向量检索和 BM25 关键词检索。
-- **可选重排序**：支持 CrossEncoder 或基于模型的相关性评分。
-- **多模型后端**：通过 `LLM_PROVIDER` 选择 SiliconFlow、OpenAI 或 Gemini API。
-- **多种文档格式**：支持 PDF、TXT、Markdown、DOCX、XLS/XLSX 和 PPTX。
-- **双入口**：提供 Gradio Web UI 和 FastAPI REST API。
-- **可验证维护**：包含自动化测试、GitHub Actions CI、贡献指南和安全报告流程。
+## Tính năng chính
 
-## RAG 流程
+- **Hỏi đáp dựa trên tài liệu**: chỉ sử dụng nội dung truy xuất được để trả lời; nói rõ khi tài liệu không có thông tin.
+- **Trích dẫn nguồn và số trang**: câu trả lời từ PDF sử dụng định dạng `[Tên tài liệu, trang X]`.
+- **Truy xuất kết hợp**: kết hợp tìm kiếm vector bằng FAISS và tìm kiếm từ khóa bằng BM25.
+- **Tối ưu cho tiếng Việt**: BM25 tách từ bằng `underthesea` thay vì tokenizer tiếng Trung.
+- **Xếp hạng lại kết quả**: hỗ trợ CrossEncoder hoặc chấm điểm liên quan qua LLM API.
+- **Nhiều dịch vụ LLM**: chọn SiliconFlow, OpenAI hoặc Gemini qua biến `LLM_PROVIDER`.
+- **Không chạy LLM cục bộ**: không phụ thuộc Ollama hoặc llama.cpp; embedding và reranker vẫn có thể chạy trên máy.
+- **Nhiều định dạng tài liệu**: hỗ trợ PDF, TXT, Markdown, DOCX, XLS/XLSX và PPTX.
+- **Hai cách sử dụng**: giao diện Gradio và REST API bằng FastAPI.
+
+## Luồng xử lý RAG
 
 ```mermaid
 flowchart LR
-    A[文档] --> B[解析]
-    B --> C[文本分块]
-    C --> D[向量化]
-    D --> E[FAISS]
-    C --> F[BM25]
-    E --> G[混合检索]
-    F --> G
-    G --> H[重排序]
-    H --> I[上下文构建]
-    I --> J[LLM 生成]
-    J --> K[回答与来源]
+    A[Tải tài liệu] --> B[Trích xuất văn bản và số trang]
+    B --> C[Chia thành các phân đoạn]
+    C --> D[Tạo embedding]
+    D --> E[Chỉ mục FAISS]
+    C --> F[Tách từ tiếng Việt]
+    F --> G[Chỉ mục BM25]
+    E --> H[Truy xuất kết hợp]
+    G --> H
+    H --> I[Xếp hạng lại]
+    I --> J[Tạo ngữ cảnh kèm nguồn và số trang]
+    J --> K[Gọi LLM qua API]
+    K --> L[Câu trả lời tiếng Việt có trích dẫn]
 ```
 
-## 快速开始
+## Bắt đầu nhanh
 
-### 1. 创建环境
+### 1. Tải mã nguồn
 
 ```bash
-git clone https://github.com/weiwill88/Local_Pdf_Chat_RAG.git
-cd Local_Pdf_Chat_RAG
+git clone https://github.com/CaoRIV/learnbot_ai.git
+cd learnbot_ai
+```
 
-python3.10 -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+### 2. Tạo môi trường Python
+
+Dự án yêu cầu Python 3.10 trở lên.
+
+Trên Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 2. 配置一个模型后端
+Trên Linux hoặc macOS:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 3. Cấu hình dịch vụ LLM
+
+Tạo `.env` từ file mẫu.
+
+Trên Windows PowerShell:
+
+```powershell
+Copy-Item example.env .env
+```
+
+Trên Linux hoặc macOS:
 
 ```bash
 cp example.env .env
 ```
 
-编辑 `.env`，将 `LLM_PROVIDER` 设置为 `siliconflow`、`openai` 或 `gemini`，并配置对应的 API Key：
+Mở `.env`, đặt `LLM_PROVIDER` thành một trong ba giá trị sau và điền API key tương ứng:
 
-- SiliconFlow：`SILICONFLOW_API_KEY`；
-- OpenAI：`OPENAI_API_KEY`；
-- Gemini：`GEMINI_API_KEY`。
+| Giá trị `LLM_PROVIDER` | Biến API key |
+| --- | --- |
+| `siliconflow` | `SILICONFLOW_API_KEY` |
+| `openai` | `OPENAI_API_KEY` |
+| `gemini` | `GEMINI_API_KEY` |
 
-密钥只保存在本地 `.env` 中。请勿提交真实密钥；示例配置中的 `Your_...` 占位符不会被识别为有效密钥。
+Không đưa API key thật lên Git. Các giá trị mẫu bắt đầu bằng `Your_` không được xem là thông tin xác thực hợp lệ.
 
-### 3. 启动 Web UI
+### 4. Khởi động giao diện Gradio
 
 ```bash
 python rag_demo.py
 ```
 
-应用默认尝试 `http://127.0.0.1:17995`，端口被占用时会依次尝试 17996–17999。
+Ứng dụng ưu tiên địa chỉ `http://127.0.0.1:17995`. Nếu cổng này đang được sử dụng, ứng dụng sẽ lần lượt thử các cổng từ 17996 đến 17999.
 
-### 4. 启动 REST API
+Quy trình sử dụng:
+
+1. Chọn một hoặc nhiều tài liệu.
+2. Nhấn **Xử lý tài liệu** và chờ quá trình lập chỉ mục hoàn tất.
+3. Nhập câu hỏi bằng tiếng Việt.
+4. Chọn dịch vụ LLM rồi nhấn **Gửi câu hỏi**.
+
+### 5. Khởi động REST API
 
 ```bash
 python api_router.py
 ```
 
-主要接口：
+Các endpoint chính:
 
-- `GET /api/status`：运行状态与后端配置状态；
-- `POST /api/upload`：上传并处理文档；
-- `POST /api/ask`：基于已处理文档提问。
+| Phương thức | Endpoint | Chức năng |
+| --- | --- | --- |
+| `GET` | `/api/status` | Kiểm tra trạng thái ứng dụng và cấu hình dịch vụ LLM |
+| `POST` | `/api/upload` | Tải lên và xử lý tài liệu |
+| `POST` | `/api/ask` | Đặt câu hỏi dựa trên tài liệu đã xử lý |
 
-## 项目结构
+## Cấu trúc dự án
 
 ```text
-├── config.py                  # 环境变量、模型与 RAG 参数
-├── rag_demo.py                # Gradio Web UI
-├── api_router.py              # FastAPI 接口
-├── llm_provider.py            # SiliconFlow/OpenAI/Gemini API 适配层
+├── config.py                  # Biến môi trường, mô hình và tham số RAG
+├── rag_demo.py                # Giao diện Gradio
+├── api_router.py              # REST API bằng FastAPI
+├── llm_provider.py            # Lớp kết nối SiliconFlow/OpenAI/Gemini
 ├── core/
-│   ├── document_loader.py     # 文档解析
-│   ├── text_splitter.py       # 文本分块
-│   ├── embeddings.py          # 向量化
-│   ├── vector_store.py        # FAISS 索引
-│   ├── bm25_index.py          # BM25 索引
-│   ├── retriever.py           # 混合与递归检索
-│   ├── reranker.py            # 结果重排序
-│   └── generator.py           # 上下文和回答生成
-├── features/                  # 联网搜索、冲突检测等扩展能力
-├── tests/                     # 无外部密钥的自动化测试
-└── .github/                   # CI、Issue 与 PR 模板
+│   ├── document_loader.py     # Trích xuất nội dung và số trang
+│   ├── text_splitter.py       # Chia văn bản thành các phân đoạn
+│   ├── embeddings.py          # Tạo vector embedding
+│   ├── vector_store.py        # Quản lý chỉ mục FAISS
+│   ├── bm25_index.py          # Tách từ tiếng Việt và chỉ mục BM25
+│   ├── retriever.py           # Truy xuất kết hợp và truy xuất đệ quy
+│   ├── reranker.py            # Xếp hạng lại kết quả
+│   └── generator.py           # Tạo ngữ cảnh, prompt và câu trả lời
+├── features/                  # Tìm kiếm web, phát hiện xung đột và tiện ích mở rộng
+├── tests/                     # Kiểm thử không cần API key thật
+└── .github/                   # Cấu hình CI và các biểu mẫu GitHub
 ```
 
-## 测试
+## Kiểm thử
+
+Cài các thư viện dành cho phát triển:
 
 ```bash
 pip install -r requirements-dev.txt
+```
+
+Chạy toàn bộ test trên Windows PowerShell:
+
+```powershell
+$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
+python -m pytest
+```
+
+Trên Linux hoặc macOS:
+
+```bash
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest
 ```
 
-当前测试覆盖：
+Bộ test bao gồm:
 
-- 配置和默认后端选择；
-- TXT、Markdown 和不支持格式的文档加载行为；
-- BM25 与混合检索合并；
-- 未配置 API Key 时不发起外部请求并返回明确错误。
+- cấu hình và lựa chọn dịch vụ LLM mặc định;
+- lời gọi API khi có hoặc thiếu thông tin xác thực;
+- trích xuất tài liệu và metadata số trang PDF;
+- bộ tách từ tiếng Việt cho BM25;
+- truy xuất BM25, FAISS và hợp nhất kết quả;
+- prompt giới hạn câu trả lời trong nội dung tài liệu;
+- trích dẫn số trang trong câu trả lời API.
 
-所有 Pull Request 都会通过 GitHub Actions 执行源码编译和测试。
+GitHub Actions sẽ biên dịch mã Python và chạy test cho mỗi Pull Request.
 
-## 配置说明
+## Biến môi trường
 
-完整示例见 [`example.env`](example.env)。常用变量包括：
+Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng:
 
-| 变量 | 作用 |
+| Biến | Mục đích |
 | --- | --- |
-| `SILICONFLOW_API_KEY` | SiliconFlow API 密钥 |
-| `SILICONFLOW_MODEL_NAME` | SiliconFlow 模型 ID |
-| `OPENAI_API_KEY` | OpenAI API 密钥 |
-| `OPENAI_API_URL` | OpenAI Chat Completions URL |
-| `OPENAI_MODEL_NAME` | OpenAI 模型 ID |
-| `GEMINI_API_KEY` | Gemini API 密钥 |
-| `GEMINI_API_URL` | Gemini API base URL |
-| `GEMINI_MODEL_NAME` | Gemini 模型 ID |
-| `LLM_PROVIDER` | `siliconflow`、`openai` 或 `gemini` |
-| `SERPAPI_KEY` | 可选联网搜索密钥 |
-| `RERANK_METHOD` | `cross_encoder` 或 `llm` |
+| `LLM_PROVIDER` | Chọn `siliconflow`, `openai` hoặc `gemini` |
+| `SILICONFLOW_API_KEY` | API key của SiliconFlow |
+| `SILICONFLOW_MODEL_NAME` | ID mô hình SiliconFlow |
+| `OPENAI_API_KEY` | API key của OpenAI |
+| `OPENAI_API_URL` | URL tương thích OpenAI Chat Completions |
+| `OPENAI_MODEL_NAME` | ID mô hình OpenAI |
+| `GEMINI_API_KEY` | API key của Gemini |
+| `GEMINI_API_URL` | URL cơ sở của Gemini API |
+| `GEMINI_MODEL_NAME` | ID mô hình Gemini |
+| `SERPAPI_KEY` | API key tùy chọn cho tìm kiếm web |
+| `RERANK_METHOD` | Chọn `cross_encoder` hoặc `llm` |
 
-## 已知边界
+Ứng dụng không yêu cầu `OLLAMA_HOST` và không gọi Ollama.
 
-- PDF 采用文本层提取，不包含通用 OCR；扫描件需要先做 OCR。
-- Excel 与 PPT 的解析以文本提取为主，不保留完整视觉布局。
-- 索引当前保存在进程内存中，服务重启后需要重新处理文档。
-- 首次使用向量或重排序模型时可能需要下载模型文件。
-- 联网搜索和云端模型会把相应查询发送到第三方服务，请先确认数据边界。
+## Giới hạn hiện tại
 
-## 参与贡献
+- PDF chỉ được đọc từ lớp văn bản, chưa tích hợp OCR tổng quát; tài liệu scan cần được OCR trước.
+- Việc đọc Excel và PowerPoint tập trung vào nội dung chữ, không giữ nguyên bố cục trực quan.
+- Chỉ mục hiện nằm trong bộ nhớ tiến trình và cần được tạo lại sau khi khởi động lại ứng dụng.
+- Mô hình embedding hoặc reranker cục bộ có thể cần tải dữ liệu trong lần chạy đầu tiên.
+- Câu hỏi gửi tới LLM và dịch vụ tìm kiếm web có thể được chuyển cho bên thứ ba; cần xem xét phạm vi dữ liệu trước khi sử dụng tài liệu nhạy cảm.
+- Máy có 8 GB RAM nên xử lý từng nhóm tài liệu nhỏ để tránh sử dụng quá nhiều bộ nhớ.
 
-欢迎提交可复现的 Bug、文档改进和聚焦的功能 Pull Request。开始前请阅读 [`CONTRIBUTING.md`](CONTRIBUTING.md) 和 [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)。
+## Đóng góp
 
-安全问题请不要创建公开 Issue，具体流程见 [`SECURITY.md`](SECURITY.md)。
+Bạn có thể gửi báo cáo lỗi có thể tái hiện, cải thiện tài liệu hoặc Pull Request tập trung vào một thay đổi cụ thể. Trước khi đóng góp, hãy đọc [`CONTRIBUTING.md`](CONTRIBUTING.md) và [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
-## 版本与维护
+Không tạo Issue công khai cho lỗ hổng bảo mật. Hãy làm theo quy trình trong [`SECURITY.md`](SECURITY.md).
 
-- 变更记录：[`CHANGELOG.md`](CHANGELOG.md)
-- 已发布版本：[GitHub Releases](https://github.com/weiwill88/Local_Pdf_Chat_RAG/releases)
-- 当前维护者：[Will Wei](https://github.com/weiwill88)
+## Phiên bản và bảo trì
 
-## 许可证
+- Lịch sử thay đổi: [`CHANGELOG.md`](CHANGELOG.md)
+- Các phiên bản đã phát hành: [GitHub Releases](https://github.com/CaoRIV/learnbot_ai/releases)
+- Dự án gốc: [weiwill88/Local_Pdf_Chat_RAG](https://github.com/weiwill88/Local_Pdf_Chat_RAG)
 
-本项目采用 [MIT License](LICENSE)。
+## Giấy phép
+
+Dự án được phát hành theo [giấy phép MIT](LICENSE).

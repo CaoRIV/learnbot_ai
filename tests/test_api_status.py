@@ -5,7 +5,12 @@ from api_router import QuestionRequest, ask_question, check_status
 from version import __version__
 
 
-def test_status_reports_current_version_without_credentials():
+def test_status_reports_current_version_without_credentials(monkeypatch):
+    monkeypatch.setattr(api_router, "SILICONFLOW_API_KEY", None)
+    monkeypatch.setattr(api_router, "OPENAI_API_KEY", None)
+    monkeypatch.setattr(api_router, "GEMINI_API_KEY", None)
+    monkeypatch.setattr(api_router, "LLM_PROVIDER", "siliconflow")
+
     status = asyncio.run(check_status())
 
     assert status["status"] == "healthy"

@@ -260,9 +260,11 @@ with gr.Blocks(title="learnbot_ai – Trợ lý hỏi đáp tài liệu") as dem
                 with gr.Column(scale=5, elem_classes="left-panel"):
                     gr.Markdown("## Tài liệu")
                     with gr.Group():
+                        gr.Markdown(
+                            "Hỗ trợ PDF, Word, Excel, PowerPoint, TXT và Markdown."
+                        )
                         file_input = gr.File(
                             label="Tải tài liệu",
-                            info="Hỗ trợ PDF, Word, Excel, PowerPoint, TXT và Markdown",
                             file_types=[".pdf", ".txt", ".docx", ".xlsx", ".xls", ".pptx", ".md"],
                             file_count="multiple"
                         )
@@ -336,7 +338,10 @@ with gr.Blocks(title="learnbot_ai – Trợ lý hỏi đáp tài liệu") as dem
             with gr.Row():
                 chunks_data = gr.Dataframe(
                     headers=["Nguồn", "Trang", "Thứ tự", "Số ký tự", "Số từ", "Nội dung xem trước"],
-                    elem_classes="chunk-table", interactive=False, wrap=True, row_count=(10, "dynamic")
+                    elem_classes="chunk-table",
+                    interactive=False,
+                    wrap=True,
+                    row_count=10,
                 )
             with gr.Row():
                 chunk_detail_text = gr.Textbox(
@@ -511,7 +516,7 @@ def check_environment():
         "Chỉ trả lời đúng hai từ: kết nối thành công",
         provider=provider,
         temperature=0.1,
-        max_tokens=20,
+        max_tokens=256,
     )
     if result.startswith(("Lỗi", "Không thể", "Phản hồi")):
         print(f"Kiểm tra kết nối {provider} thất bại: {result}")

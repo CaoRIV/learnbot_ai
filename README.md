@@ -18,8 +18,6 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 
 > Đây là dự án phục vụ học tập và thử nghiệm, chưa phải một dịch vụ kho tri thức sẵn sàng cho môi trường vận hành thực tế. Trước khi dùng với dữ liệu thực tế, nên bổ sung xác thực, phân quyền, lưu trữ bền vững, đánh giá chất lượng, kiểm toán bảo mật và cơ chế bảo vệ dữ liệu.
 
-![Giao diện hiện tại của learnbot_ai](images/demo-current.png)
-
 ## Tính năng chính
 
 - **Hỏi đáp dựa trên tài liệu**: chỉ sử dụng nội dung truy xuất được để trả lời; nói rõ khi tài liệu không có thông tin.

@@ -189,9 +189,9 @@ def get_system_models_info():
         "Phương pháp truy xuất": "Tìm kiếm vector + BM25 kết hợp (α=0,7)",
         "Mô hình xếp hạng lại": "CrossEncoder đa ngôn ngữ",
         "Dịch vụ LLM mặc định": get_model_display_name(DEFAULT_MODEL_CHOICE),
-        "Model SiliconFlow": SILICONFLOW_MODEL_NAME,
-        "Model OpenAI": OPENAI_MODEL_NAME,
-        "Model Gemini": GEMINI_MODEL_NAME,
+        "Mô hình SiliconFlow": SILICONFLOW_MODEL_NAME,
+        "Mô hình OpenAI": OPENAI_MODEL_NAME,
+        "Mô hình Gemini": GEMINI_MODEL_NAME,
         "Công cụ tách từ": "Underthesea (tiếng Việt)"
     }
 
@@ -207,34 +207,275 @@ def get_model_display_name(model_choice_val):
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Giao diện Gradio 6.x
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+APP_THEME = gr.themes.Base(
+    primary_hue=gr.themes.colors.amber,
+    secondary_hue=gr.themes.colors.slate,
+    neutral_hue=gr.themes.colors.stone,
+    font=[
+        gr.themes.GoogleFont("Be Vietnam Pro", weights=(400, 500, 600, 700)),
+        "Segoe UI",
+        "sans-serif",
+    ],
+    font_mono=["Cascadia Code", "Consolas", "monospace"],
+    radius_size=gr.themes.sizes.radius_lg,
+    spacing_size=gr.themes.sizes.spacing_md,
+).set(
+    body_background_fill="#f5f5f1",
+    body_background_fill_dark="#111310",
+    body_text_color="#171717",
+    body_text_color_dark="#f5f5f1",
+    body_text_color_subdued="#57534e",
+    body_text_color_subdued_dark="#b7b3aa",
+    background_fill_primary="#ffffff",
+    background_fill_primary_dark="#191b18",
+    background_fill_secondary="#f8f8f5",
+    background_fill_secondary_dark="#20231f",
+    block_background_fill="#ffffff",
+    block_background_fill_dark="#191b18",
+    block_border_color="#e7e5df",
+    block_border_color_dark="#343731",
+    block_radius="18px",
+    block_shadow="none",
+    input_background_fill="#ffffff",
+    input_background_fill_dark="#151714",
+    input_border_color="#d8d5cd",
+    input_border_color_dark="#44483f",
+    input_border_color_focus="#b88920",
+    input_border_color_focus_dark="#e2bd61",
+    input_radius="14px",
+    button_primary_background_fill="#c99b2e",
+    button_primary_background_fill_dark="#e0b955",
+    button_primary_background_fill_hover="#b48724",
+    button_primary_background_fill_hover_dark="#edc96d",
+    button_primary_text_color="#171717",
+    button_primary_text_color_dark="#171717",
+    button_primary_border_color="#c99b2e",
+    button_primary_border_color_dark="#e0b955",
+    button_primary_shadow="none",
+    button_primary_shadow_hover="0 8px 20px rgba(159, 113, 12, 0.20)",
+    button_secondary_background_fill="#ffffff",
+    button_secondary_background_fill_dark="#20231f",
+    button_secondary_border_color="#d8d5cd",
+    button_secondary_border_color_dark="#44483f",
+    button_secondary_text_color="#292524",
+    button_secondary_text_color_dark="#f5f5f1",
+    button_transform_hover="none",
+    button_transition="background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease",
+)
+
 CSS = """
-/* Chỉ bổ sung chi tiết, không ghi đè hành vi cốt lõi của Gradio. */
-.gradio-container { max-width:100%!important; width:100%!important; }
-.left-panel { padding:16px; border-radius:12px; }
-.right-panel { border-radius:12px; }
-.file-list { margin-top:10px; }
-.footer-note { opacity:0.7; font-size:13px; margin-top:12px; }
-.chunk-detail-box { min-height:200px; font-family:monospace; white-space:pre-wrap; }
-.monitor-panel { border-radius:12px; padding:20px; margin-bottom:20px; }
-.metric-title { font-size:14px; margin-bottom:10px; }
-.metric-value { font-size:24px; font-weight:700; margin-bottom:5px; }
-.metric-trend { font-size:12px; color:#4CAF50; }
-.progress-container { width:100%; background:rgba(128,128,128,0.2); border-radius:10px; margin:10px 0; }
-.progress-bar { height:8px; border-radius:10px;
-    background:linear-gradient(90deg, #00bcd4, #7b1fa2); transition:width 0.3s ease; }
-.log-container { max-height:300px; overflow-y:auto; border-radius:8px; padding:15px;
-    font-family:monospace; font-size:13px; }
-.theme-toggle-btn { min-width:40px!important; font-size:20px!important; padding:4px 8px!important; }
+:root {
+    --app-bg:#f5f5f1;
+    --app-surface:#ffffff;
+    --app-surface-muted:#f8f8f5;
+    --app-border:#e4e1d9;
+    --app-text:#171717;
+    --app-muted:#625f58;
+    --app-accent:#c99b2e;
+    --app-accent-soft:#faf2dd;
+    --app-success:#217a52;
+    --app-shadow:0 18px 48px rgba(36,31,20,.07);
+}
+body.dark {
+    --app-bg:#111310;
+    --app-surface:#191b18;
+    --app-surface-muted:#20231f;
+    --app-border:#343731;
+    --app-text:#f5f5f1;
+    --app-muted:#b7b3aa;
+    --app-accent:#e0b955;
+    --app-accent-soft:#322a18;
+    --app-success:#69c99b;
+    --app-shadow:0 20px 50px rgba(0,0,0,.20);
+}
+html { scroll-behavior:smooth; }
+body { background:var(--app-bg)!important; }
+.gradio-container {
+    max-width:1440px!important;
+    width:100%!important;
+    margin:0 auto!important;
+    padding:24px clamp(16px,3vw,44px) 40px!important;
+    overflow-x:hidden;
+}
+footer { display:none!important; }
+button, [role="button"], [role="tab"] { cursor:pointer!important; }
+button:focus-visible, [role="button"]:focus-visible, [role="tab"]:focus-visible,
+textarea:focus-visible, input:focus-visible {
+    outline:3px solid color-mix(in srgb, var(--app-accent) 55%, transparent)!important;
+    outline-offset:2px!important;
+}
+.topbar { align-items:center!important; margin-bottom:18px!important; }
+.brand-shell { display:flex; align-items:flex-start; gap:16px; padding:4px 0; }
+.brand-mark {
+    display:grid; place-items:center; flex:0 0 48px; width:48px; height:48px;
+    border-radius:15px; color:#171717; background:var(--app-accent);
+    box-shadow:0 10px 24px rgba(159,113,12,.18);
+}
+.brand-mark svg { width:25px; height:25px; }
+.brand-eyebrow {
+    margin:0 0 4px; color:var(--app-muted); font-size:12px; font-weight:700;
+    letter-spacing:.12em; text-transform:uppercase;
+}
+.brand-title {
+    margin:0; color:var(--app-text); font-size:clamp(24px,3vw,36px);
+    line-height:1.12; letter-spacing:-.035em; font-weight:700;
+}
+.brand-copy { margin:8px 0 0; max-width:720px; color:var(--app-muted); font-size:14px; line-height:1.6; }
+.trust-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.trust-chip {
+    display:inline-flex; align-items:center; min-height:28px; padding:4px 10px;
+    border:1px solid var(--app-border); border-radius:999px; color:var(--app-muted);
+    background:var(--app-surface); font-size:11px; font-weight:600;
+}
+.theme-toggle-btn {
+    min-width:112px!important; min-height:40px!important; padding:8px 14px!important;
+    border-radius:999px!important; font-size:12px!important; font-weight:600!important;
+}
+.main-tabs > .tab-nav, .main-tabs [role="tablist"] {
+    gap:6px!important; padding:5px!important; border:1px solid var(--app-border)!important;
+    border-radius:14px!important; background:var(--app-surface)!important;
+}
+.main-tabs [role="tab"] {
+    min-height:38px!important; padding:8px 14px!important; border-radius:10px!important;
+    color:var(--app-muted)!important; font-size:13px!important; font-weight:600!important;
+    transition:background-color 160ms ease,color 160ms ease!important;
+}
+.main-tabs [role="tab"][aria-selected="true"] {
+    color:var(--app-text)!important; background:var(--app-accent-soft)!important;
+}
+.workspace-grid { align-items:flex-start!important; gap:18px!important; padding-top:18px!important; }
+.surface-card {
+    padding:20px!important; border:1px solid var(--app-border)!important;
+    border-radius:22px!important; background:var(--app-surface)!important;
+    box-shadow:var(--app-shadow)!important;
+}
+.document-panel { position:sticky; top:18px; }
+.section-heading { display:flex; align-items:flex-start; gap:12px; margin:0 0 16px; }
+.section-number {
+    display:grid; place-items:center; flex:0 0 30px; width:30px; height:30px;
+    border-radius:9px; background:var(--app-accent-soft); color:var(--app-text);
+    font-size:11px; font-weight:700;
+}
+.section-heading h2 { margin:0; color:var(--app-text); font-size:17px; line-height:1.3; font-weight:700; }
+.section-heading p { margin:4px 0 0; color:var(--app-muted); font-size:12px; line-height:1.5; }
+.format-note {
+    margin:0 0 10px!important; padding:0!important; overflow:visible!important;
+    color:var(--app-muted)!important; font-size:11px!important; line-height:1.5!important;
+}
+#upload-zone {
+    min-height:168px!important; border:1px dashed #aaa397!important;
+    border-radius:16px!important; background:var(--app-surface-muted)!important;
+    transition:border-color 160ms ease,background-color 160ms ease!important;
+}
+#upload-zone:hover { border-color:var(--app-accent)!important; background:var(--app-accent-soft)!important; }
+.upload-action { min-height:44px!important; margin-top:10px!important; }
+.process-details { margin-top:12px!important; border-color:var(--app-border)!important; border-radius:14px!important; }
+.file-list { margin-top:8px!important; }
+.chat-container {
+    min-height:500px!important; border:1px solid var(--app-border)!important;
+    border-radius:18px!important; background:var(--app-surface-muted)!important;
+}
+.composer-card {
+    margin-top:12px!important; padding:12px!important; border:1px solid var(--app-border)!important;
+    border-radius:18px!important; background:var(--app-surface)!important;
+    box-shadow:0 10px 28px rgba(36,31,20,.06)!important;
+}
+.composer-card > .composer-card,
+.model-card > .model-card,
+.monitor-panel > .monitor-panel {
+    padding:0!important; border:0!important; border-radius:0!important;
+    background:transparent!important; box-shadow:none!important;
+}
+.model-card .styler, .monitor-panel .styler { background:transparent!important; }
+.composer-card textarea { line-height:1.55!important; }
+.composer-options { align-items:end!important; gap:10px!important; }
+.send-button, .clear-button { min-height:42px!important; }
+.api-info {
+    display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; color:var(--app-muted);
+    font-size:11px;
+}
+.api-badge {
+    display:inline-flex; align-items:center; min-height:26px; padding:4px 9px;
+    border:1px solid var(--app-border); border-radius:999px; background:var(--app-surface-muted);
+}
+.api-badge strong { margin-left:4px; color:var(--app-text); }
+.footer-note { margin:10px 2px 0; color:var(--app-muted); font-size:11px; line-height:1.55; }
+.chunk-layout { padding-top:18px!important; gap:18px!important; }
+.model-card, .monitor-panel {
+    padding:18px!important; border:1px solid var(--app-border)!important;
+    border-radius:18px!important; background:var(--app-surface)!important;
+}
+.chunk-table { border-radius:16px!important; overflow:hidden!important; }
+.chunk-detail-box { min-height:200px; font-family:"Cascadia Code",Consolas,monospace; white-space:pre-wrap; }
+.metrics-grid { gap:12px!important; }
+.metric-card {
+    min-width:180px!important; padding:16px!important; border:1px solid var(--app-border)!important;
+    border-radius:16px!important; background:var(--app-surface-muted)!important;
+}
+.metric-title { margin-bottom:8px!important; color:var(--app-muted)!important; font-size:12px!important; }
+.metric-value { margin-bottom:3px!important; color:var(--app-text)!important; font-size:22px!important; font-weight:700!important; }
+.metric-trend { color:var(--app-success)!important; font-size:11px!important; }
+.progress-container { width:100%; margin:10px 0; overflow:hidden; border-radius:999px; background:var(--app-border); }
+.progress-bar { height:7px; border-radius:999px; background:var(--app-accent); transition:width 240ms ease; }
+.log-container {
+    max-height:300px; overflow-y:auto; padding:14px; border:1px solid var(--app-border);
+    border-radius:14px; background:var(--app-surface-muted); font-family:"Cascadia Code",Consolas,monospace; font-size:12px;
+}
+@media (max-width: 900px) {
+    .gradio-container { padding:14px 12px 28px!important; }
+    .topbar { gap:10px!important; }
+    .document-panel { position:static; }
+    .surface-card { padding:16px!important; border-radius:18px!important; }
+    .chat-container { min-height:420px!important; height:420px!important; }
+    .metrics-grid { flex-wrap:wrap!important; }
+    .metric-card { flex:1 1 44%!important; }
+}
+@media (max-width: 560px) {
+    .brand-shell { gap:11px; }
+    .brand-mark { flex-basis:42px; width:42px; height:42px; border-radius:13px; }
+    .brand-title { font-size:24px; }
+    .brand-copy { font-size:12px; }
+    .trust-row { display:none; }
+    .theme-toggle-btn { width:100%!important; }
+    .main-tabs [role="tab"] { padding:8px 9px!important; font-size:12px!important; }
+    .composer-options, .composer-actions { flex-direction:column!important; align-items:stretch!important; }
+    .composer-options > *, .composer-actions > * {
+        width:100%!important; min-width:0!important; flex:1 1 auto!important;
+    }
+    .metric-card { flex-basis:100%!important; }
+    .chat-container { min-height:360px!important; height:360px!important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior:auto!important; transition-duration:0.01ms!important; animation-duration:0.01ms!important; }
+}
 """
 
 # Chuyển chế độ sáng/tối bằng class ``dark`` trên phần tử body.
 THEME_JS = """
 (() => {
-    // Khôi phục lựa chọn giao diện; mặc định là chế độ sáng.
-    const saved = localStorage.getItem('rag-theme');
-    if (saved === 'dark') {
-        document.querySelector('body').classList.add('dark');
-    }
+    const applySavedTheme = () => {
+        const saved = localStorage.getItem('rag-theme');
+        if (saved === 'dark') document.body.classList.add('dark');
+    };
+    const translations = new Map([
+        ['Drop File Here', 'Kéo thả tài liệu vào đây'],
+        ['Drop files here', 'Kéo thả tài liệu vào đây'],
+        ['Click to Upload', 'Chọn tài liệu'],
+        ['- or -', '— hoặc —'],
+        ['or', 'hoặc']
+    ]);
+    const translateUpload = () => {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+            const value = node.nodeValue?.trim();
+            if (translations.has(value)) node.nodeValue = node.nodeValue.replace(value, translations.get(value));
+        }
+    };
+    applySavedTheme();
+    window.setTimeout(translateUpload, 120);
+    const observer = new MutationObserver(translateUpload);
+    observer.observe(document.body, { childList:true, subtree:true });
 })()
 """
 
@@ -242,33 +483,83 @@ def toggle_theme():
     """Để JavaScript của sự kiện nút chuyển chế độ giao diện thực thi."""
     return gr.update()
 
-with gr.Blocks(title="learnbot_ai – Trợ lý hỏi đáp tài liệu") as demo:
-    with gr.Row():
-        with gr.Column(scale=9):
-            gr.Markdown("# Trợ lý hỏi đáp tài liệu")
-        with gr.Column(scale=2, min_width=140):
+
+def build_api_info_html(enable_web_search, model_choice_val):
+    """Tạo dải trạng thái ngắn cho cấu hình câu hỏi hiện tại."""
+    web_status = "Đã bật" if enable_web_search else "Đã tắt"
+    return f"""<div class="api-info" aria-label="Thiết lập câu hỏi">
+        <span class="api-badge">Tìm kiếm web <strong>{web_status}</strong></span>
+        <span class="api-badge">Dịch vụ LLM <strong>{get_model_display_name(model_choice_val)}</strong></span>
+    </div>"""
+
+
+with gr.Blocks(
+    title="learnbot_ai – Trợ lý hỏi đáp tài liệu",
+    fill_width=True,
+) as demo:
+    with gr.Row(elem_classes="topbar"):
+        with gr.Column(scale=10, min_width=300):
+            gr.HTML("""
+                <div class="brand-shell">
+                    <div class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 4.5A2.5 2.5 0 0 1 4.5 2H12v19H4.5A2.5 2.5 0 0 1 2 18.5z"/>
+                            <path d="M22 4.5A2.5 2.5 0 0 0 19.5 2H12v19h7.5a2.5 2.5 0 0 0 2.5-2.5z"/>
+                            <path d="M6 7h2.5M15.5 7H18M6 11h3M15 11h3"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="brand-eyebrow">learnbot_ai · RAG tiếng Việt</p>
+                        <h1 class="brand-title">Hỏi tài liệu, nhận câu trả lời có căn cứ</h1>
+                        <p class="brand-copy">Tạo kho tri thức từ tài liệu của bạn và truy xuất câu trả lời kèm nguồn, số trang rõ ràng.</p>
+                        <div class="trust-row" aria-label="Năng lực chính">
+                            <span class="trust-chip">Trích dẫn theo trang</span>
+                            <span class="trust-chip">FAISS + BM25</span>
+                            <span class="trust-chip">LLM qua API</span>
+                        </div>
+                    </div>
+                </div>
+            """)
+        with gr.Column(scale=2, min_width=130):
             theme_btn = gr.Button(
-                "Chế độ sáng / tối",
-                min_width=120,
+                "Sáng / tối",
+                min_width=112,
                 elem_classes="theme-toggle-btn",
             )
 
-    with gr.Tabs() as tabs:
+    with gr.Tabs(elem_classes="main-tabs") as tabs:
         # Thẻ hỏi đáp
-        with gr.TabItem("Hỏi đáp"):
-            with gr.Row(equal_height=True):
-                with gr.Column(scale=5, elem_classes="left-panel"):
-                    gr.Markdown("## Tài liệu")
-                    with gr.Group():
-                        gr.Markdown(
-                            "Hỗ trợ PDF, Word, Excel, PowerPoint, TXT và Markdown."
-                        )
-                        file_input = gr.File(
-                            label="Tải tài liệu",
-                            file_types=[".pdf", ".txt", ".docx", ".xlsx", ".xls", ".pptx", ".md"],
-                            file_count="multiple"
-                        )
-                        upload_btn = gr.Button("Xử lý tài liệu", variant="primary")
+        with gr.TabItem("Trò chuyện"):
+            with gr.Row(equal_height=False, elem_classes="workspace-grid"):
+                with gr.Column(
+                    scale=4,
+                    min_width=300,
+                    elem_classes=["surface-card", "document-panel"],
+                ):
+                    gr.HTML("""<div class="section-heading">
+                        <span class="section-number">01</span>
+                        <div><h2>Chuẩn bị kho tài liệu</h2><p>Tải tệp lên và lập chỉ mục trước khi đặt câu hỏi.</p></div>
+                    </div>""")
+                    gr.HTML(
+                        "<p class=\"format-note\">PDF · Word · Excel · PowerPoint · TXT · Markdown</p>"
+                    )
+                    file_input = gr.File(
+                        label="Tài liệu nguồn",
+                        file_types=[".pdf", ".txt", ".docx", ".xlsx", ".xls", ".pptx", ".md"],
+                        file_count="multiple",
+                        height=168,
+                        elem_id="upload-zone",
+                    )
+                    upload_btn = gr.Button(
+                        "Lập chỉ mục tài liệu",
+                        variant="primary",
+                        elem_classes="upload-action",
+                    )
+                    with gr.Accordion(
+                        "Kết quả xử lý",
+                        open=True,
+                        elem_classes="process-details",
+                    ):
                         upload_status = gr.Textbox(
                             label="Trạng thái xử lý",
                             interactive=False,
@@ -277,109 +568,150 @@ with gr.Blocks(title="learnbot_ai – Trợ lý hỏi đáp tài liệu") as dem
                         file_list = gr.Textbox(
                             label="Tài liệu đã xử lý",
                             interactive=False,
-                            lines=3,
+                            lines=1,
                             elem_classes="file-list",
                         )
 
-                    gr.Markdown("## Đặt câu hỏi")
-                    with gr.Group():
+                with gr.Column(
+                    scale=7,
+                    min_width=420,
+                    elem_classes=["surface-card", "conversation-panel"],
+                ):
+                    gr.HTML("""<div class="section-heading">
+                        <span class="section-number">02</span>
+                        <div><h2>Tra cứu nội dung</h2><p>Câu trả lời chỉ dựa trên nguồn đã truy xuất.</p></div>
+                    </div>""")
+                    chatbot = gr.Chatbot(
+                        label="Lịch sử trò chuyện",
+                        height=500,
+                        elem_classes="chat-container",
+                        show_label=False,
+                        layout="bubble",
+                        buttons=["copy"],
+                        placeholder="Tải và xử lý tài liệu, sau đó đặt câu hỏi đầu tiên của bạn.",
+                    )
+                    api_info = gr.HTML(
+                        build_api_info_html(False, DEFAULT_MODEL_CHOICE)
+                    )
+                    with gr.Group(elem_classes="composer-card"):
                         question_input = gr.Textbox(
-                            label="Câu hỏi",
-                            lines=3,
-                            placeholder="Ví dụ: Tài liệu nói gì về quy trình đăng ký?",
+                            label="Câu hỏi về tài liệu",
+                            lines=2,
+                            max_lines=6,
+                            placeholder="Ví dụ: Tóm tắt nội dung chính và dẫn nguồn theo từng trang...",
+                            autofocus=True,
                         )
-                        with gr.Row():
+                        with gr.Row(elem_classes="composer-options"):
                             web_search_checkbox = gr.Checkbox(
                                 label="Tìm thêm trên web",
                                 value=False,
-                                info="Cần cấu hình SERPAPI_KEY",
+                                info="Cần SERPAPI_KEY",
                             )
                             model_choice = gr.Dropdown(
                                 choices=MODEL_CHOICES,
                                 value=DEFAULT_MODEL_CHOICE,
                                 label="Dịch vụ LLM",
-                                info="Chọn dịch vụ mô hình ngôn ngữ qua API",
+                                info="Mô hình gọi qua API",
                             )
-                        with gr.Row():
-                            ask_btn = gr.Button("Gửi câu hỏi", variant="primary", scale=2)
+                        with gr.Row(elem_classes="composer-actions"):
+                            ask_btn = gr.Button(
+                                "Gửi câu hỏi",
+                                variant="primary",
+                                scale=2,
+                                elem_classes="send-button",
+                            )
                             clear_btn = gr.Button(
-                                "Xóa cuộc trò chuyện",
+                                "Xóa hội thoại",
                                 variant="secondary",
                                 elem_classes="clear-button",
                                 scale=1,
                             )
-                    api_info = gr.HTML("")
-
-                with gr.Column(scale=7, elem_classes="right-panel"):
-                    gr.Markdown("## Nội dung trao đổi")
-                    chatbot = gr.Chatbot(label="Lịch sử trò chuyện", height=600, elem_classes="chat-container",
-                                         show_label=False)
                     status_display = gr.HTML("")
                     gr.Markdown("""<div class="footer-note">
-                        Câu trả lời có thể mất một đến hai phút. Bạn có thể tiếp tục hỏi dựa trên nội dung trước đó.
+                        Nhấn Enter để gửi, Shift + Enter để xuống dòng. Hãy đối chiếu trích dẫn khi dùng thông tin quan trọng.
                     </div>""")
 
         # Thẻ xem phân đoạn
-        with gr.TabItem("Xem phân đoạn"):
-            with gr.Row():
-                with gr.Column(scale=1):
-                    gr.Markdown("## Cấu hình hệ thống")
+        with gr.TabItem("Phân đoạn"):
+            with gr.Row(elem_classes="chunk-layout"):
+                with gr.Column(
+                    scale=1,
+                    min_width=280,
+                    elem_classes="surface-card",
+                ):
+                    gr.HTML("""<div class="section-heading">
+                        <span class="section-number">A</span>
+                        <div><h2>Cấu hình truy xuất</h2><p>Mô hình và kỹ thuật đang được sử dụng.</p></div>
+                    </div>""")
                     models_info = get_system_models_info()
                     with gr.Group(elem_classes="model-card"):
-                        gr.Markdown("### Mô hình và kỹ thuật")
                         for key, value in models_info.items():
                             with gr.Row():
                                 gr.Markdown(f"**{key}**:")
                                 gr.Markdown(f"{value}")
-                with gr.Column(scale=2):
-                    gr.Markdown("## Thống kê phân đoạn")
-                    refresh_chunks_btn = gr.Button("Tải dữ liệu phân đoạn", variant="primary")
+                with gr.Column(
+                    scale=2,
+                    min_width=460,
+                    elem_classes="surface-card",
+                ):
+                    gr.HTML("""<div class="section-heading">
+                        <span class="section-number">B</span>
+                        <div><h2>Dữ liệu đã lập chỉ mục</h2><p>Kiểm tra nội dung trước khi hệ thống truy xuất.</p></div>
+                    </div>""")
+                    refresh_chunks_btn = gr.Button(
+                        "Làm mới danh sách",
+                        variant="primary",
+                    )
                     chunks_status = gr.Markdown("Chọn nút trên để xem các phân đoạn đã lập chỉ mục.")
-            with gr.Row():
-                chunks_data = gr.Dataframe(
-                    headers=["Nguồn", "Trang", "Thứ tự", "Số ký tự", "Số từ", "Nội dung xem trước"],
-                    elem_classes="chunk-table",
-                    interactive=False,
-                    wrap=True,
-                    row_count=10,
-                )
-            with gr.Row():
-                chunk_detail_text = gr.Textbox(
-                    label="Chi tiết phân đoạn",
-                    placeholder="Chọn một hàng trong bảng để xem toàn bộ nội dung.",
-                    lines=8, elem_classes="chunk-detail-box"
-                )
+                    chunks_data = gr.Dataframe(
+                        headers=["Nguồn", "Trang", "Thứ tự", "Số ký tự", "Số từ", "Nội dung xem trước"],
+                        elem_classes="chunk-table",
+                        interactive=False,
+                        wrap=True,
+                        row_count=10,
+                    )
+                    chunk_detail_text = gr.Textbox(
+                        label="Nội dung đầy đủ",
+                        placeholder="Chọn một hàng trong bảng để xem toàn bộ nội dung.",
+                        lines=8,
+                        elem_classes="chunk-detail-box",
+                    )
 
         # Thẻ giám sát hệ thống
-        with gr.TabItem("Giám sát hệ thống"):
+        with gr.TabItem("Hệ thống"):
             with gr.Column():
                 with gr.Group(elem_classes="monitor-panel"):
-                    with gr.Row():
-                        gr.Markdown("## Tài nguyên hệ thống")
-                        refresh_monitor_btn = gr.Button("Cập nhật số liệu", variant="primary")
-                    with gr.Row():
-                        with gr.Column():
+                    gr.HTML("""<div class="section-heading">
+                        <span class="section-number">01</span>
+                        <div><h2>Tài nguyên hệ thống</h2><p>Theo dõi mức sử dụng của tiến trình hiện tại.</p></div>
+                    </div>""")
+                    refresh_monitor_btn = gr.Button("Cập nhật số liệu", variant="primary")
+                    with gr.Row(elem_classes="metrics-grid"):
+                        with gr.Column(elem_classes="metric-card"):
                             gr.Markdown("Mức sử dụng CPU", elem_classes="metric-title")
                             cpu_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
                             cpu_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="width:0%"></div></div>')
                             cpu_info = gr.Markdown("Số lõi: đang tải...", elem_classes="metric-trend")
-                        with gr.Column():
+                        with gr.Column(elem_classes="metric-card"):
                             gr.Markdown("Mức sử dụng bộ nhớ", elem_classes="metric-title")
                             memory_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
                             memory_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="width:0%"></div></div>')
                             memory_info = gr.Markdown("Tổng bộ nhớ: đang tải...", elem_classes="metric-trend")
-                        with gr.Column():
+                        with gr.Column(elem_classes="metric-card"):
                             gr.Markdown("Dung lượng ổ đĩa", elem_classes="metric-title")
                             disk_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
                             disk_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="width:0%"></div></div>')
                             disk_info = gr.Markdown("Tổng dung lượng: đang tải...", elem_classes="metric-trend")
-                        with gr.Column():
+                        with gr.Column(elem_classes="metric-card"):
                             gr.Markdown("Kho vector", elem_classes="metric-title")
                             vector_db_value = gr.Markdown("Phân đoạn: 0", elem_classes="metric-value")
                             vector_db_info = gr.Markdown("Vector: 0", elem_classes="metric-trend")
 
                 with gr.Group(elem_classes="monitor-panel"):
-                    gr.Markdown("## Nhật ký hệ thống")
+                    gr.HTML("""<div class="section-heading">
+                        <span class="section-number">02</span>
+                        <div><h2>Nhật ký hệ thống</h2><p>Thông báo vận hành gần nhất của ứng dụng.</p></div>
+                    </div>""")
                     with gr.Row():
                         log_level = gr.Dropdown(
                             choices=["Tất cả", "Thông tin", "Cảnh báo", "Lỗi"],
@@ -397,14 +729,9 @@ with gr.Blocks(title="learnbot_ai – Trợ lý hỏi đáp tài liệu") as dem
         if history is None or not isinstance(history, list):
             history = []
 
-        api_text = """<div class="api-info" style="margin-top:10px;padding:10px;border-radius:5px;
-            background:var(--panel-bg);border:1px solid var(--border-color);">
-            <p><strong>Thiết lập câu hỏi</strong></p>
-            <p>Tìm kiếm web: <strong>%s</strong></p>
-            <p>Dịch vụ LLM: <strong>%s</strong></p>
-        </div>""" % (
-            "Đã bật" if enable_web_search else "Đã tắt",
-            get_model_display_name(model_choice_val)
+        api_text = build_api_info_html(
+            enable_web_search,
+            model_choice_val,
         )
 
         if not question or question.strip() == "":
@@ -427,14 +754,9 @@ with gr.Blocks(title="learnbot_ai – Trợ lý hỏi đáp tài liệu") as dem
         return history, "", api_text
 
     def update_api_info(enable_web_search, model_choice_val):
-        return """<div class="api-info" style="margin-top:10px;padding:10px;border-radius:5px;
-            background:var(--panel-bg);border:1px solid var(--border-color);">
-            <p><strong>Thiết lập câu hỏi</strong></p>
-            <p>Tìm kiếm web: <strong>%s</strong></p>
-            <p>Dịch vụ LLM: <strong>%s</strong></p>
-        </div>""" % (
-            "Đã bật" if enable_web_search else "Đã tắt",
-            get_model_display_name(model_choice_val)
+        return build_api_info_html(
+            enable_web_search,
+            model_choice_val,
         )
 
     def get_system_metrics():
@@ -461,7 +783,7 @@ with gr.Blocks(title="learnbot_ai – Trợ lý hỏi đáp tài liệu") as dem
             d_color = "#4CAF50" if disk.percent < 50 else "#FFC107" if disk.percent < 80 else "#f44336"
 
             now = datetime.now().strftime("%H:%M:%S")
-            log = f'<div class="log-entry"><span style="color:var(--tech-cyan)">[{now}]</span> <span style="color:#4CAF50">[THÔNG TIN]</span> Đã cập nhật số liệu hệ thống</div>'
+            log = f'<div class="log-entry"><span style="color:var(--app-accent)">[{now}]</span> <span style="color:var(--app-success)">[THÔNG TIN]</span> Đã cập nhật số liệu hệ thống</div>'
 
             return (
                 f"{cpu_pct}%", bar(cpu_pct, c_color), f"Lõi vật lý: {cpu_cnt}",
@@ -478,6 +800,11 @@ with gr.Blocks(title="learnbot_ai – Trợ lý hỏi đáp tài liệu") as dem
     upload_btn.click(process_multiple_files, inputs=[file_input], outputs=[upload_status, file_list], show_progress=True)
     ask_btn.click(process_chat, inputs=[question_input, chatbot, web_search_checkbox, model_choice],
                   outputs=[chatbot, question_input, api_info])
+    question_input.submit(
+        process_chat,
+        inputs=[question_input, chatbot, web_search_checkbox, model_choice],
+        outputs=[chatbot, question_input, api_info],
+    )
     clear_btn.click(clear_chat_history, inputs=[], outputs=[chatbot, status_display])
     web_search_checkbox.change(update_api_info, inputs=[web_search_checkbox, model_choice], outputs=[api_info])
     model_choice.change(update_api_info, inputs=[web_search_checkbox, model_choice], outputs=[api_info])
@@ -541,7 +868,7 @@ if __name__ == "__main__":
         demo.launch(
             server_port=selected_port, server_name="0.0.0.0",
             show_error=True, ssl_verify=False, height=900,
-            css=CSS, js=THEME_JS
+            theme=APP_THEME, css=CSS, js=THEME_JS,
         )
     except Exception as e:
         print(f"Không thể khởi động ứng dụng: {e}")

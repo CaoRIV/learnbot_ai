@@ -91,6 +91,13 @@ RERANK_TOP_K = 5
 MAX_RETRIEVAL_ITERATIONS = 3
 RERANK_METHOD = os.getenv("RERANK_METHOD", "cross_encoder")
 
+# Giới hạn tài liệu tải lên để tránh chiếm quá nhiều RAM trên máy cấu hình thấp.
+try:
+    MAX_UPLOAD_SIZE_MB = max(1, int(os.getenv("MAX_UPLOAD_SIZE_MB", "25")))
+except ValueError:
+    logging.warning("MAX_UPLOAD_SIZE_MB không hợp lệ; sử dụng giá trị mặc định 25 MB")
+    MAX_UPLOAD_SIZE_MB = 25
+
 # Cấu hình runtime nhẹ, phù hợp Windows
 os.environ["HF_ENDPOINT"] = os.getenv("HF_ENDPOINT", "https://hf-mirror.com")
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"

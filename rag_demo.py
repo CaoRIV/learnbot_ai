@@ -5,7 +5,6 @@ hiển thị số liệu hệ thống. Logic RAG chính nằm trong ``core`` và
 """
 
 import os
-import time
 import logging
 import webbrowser
 import gradio as gr
@@ -20,11 +19,9 @@ from config import (
 )
 
 # Các module RAG chính
-from core.document_loader import extract_text_by_page
-from core.text_splitter import split_text
-from core.embeddings import encode_texts
 from core.vector_store import vector_store
-from core.bm25_index import bm25_manager, tokenize_vietnamese
+from core.bm25_index import tokenize_vietnamese
+from core.ingestion import DocumentSource, ingest_documents
 from core.generator import query_answer
 from llm_provider import call_llm, get_provider_config, get_provider_name
 
@@ -39,80 +36,17 @@ print("Phiên bản Gradio:", gr.__version__)
 # Xử lý tài liệu
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 def process_multiple_files(files, progress=gr.Progress()):
-    """Xử lý tài liệu: trích xuất → phân đoạn → embedding → lập chỉ mục."""
-    if not files:
-        return "Vui lòng chọn ít nhất một tài liệu để xử lý.", []
-
+    """Cầu nối tương thích giữa thành phần tải tệp Gradio và pipeline lõi."""
+    sources = [
+        DocumentSource(path=file.name, display_name=os.path.basename(file.name))
+        for file in (files or [])
+    ]
     try:
-        progress(0.1, desc="Đang xóa dữ liệu cũ...")
-        vector_store.clear()
-        bm25_manager.clear()
-
-        total_files = len(files)
-        processed_results = []
-        all_chunks, all_metadatas, all_ids = [], [], []
-
-        for idx, file in enumerate(files, 1):
-            try:
-                file_name = os.path.basename(file.name)
-                progress(
-                    (idx - 1) / total_files,
-                    desc=f"Đang xử lý tài liệu {idx}/{total_files}: {file_name}",
-                )
-
-                pages = extract_text_by_page(file.name)
-                if not pages:
-                    raise ValueError("Tài liệu trống hoặc không thể trích xuất văn bản")
-
-                doc_id = f"doc_{int(time.time())}_{idx}"
-                chunks = []
-                metadatas = []
-                for page_data in pages:
-                    page_chunks = split_text(page_data["text"])
-                    chunks.extend(page_chunks)
-                    metadatas.extend(
-                        {
-                            "source": file_name,
-                            "doc_id": doc_id,
-                            "page": page_data["page"],
-                        }
-                        for _ in page_chunks
-                    )
-                chunk_ids = [f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
-
-                all_chunks.extend(chunks)
-                all_metadatas.extend(metadatas)
-                all_ids.extend(chunk_ids)
-                page_summary = (
-                    f" từ {len(pages)} trang" if pages[0]["page"] is not None else ""
-                )
-                processed_results.append(
-                    f"{file_name}: đã tạo {len(chunks)} phân đoạn{page_summary}."
-                )
-
-            except Exception as e:
-                logging.error("Không thể xử lý %s: %s", file_name, e)
-                processed_results.append(f"{file_name}: xử lý thất bại – {e}")
-
-        if all_chunks:
-            progress(0.8, desc="Đang tạo embedding...")
-            embeddings = encode_texts(all_chunks, show_progress=True)
-
-            progress(0.9, desc="Đang xây chỉ mục FAISS...")
-            vector_store.build_index(all_chunks, all_ids, all_metadatas, embeddings)
-
-        progress(0.95, desc="Đang xây chỉ mục BM25...")
-        bm25_manager.build_index(all_chunks, all_ids)
-
-        summary = (
-            f"\nHoàn tất: {total_files} tài liệu, {len(all_chunks)} phân đoạn."
-        )
-        processed_results.append(summary)
-        return "\n".join(processed_results), [os.path.basename(f.name) for f in files]
-
-    except Exception as e:
-        logging.error("Quá trình xử lý tài liệu gặp lỗi: %s", e)
-        return f"Không thể xử lý tài liệu: {e}", []
+        result = ingest_documents(sources, progress=progress)
+        return result.message, result.filenames
+    except Exception as exc:
+        logging.error("Quá trình xử lý tài liệu gặp lỗi: %s", exc)
+        return f"Không thể xử lý tài liệu: {exc}", []
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

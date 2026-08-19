@@ -160,6 +160,16 @@ class VectorStore:
         self.id_order.clear()
         logging.info("向量存储已清空")
 
+    def replace_with(self, other):
+        """Thay toàn bộ dữ liệu bằng một kho đã xây dựng thành công."""
+        if not isinstance(other, VectorStore):
+            raise TypeError("Kho thay thế phải là một VectorStore")
+        self.index = other.index
+        self.contents_map = other.contents_map
+        self.metadatas_map = other.metadatas_map
+        self.id_order = other.id_order
+        logging.info("Đã thay kho vector với %s phân đoạn", self.total_chunks)
+
 
 # 模块级单例
 vector_store = VectorStore()

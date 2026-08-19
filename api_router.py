@@ -1,33 +1,41 @@
-"""
-REST API 模块（使用FastAPI实现）
-"""
+"""REST API FastAPI cho hệ thống hỏi đáp tài liệu tiếng Việt."""
+
+import asyncio
+from contextlib import asynccontextmanager
+import logging
+import os
+import re
+import tempfile
+from typing import Any, Dict, List, Optional
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import tempfile
-import os
-import re
-from typing import Dict, Any, List, Optional
-import logging
-import asyncio
-from contextlib import asynccontextmanager
+
 from version import __version__
 
-# 从重构后的模块导入
 from config import (
     GEMINI_API_KEY,
     LLM_PROVIDER,
+    MAX_UPLOAD_SIZE_MB,
     OPENAI_API_KEY,
     SILICONFLOW_API_KEY,
     is_configured_api_key,
 )
 from core.generator import query_answer
+from core.ingestion import (
+    DocumentSource,
+    SUPPORTED_DOCUMENT_EXTENSIONS,
+    ingest_documents,
+)
 from core.vector_store import vector_store
 from features.web_search import check_serpapi_key
 from utils.network import is_port_available
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("rag-api")
+MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
+UPLOAD_COPY_CHUNK_SIZE = 1024 * 1024
 
 
 class ProgressCallback:
@@ -83,35 +91,63 @@ class FileProcessResult(BaseModel):
 @app.post("/api/upload", response_model=FileProcessResult)
 async def upload_file(file: UploadFile = File(...)):
     """Xử lý tài liệu và đưa các phân đoạn vào kho vector."""
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
-            content = await file.read()
-            tmp.write(content)
-            tmp_path = tmp.name
-
-        from rag_demo import process_multiple_files
-        progress = ProgressCallback()
-
-        result_text = await asyncio.to_thread(
-            process_multiple_files,
-            [type('obj', (object,), {"name": tmp_path})],
-            progress
+    raw_filename = file.filename or ""
+    safe_filename = os.path.basename(raw_filename.replace("\\", "/"))
+    extension = os.path.splitext(safe_filename)[1].lower()
+    if not safe_filename:
+        raise HTTPException(400, "Tên tài liệu không hợp lệ")
+    if extension not in SUPPORTED_DOCUMENT_EXTENSIONS:
+        supported = ", ".join(sorted(SUPPORTED_DOCUMENT_EXTENSIONS))
+        raise HTTPException(
+            415,
+            f"Định dạng tài liệu chưa được hỗ trợ. Các định dạng hợp lệ: {supported}",
         )
 
-        os.unlink(tmp_path)
-        result = result_text[0] if isinstance(result_text, tuple) else result_text
-        chunk_match = re.search(r'(\d+) phân đoạn', result)
-        chunks = int(chunk_match.group(1)) if chunk_match else 0
-        has_error = "thất bại" in result or "Không thể" in result
+    temp_path = None
+    try:
+        uploaded_size = 0
+        with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as tmp:
+            tmp_path = tmp.name
+            temp_path = tmp_path
+            while chunk := await file.read(UPLOAD_COPY_CHUNK_SIZE):
+                uploaded_size += len(chunk)
+                if uploaded_size > MAX_UPLOAD_SIZE_BYTES:
+                    raise HTTPException(
+                        413,
+                        f"Tài liệu vượt quá giới hạn {MAX_UPLOAD_SIZE_MB} MB",
+                    )
+                tmp.write(chunk)
+
+        if uploaded_size == 0:
+            raise HTTPException(400, "Tài liệu tải lên đang trống")
+
+        progress = ProgressCallback()
+        result = await asyncio.to_thread(
+            ingest_documents,
+            [DocumentSource(path=temp_path, display_name=safe_filename)],
+            progress,
+        )
 
         return {
-            "status": "error" if has_error else "success",
-            "message": result,
-            "file_info": {"filename": file.filename, "chunks": chunks}
+            "status": "success" if result.success else "error",
+            "message": result.message,
+            "file_info": {"filename": safe_filename, "chunks": result.chunk_count},
         }
-    except Exception as e:
-        logger.error("Không thể xử lý tài liệu: %s", e)
-        raise HTTPException(500, f"Không thể xử lý tài liệu: {e}") from e
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Không thể xử lý tài liệu: %s", exc)
+        raise HTTPException(500, f"Không thể xử lý tài liệu: {exc}") from exc
+    finally:
+        try:
+            await file.close()
+        except Exception as exc:
+            logger.warning("Không thể đóng tệp tải lên %s: %s", safe_filename, exc)
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.unlink(temp_path)
+            except OSError as exc:
+                logger.warning("Không thể xóa tệp tạm %s: %s", temp_path, exc)
 
 
 @app.post("/api/ask", response_model=AnswerResponse)

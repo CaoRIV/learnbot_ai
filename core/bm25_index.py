@@ -57,6 +57,16 @@ class BM25IndexManager:
         self.tokenized_corpus = []
         self.raw_corpus = []
 
+    def replace_with(self, other):
+        """Thay toàn bộ dữ liệu bằng một chỉ mục đã xây dựng thành công."""
+        if not isinstance(other, BM25IndexManager):
+            raise TypeError("Chỉ mục thay thế phải là một BM25IndexManager")
+        self.bm25_index = other.bm25_index
+        self.doc_mapping = other.doc_mapping
+        self.tokenized_corpus = other.tokenized_corpus
+        self.raw_corpus = other.raw_corpus
+        logging.info("Đã thay chỉ mục BM25 với %s tài liệu", len(self.raw_corpus))
+
 
 # Singleton dùng chung trong tiến trình
 bm25_manager = BM25IndexManager()

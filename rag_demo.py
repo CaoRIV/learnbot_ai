@@ -19,6 +19,7 @@ from config import (
 )
 
 # Các module RAG chính
+from core.embeddings import EMBED_MODEL_NAME
 from core.vector_store import vector_store
 from core.bm25_index import tokenize_vietnamese
 from core.ingestion import DocumentSource, ingest_documents
@@ -118,7 +119,7 @@ def show_chunk_details(evt: gr.SelectData):
 def get_system_models_info():
     """Trả về thông tin mô hình và kỹ thuật đang sử dụng."""
     return {
-        "Mô hình embedding": "all-MiniLM-L6-v2",
+        "Mô hình embedding": EMBED_MODEL_NAME,
         "Cách phân đoạn": "RecursiveCharacterTextSplitter (400 ký tự, chồng lấn 40)",
         "Phương pháp truy xuất": "Tìm kiếm vector + BM25 kết hợp (α=0,7)",
         "Mô hình xếp hạng lại": "CrossEncoder đa ngôn ngữ",

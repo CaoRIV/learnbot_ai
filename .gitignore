@@ -28,3 +28,6 @@ htmlcov/
 # Local browser verification artifacts
 .playwright-cli/
 output/playwright/
+
+# T?p t?m c?a Codex
+.codex-tmp/

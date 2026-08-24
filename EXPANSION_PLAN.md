@@ -1,226 +1,179 @@
-# learnbot_ai Expansion Plan
+# Kế hoạch mở rộng gọn cho learnbot_ai
 
-## 1. Objectives
+## 1. Mục tiêu
 
-Develop `learnbot_ai` from a RAG prototype into a Vietnamese document question-answering
-assistant that can operate reliably, be evaluated for quality, and scale to support
-multiple users.
+Ổn định `learnbot_ai` thành một trợ lý hỏi–đáp tài liệu tiếng Việt dùng được cho
+cá nhân hoặc một nhóm nhỏ, với ba kết quả rõ ràng:
 
-The following principles remain unchanged:
+- Dữ liệu tài liệu được lưu bền vững trong SQLite.
+- Không phải lập chỉ mục lại sau mỗi lần khởi động.
+- Câu trả lời có nguồn và không đoán khi thiếu bằng chứng.
 
-- The LLM that generates answers must always be called through an API (SiliconFlow, OpenAI, or Gemini).
-- Lightweight embedding models and rerankers may run locally.
-- The entire UI, logs, and system prompts must be in Vietnamese.
-- The application must support Python 3.10+ and machines with approximately 8 GB of RAM.
+Phạm vi hiện tại vẫn giữ nguyên: Python 3.10+, máy khoảng 8 GB RAM, FAISS +
+BM25, embedding/reranker cục bộ nhẹ và LLM sinh câu trả lời qua API.
 
-## 2. Current Status and Issues to Address
+## 2. Kiến trúc lưu trữ tối giản
 
-- The project already has a document ingestion pipeline, FAISS + BM25 hybrid retrieval,
-  a reranker, Gradio, FastAPI, and an automated test suite.
-- The index currently exists only in process memory; restarting requires reindexing
-  all documents.
-- There is no benchmark dataset for measuring Vietnamese retrieval quality.
-- The suitability of the embedding model and reranker, as well as the quality of source
-  citations, requires further evaluation.
-- Scanned PDFs, images, and table layouts are not yet handled fully.
+SQLite là **nguồn dữ liệu chính** cho tài liệu và metadata. FAISS vẫn được giữ
+làm **index tìm kiếm vector cục bộ** để không phải thay đổi pipeline retrieval
+hiện tại. BM25 và manifest index được lưu theo snapshot.
 
-## 3. Proposed Roadmap
+Cấu trúc dữ liệu dự kiến:
 
-### Phase 0 — Stabilize the Foundation
+```text
+data/
+├── learnbot.db
+└── indexes/
+    ├── faiss.index
+    ├── bm25.pkl
+    └── manifest.json
+```
 
-**Objective:** Keep the baseline green before every change.
+Các bảng SQLite tối thiểu:
 
-**Tasks:**
+- `documents`: tên file, hash, kích thước, trạng thái xử lý, thời gian tạo/cập nhật.
+- `chunks`: `document_id`, số thứ tự chunk, nội dung, số trang và metadata cần
+  hiển thị citation.
+- `index_snapshots`: phiên bản schema, model embedding, đường dẫn snapshot,
+  số chunk và trạng thái hợp lệ.
 
-- Standardize test commands for Windows and CI.
-- Maintain tests for ingestion, retrieval, LLM providers, and the API.
-- Add `compileall`, formatting, and secret-scanning checks.
-- Record the Python version, embedding model, and reranker model in use.
+Không lưu vector trong SQLite ở giai đoạn đầu. FAISS tiếp tục chịu trách nhiệm
+lưu và tìm kiếm vector; SQLite lưu dữ liệu cần để quản lý và tạo lại index.
 
-**Completion criteria:**
+## 3. Không làm trong giai đoạn này
 
-- CI runs reliably on Python 3.10.
-- The repository contains no API keys or user data.
-- Tests run on every pull request before merging.
+Chưa xây đăng nhập, multi-user, database server, object storage, Docker
+production, ứng dụng mobile, chatbot bên thứ ba hoặc pipeline vision đầy đủ.
+Những phần này chỉ được xem xét sau khi có người dùng và nhu cầu thực tế.
 
-### Phase 1 — Persistent Indexes and Incremental Updates
+OCR cũng chưa phải mục tiêu bắt buộc; trước mắt tài liệu scan có thể được OCR
+bên ngoài rồi đưa vào hệ thống như văn bản thông thường.
 
-**Objective:** Avoid rebuilding the entire document index after each startup.
+## 4. Lộ trình chính
 
-**Proposed design:**
+### Giai đoạn 1 — SQLite và chỉ mục bền vững
 
-- Create a dedicated data directory, such as `data/indexes/`.
-- Save FAISS indexes with `faiss.write_index` and load them with `faiss.read_index`.
-- Store BM25 data, chunk content, metadata, and ID order in a clearly versioned snapshot.
-- Store a manifest containing the file name, size, hash, modification time, chunk count,
-  and embedding model.
-- Use a Windows-safe file-locking mechanism (`filelock`) to prevent read/write race
-  conditions when queries and index updates occur concurrently.
-- Write snapshots to a temporary directory and then rename them atomically to avoid
-  corrupting the active index.
-- Support starting from a snapshot, adding new documents, replacing modified documents,
-  and deleting documents.
+**Mục tiêu:** Khởi động ứng dụng với kho tài liệu đã lập chỉ mục mà không cần
+embedding lại toàn bộ.
 
-**Required tests:**
+**Việc cần làm:**
 
-- Saving and reloading an index produces equivalent retrieval results.
-- Restarting does not invoke the embedding model when the snapshot remains valid.
-- Corrupt or incompatible snapshot versions are detected and reported with Vietnamese
-  error messages.
-- A mid-operation failure does not remove the previous snapshot.
+- Thêm cấu hình `DATABASE_PATH`, mặc định là `data/learnbot.db`.
+- Dùng module `sqlite3` có sẵn trong Python; chưa thêm ORM hoặc database
+  framework.
+- Tạo migration SQL nhỏ cho ba bảng `documents`, `chunks` và
+  `index_snapshots`.
+- Dùng khóa chính, khóa ngoại và unique constraint để tránh tài liệu/chunk trùng.
+- Tạo index cho `documents.content_hash`, `documents.status` và
+  `chunks.document_id`.
+- Bật `foreign_keys`, chế độ `WAL` và `busy_timeout` khi mở kết nối.
+- Lưu nội dung chunk và metadata bằng `executemany` trong transaction ngắn.
+- Giữ một lớp repository nhỏ để logic ingestion không phụ thuộc trực tiếp vào
+  câu lệnh SQLite.
+- Lưu FAISS, BM25 và manifest vào thư mục snapshot cục bộ; ghi trạng thái
+  snapshot vào SQLite.
+- Chỉ cập nhật database và thay snapshot sau khi toàn bộ candidate index đã xây
+  thành công.
+- Khi lỗi, rollback transaction và giữ snapshot trước đó.
 
-**Completion criteria:**
+**Test nghiệm thu:**
 
-- Starting the application with a previously indexed collection does not reprocess documents.
-- A `rebuild index` button or API is available when a full rebuild is necessary.
+- Lưu rồi tải lại cho kết quả retrieval tương đương.
+- Khởi động lại đọc được tài liệu và metadata từ SQLite.
+- Tài liệu cùng hash không bị nhập trùng.
+- Snapshot hỏng hoặc sai model được phát hiện và báo lỗi tiếng Việt.
+- Nhập tài liệu thất bại không làm mất dữ liệu đang hoạt động.
+- Có thể thêm tài liệu mới mà không xử lý lại các tài liệu không đổi.
+- Test dùng database tạm, không phụ thuộc dịch vụ bên ngoài.
 
-### Phase 2 — Evaluate and Improve Vietnamese Retrieval Quality
+### Giai đoạn 2 — Đo chất lượng retrieval tiếng Việt
 
-**Objective:** Measure quality instead of merely checking whether the system runs.
+**Mục tiêu:** Có số liệu để biết thay đổi embedding, BM25 hoặc reranker có thực
+sự tốt hơn không.
 
-**Tasks:**
+**Việc cần làm:**
 
-- Create a small Vietnamese evaluation dataset in JSONL format containing questions,
-  relevant documents, relevant chunks, and source pages.
-- Build a lightweight internal benchmark script that calculates `Recall@k`, `MRR`,
-  `Hit Rate`, RAM footprint, and query latency without relying on heavy frameworks,
-  ensuring smooth operation on machines with 8 GB of RAM.
-- Propose and evaluate lightweight Vietnamese-optimized embedding models (< 500 MB):
-  `bkai-foundation-models/vietnamese-bi-encoder` and
-  `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`.
-- Propose and test cross-encoder rerankers that support Vietnamese:
-  `amberoad/bert-multilingual-passage-reranking-msmarco` and `BAAI/bge-reranker-base`.
-- Compare multilingual embeddings, BM25, and hybrid retrieval on the same dataset.
-- Allow embedding and reranker model names to be configured through environment variables.
-- Verify that the active reranker uses a cross-encoder checkpoint trained for the intended task.
-- Add a small benchmark to track RAM usage and processing time on low-spec machines.
+- Tạo một tập nhỏ khoảng 20–50 câu hỏi tiếng Việt có đáp án/chunk đúng.
+- Ghi rõ tài liệu và trang đúng cho từng câu hỏi.
+- Viết lệnh benchmark cho `Recall@5`, `MRR` và thời gian truy vấn.
+- Bổ sung test cho truy vấn tiếng Việt, hybrid merge và metadata trang.
+- Đặt tên model embedding/reranker trong cấu hình thay vì hard-code.
 
-**Initial completion criteria:**
+**Test nghiệm thu:**
 
-- A reproducible benchmark report can be generated with a single command.
-- Minimum Recall@5 and MRR thresholds prevent quality regressions.
-- Every retrieval change updates the relevant test or benchmark.
+- Benchmark chạy được không cần API key và không tải LLM.
+- Kết quả benchmark có thể tái lập trên cùng tập dữ liệu.
+- Thay đổi retrieval phải cập nhật test hoặc ghi nhận số liệu trước/sau.
 
-### Phase 3 — Better-Grounded and Safer Answers
+### Giai đoạn 3 — Citation và trả lời có điều kiện
 
-**Objective:** Reduce hallucinations and help users verify sources.
+**Mục tiêu:** Người dùng có thể kiểm tra câu trả lời và hệ thống không suy đoán
+khi không có tài liệu phù hợp.
 
-**Tasks:**
+**Việc cần làm:**
 
-- Standardize source metadata: document name, page, chunk ID, and URL when available.
-- Display citations next to answers and allow users to open chunk details.
-- Standardize the context structure with clear delimiters (for example,
-  `<tai_lieu>...</tai_lieu>`) in the system prompt to protect against prompt injection
-  from document content.
-- Add a minimum confidence threshold; when evidence is insufficient, clearly state that
-  the information was not found instead of guessing.
-- Support streaming responses (Server-Sent Events / SSE) in the FastAPI backend and
-  Gradio UI to reduce perceived response latency.
-- Distinguish internal document sources from web search results.
-- Record users' correct/incorrect feedback as evaluation data.
+- Chuẩn hóa citation theo tên tài liệu, trang và chunk ID.
+- Hiển thị citation trong UI và API response.
+- Thêm ngưỡng liên quan tối thiểu cho context.
+- Nếu không đủ bằng chứng, trả lời rõ: chưa tìm thấy thông tin trong tài liệu.
+- Giữ nội dung retrieved là dữ liệu không tin cậy, không cho phép ghi đè prompt
+  hệ thống.
 
-**Required tests:**
+**Test nghiệm thu:**
 
-- Answers contain citations to the correct pages.
-- When there are no relevant results, the system does not assert information absent from
-  the documents.
-- Document content is treated as untrusted data and cannot override the system prompt.
+- Citation trỏ đúng tài liệu và trang.
+- Câu hỏi ngoài phạm vi không tạo câu trả lời khẳng định vô căn cứ.
+- API và Gradio trả về cùng quy tắc citation.
 
-### Phase 4 — Expand Supported Document Types
+## 5. Cách triển khai SQLite
 
-**Objective:** Support more real-world documents while keeping RAM usage under control.
+- Đường dẫn database chỉ đọc từ cấu hình; file database không được commit vào Git.
+- Migration có phiên bản và chạy được nhiều lần mà không phá dữ liệu.
+- Mỗi thao tác ghi dùng transaction ngắn; ingestion lock hiện tại tiếp tục ngăn
+  hai lần xây index chạy đồng thời.
+- Dùng một connection theo thao tác hoặc theo thread, không chia sẻ connection
+  toàn cục giữa FastAPI và Gradio.
+- Dùng truy vấn có tham số, không nối trực tiếp dữ liệu người dùng vào SQL.
+- Khi backup, sao lưu cả `learnbot.db` và thư mục `data/indexes/` cùng nhau.
 
-**Priority order:**
+## 6. Cách triển khai chung
 
-1. OCR for scanned PDFs.
-2. Preserve the structure of Excel tables and tables in PDFs.
-3. Extract text from PowerPoint files with slide metadata.
-4. Optionally analyze images when the LLM provider supports vision.
+Mỗi giai đoạn nên là một hoặc vài commit nhỏ, theo thứ tự:
 
-**Requirements:**
+1. Viết test cho hành vi mới.
+2. Implement thay đổi tối thiểu.
+3. Chạy toàn bộ test hiện có và test tích hợp SQLite.
+4. Cập nhật README, migration và changelog nếu cách sử dụng thay đổi.
+5. Chỉ chuyển sang giai đoạn sau khi tiêu chí nghiệm thu đạt.
 
-- OCR is optional and must not slow down ordinary text documents.
-- Provide documentation for installing external dependencies (Tesseract binaries on
-  Windows) and a graceful fallback when no OCR engine is installed.
-- Standardize table extraction (Excel/PDF) into Markdown tables or JSON to preserve
-  row-and-column structure for both BM25 and embeddings.
-- Every chunk must retain its page or slide number.
-- Documents exceeding the size limit must be rejected with a clear message.
-- Add tests for corrupt, empty, and multi-page documents.
+Không thêm thư viện hoặc dịch vụ mới nếu chưa có yêu cầu cụ thể.
 
-### Phase 5 — Multi-User Support and Production Operations (As Needed)
+## 7. Backlog tùy chọn — chỉ làm khi có nhu cầu
 
-**Objective:** Support multiple users or independent document collections.
+### OCR PDF scan
 
-**Tasks:**
+Chỉ bắt đầu khi có nhiều tài liệu scan thực tế. Ưu tiên một công cụ OCR tùy chọn,
+giữ được số trang và không làm chậm luồng PDF văn bản.
 
-- Add authentication and authorization.
-- Separate workspaces, documents, and indexes by user or group.
-- Store metadata in SQLite or PostgreSQL and large files in object storage.
-- Add rate limiting, API quotas, and audit logs.
-- Add Docker packaging, health checks, backups, and deployment documentation.
+### PostgreSQL và multi-user
 
-**Prerequisites:**
+Chỉ chuyển từ SQLite sang PostgreSQL khi có nhiều người dùng ghi dữ liệu đồng
+thời, cần chạy nhiều instance ứng dụng hoặc cần database trên server. Lớp
+repository của Phase 1 giúp giới hạn phạm vi thay đổi khi migrate.
 
-- Begin only after index snapshots and citations are stable.
-- Clearly define the deployment model: internal, personal computer, or public service.
+### Tích hợp bên ngoài
 
-## 4. Priorities
+Chỉ bắt đầu sau khi API `/api/ask` ổn định và có nhu cầu sử dụng từ một kênh cụ
+thể. Mỗi tích hợp phải dùng lại API lõi, không tạo pipeline RAG riêng.
 
-| Priority | Item | Rationale |
-| --- | --- | --- |
-| P0 | Persistent indexes | Addresses the largest current operational limitation |
-| P0 | Retrieval evaluation suite | Establishes a measurement basis for all subsequent improvements |
-| P1 | Citations and refusal mechanism | Improves answer reliability |
-| P1 | OCR and table structure | Expands the range of supported documents |
-| P2 | Multi-user/workspaces | Needed only when the application begins serving multiple users |
-| P2 | External integrations | Implement after the core API is stable |
+## 8. Định nghĩa hoàn thành
 
-## 5. Milestone-Based Release Plan
+Roadmap MVP được xem là hoàn thành khi:
 
-### Milestone 1 — Stable Personal Release
-
-- FAISS/BM25 snapshots.
-- Incremental updates.
-- Vietnamese retrieval benchmarks.
-- Page-level citations.
-
-### Milestone 2 — Advanced Document Preview
-
-- OCR for scanned PDFs.
-- Table and slide metadata.
-- Answer feedback mechanism.
-
-### Milestone 3 — Team Release
-
-- Login and workspaces.
-- Document-level permissions.
-- Backups, audit logs, and cost limits.
-
-## 6. Risks and Mitigations
-
-- **Insufficient RAM:** Limit the number of documents per ingestion operation, use
-  lightweight models, process data in batches, and release memory after indexing.
-- **Slow model downloads or network errors:** Use lazy loading and local caching, display
-  progress, and provide clear error messages.
-- **Embedding changes:** Store the model name and version in the manifest; a new model
-  must use a new index namespace.
-- **Index read/write conflicts on Windows:** Use multi-process file locking when reading
-  and updating snapshots.
-- **Missing external OCR dependencies:** Provide a graceful fallback for scanned files
-  when the Tesseract binary is not installed on Windows.
-- **LLM hallucinations:** Restrict prompts to the provided context, require citations,
-  set a refusal threshold, and test out-of-scope questions.
-- **Sensitive data exposure:** Warn users when sending context to an external API, allow
-  web search to be disabled, and clearly document the data scope in the user guide.
-
-## 7. General Definition of Done
-
-An item is considered complete only when:
-
-- Appropriate automated tests exist.
-- Error messages and logs are in Vietnamese.
-- The README or operations documentation is updated if usage changes.
-- No locally running LLM is used.
-- Existing data and indexes are not corrupted when an operation fails.
-- The item has been tested on Windows and on a Python version supported by the project.
+- SQLite lưu được tài liệu, chunk, metadata và trạng thái index.
+- FAISS/BM25 được lưu và tải lại an toàn.
+- Có benchmark retrieval tiếng Việt có thể chạy lại.
+- Câu trả lời có citation hoặc thông báo không đủ dữ liệu.
+- Toàn bộ test pass trên môi trường hỗ trợ.
+- Không dùng LLM chạy local.
+- Không làm mất dữ liệu/index hiện có khi thao tác thất bại.

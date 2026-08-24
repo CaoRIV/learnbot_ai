@@ -7,14 +7,27 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-dotenv_path = Path(__file__).parent / ".env"
+PROJECT_ROOT = Path(__file__).resolve().parent
+
+dotenv_path = PROJECT_ROOT / ".env"
 if not dotenv_path.exists():
-    dotenv_path = Path(__file__).parent / "example.env"
+    dotenv_path = PROJECT_ROOT / "example.env"
     logging.warning(
         "Không tìm thấy .env, đang dùng example.env. "
         "Hãy sao chép example.env thành .env và điền API key thật."
     )
 load_dotenv(dotenv_path)
+
+
+def resolve_database_path(value=None):
+    """Chuẩn hóa đường dẫn SQLite tương đối theo thư mục gốc dự án."""
+    configured_path = Path(value or os.getenv("DATABASE_PATH", "data/learnbot.db"))
+    if not configured_path.is_absolute():
+        configured_path = PROJECT_ROOT / configured_path
+    return configured_path.resolve()
+
+
+DATABASE_PATH = resolve_database_path()
 
 
 def is_configured_api_key(api_key):

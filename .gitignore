@@ -31,3 +31,8 @@ output/playwright/
 
 # T?p t?m c?a Codex
 .codex-tmp/
+
+# Dữ liệu SQLite và snapshot chỉ mục cục bộ
+data/*.db
+data/*.db-*
+data/indexes/

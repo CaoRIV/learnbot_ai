@@ -157,7 +157,8 @@ See [`example.env`](example.env) for the complete example. Common variables incl
 
 - PDF extraction reads the text layer and does not provide general-purpose OCR.
 - Excel and PowerPoint extraction focuses on text rather than visual layout.
-- The index is currently in process memory and must be rebuilt after restart.
+- Documents and chunks are persisted in SQLite, but FAISS/BM25 snapshots are not
+  loaded automatically at startup yet; the index is rebuilt on the next ingestion.
 - Embedding and reranking models may be downloaded on first use.
 - Cloud model and web-search requests send the relevant query to third-party services; review your data boundary first.
 

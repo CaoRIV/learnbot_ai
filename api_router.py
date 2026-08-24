@@ -131,7 +131,12 @@ async def upload_file(file: UploadFile = File(...)):
         return {
             "status": "success" if result.success else "error",
             "message": result.message,
-            "file_info": {"filename": safe_filename, "chunks": result.chunk_count},
+            "file_info": {
+                "filename": safe_filename,
+                "chunks": result.chunk_count,
+                "processed_files": result.processed_files,
+                "skipped_files": result.skipped_files,
+            },
         }
     except HTTPException:
         raise

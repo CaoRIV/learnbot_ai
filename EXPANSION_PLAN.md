@@ -56,6 +56,10 @@ bên ngoài rồi đưa vào hệ thống như văn bản thông thường.
 **Mục tiêu:** Khởi động ứng dụng với kho tài liệu đã lập chỉ mục mà không cần
 embedding lại toàn bộ.
 
+**Tiến độ:** Phase 1A và 1B đã hoàn tất. Tài liệu/chunk đã được lưu tích lũy,
+chống trùng bằng hash và ghi theo transaction. Phần snapshot FAISS/BM25 cùng
+khôi phục khi khởi động thuộc Phase 1C.
+
 **Việc cần làm:**
 
 - Thêm cấu hình `DATABASE_PATH`, mặc định là `data/learnbot.db`.
@@ -83,7 +87,8 @@ embedding lại toàn bộ.
 - Tài liệu cùng hash không bị nhập trùng.
 - Snapshot hỏng hoặc sai model được phát hiện và báo lỗi tiếng Việt.
 - Nhập tài liệu thất bại không làm mất dữ liệu đang hoạt động.
-- Có thể thêm tài liệu mới mà không xử lý lại các tài liệu không đổi.
+- Có thể thêm tài liệu mới mà không trích xuất hoặc chia chunk lại các tài liệu
+  không đổi. Phase 1C sẽ loại bỏ cả việc embedding lại các chunk đã lưu.
 - Test dùng database tạm, không phụ thuộc dịch vụ bên ngoài.
 
 ### Giai đoạn 2 — Đo chất lượng retrieval tiếng Việt

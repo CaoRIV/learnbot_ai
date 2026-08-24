@@ -187,3 +187,75 @@ def test_activate_snapshot_keeps_only_one_active_snapshot(tmp_path: Path):
         }
 
     assert statuses == {"snapshot-1": "inactive", "snapshot-2": "active"}
+
+
+def test_save_ingestion_batch_persists_documents_and_chunks(tmp_path: Path):
+    repository = SQLiteRepository(tmp_path / "learnbot.db")
+    repository.initialize()
+
+    saved = repository.save_ingestion_batch(
+        [
+            {
+                "id": "doc-1",
+                "source_name": "tai-lieu.txt",
+                "content_hash": "hash-1",
+                "file_size": 120,
+                "chunks": [
+                    {
+                        "id": "chunk-1",
+                        "chunk_index": 0,
+                        "content": "Nội dung đã lưu.",
+                        "page": 1,
+                        "metadata": {"source": "tai-lieu.txt"},
+                    }
+                ],
+            }
+        ]
+    )
+
+    assert [document["id"] for document in saved] == ["doc-1"]
+    assert repository.get_document("doc-1")["status"] == "ready"
+    assert repository.get_chunks("doc-1")[0]["content"] == "Nội dung đã lưu."
+
+
+def test_save_ingestion_batch_rolls_back_all_documents_on_failure(tmp_path: Path):
+    repository = SQLiteRepository(tmp_path / "learnbot.db")
+    repository.initialize()
+
+    with pytest.raises(sqlite3.IntegrityError):
+        repository.save_ingestion_batch(
+            [
+                {
+                    "id": "doc-1",
+                    "source_name": "mot.txt",
+                    "content_hash": "hash-1",
+                    "file_size": 10,
+                    "chunks": [
+                        {
+                            "id": "duplicate-chunk",
+                            "chunk_index": 0,
+                            "content": "Nội dung một.",
+                            "page": None,
+                            "metadata": {},
+                        }
+                    ],
+                },
+                {
+                    "id": "doc-2",
+                    "source_name": "hai.txt",
+                    "content_hash": "hash-2",
+                    "file_size": 20,
+                    "chunks": [
+                        {
+                            "id": "duplicate-chunk",
+                            "chunk_index": 0,
+                            "content": "Nội dung hai.",
+                            "page": None,
+                            "metadata": {},
+                        }
+                    ],
+                },
+            ]
+        )
+
+    assert repository.list_documents() == []

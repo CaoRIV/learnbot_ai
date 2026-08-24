@@ -102,10 +102,12 @@ Main endpoints:
 ├── rag_demo.py                # Gradio web UI
 ├── api_router.py              # FastAPI interface
 ├── llm_provider.py            # SiliconFlow/OpenAI/Gemini API abstraction
+├── migrations/                # Versioned SQLite schema migrations
 ├── core/
 │   ├── document_loader.py     # Document extraction
 │   ├── text_splitter.py       # Text chunking
 │   ├── embeddings.py          # Embeddings
+│   ├── storage.py             # SQLite repository for documents and metadata
 │   ├── vector_store.py        # FAISS index
 │   ├── bm25_index.py          # BM25 index
 │   ├── retriever.py           # Hybrid and recursive retrieval
@@ -149,6 +151,7 @@ See [`example.env`](example.env) for the complete example. Common variables incl
 | `LLM_PROVIDER` | `siliconflow`, `openai`, or `gemini` |
 | `SERPAPI_KEY` | Optional web-search credential |
 | `RERANK_METHOD` | `cross_encoder` or `llm` |
+| `DATABASE_PATH` | SQLite file path; defaults to `data/learnbot.db` |
 
 ## Known limitations
 

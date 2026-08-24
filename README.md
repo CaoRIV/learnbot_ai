@@ -143,10 +143,12 @@ Các endpoint chính:
 ├── rag_demo.py                # Giao diện Gradio
 ├── api_router.py              # REST API bằng FastAPI
 ├── llm_provider.py            # Lớp kết nối SiliconFlow/OpenAI/Gemini
+├── migrations/                # Migration schema SQLite có phiên bản
 ├── core/
 │   ├── document_loader.py     # Trích xuất nội dung và số trang
 │   ├── text_splitter.py       # Chia văn bản thành các phân đoạn
 │   ├── embeddings.py          # Tạo vector embedding
+│   ├── storage.py             # Repository SQLite cho tài liệu và metadata
 │   ├── vector_store.py        # Quản lý chỉ mục FAISS
 │   ├── bm25_index.py          # Tách từ tiếng Việt và chỉ mục BM25
 │   ├── retriever.py           # Truy xuất kết hợp và truy xuất đệ quy
@@ -207,6 +209,7 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 | `GEMINI_MODEL_NAME` | ID mô hình Gemini |
 | `SERPAPI_KEY` | API key tùy chọn cho tìm kiếm web |
 | `RERANK_METHOD` | Chọn `cross_encoder` hoặc `llm` |
+| `DATABASE_PATH` | Đường dẫn file SQLite, mặc định `data/learnbot.db` |
 
 Ứng dụng không yêu cầu `OLLAMA_HOST` và không gọi Ollama.
 

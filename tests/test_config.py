@@ -17,3 +17,9 @@ def test_provider_selection_uses_supported_value(monkeypatch):
 def test_invalid_provider_falls_back_to_siliconflow(monkeypatch):
     monkeypatch.setenv("LLM_PROVIDER", "unknown")
     assert config.choose_default_provider() == "siliconflow"
+
+
+def test_database_path_is_resolved_from_project_root():
+    expected = config.PROJECT_ROOT / "custom-data" / "learnbot.db"
+
+    assert config.resolve_database_path("custom-data/learnbot.db") == expected

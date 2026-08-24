@@ -207,6 +207,80 @@ class SQLiteRepository:
             chunks.append(chunk)
         return chunks
 
+    def save_ingestion_batch(
+        self,
+        documents: Iterable[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Lưu một batch tài liệu và chunk trong cùng một transaction.
+
+        Nếu một tài liệu có cùng hash đã tồn tại, bản ghi cũ được giữ nguyên ID
+        và nội dung chunk được thay bằng kết quả xử lý mới. Bất kỳ lỗi nào cũng
+        rollback toàn bộ batch.
+        """
+        records = list(documents)
+        saved_documents: list[dict[str, Any]] = []
+
+        with self.connection() as connection:
+            for document in records:
+                existing = connection.execute(
+                    "SELECT id FROM documents WHERE content_hash = ?",
+                    (document["content_hash"],),
+                ).fetchone()
+                document_id = existing["id"] if existing else document["id"]
+
+                connection.execute(
+                    """
+                    INSERT INTO documents (
+                        id, source_name, content_hash, file_size, status
+                    ) VALUES (?, ?, ?, ?, 'ready')
+                    ON CONFLICT(content_hash) DO UPDATE SET
+                        source_name = excluded.source_name,
+                        file_size = excluded.file_size,
+                        status = 'ready',
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (
+                        document_id,
+                        document["source_name"],
+                        document["content_hash"],
+                        document["file_size"],
+                    ),
+                )
+                connection.execute(
+                    "DELETE FROM chunks WHERE document_id = ?",
+                    (document_id,),
+                )
+                chunk_rows = [
+                    (
+                        chunk["id"],
+                        document_id,
+                        chunk["chunk_index"],
+                        chunk["content"],
+                        chunk.get("page"),
+                        json.dumps(
+                            chunk.get("metadata", {}),
+                            ensure_ascii=False,
+                            sort_keys=True,
+                        ),
+                    )
+                    for chunk in document["chunks"]
+                ]
+                connection.executemany(
+                    """
+                    INSERT INTO chunks (
+                        id, document_id, chunk_index, content, page, metadata_json
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    chunk_rows,
+                )
+                row = connection.execute(
+                    "SELECT * FROM documents WHERE id = ?",
+                    (document_id,),
+                ).fetchone()
+                saved_documents.append(dict(row))
+
+        return saved_documents
+
     def activate_snapshot(
         self,
         *,

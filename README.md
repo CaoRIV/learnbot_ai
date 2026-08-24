@@ -185,6 +185,7 @@ Bộ test bao gồm:
 - trích xuất tài liệu và metadata số trang PDF;
 - bộ tách từ tiếng Việt cho BM25;
 - truy xuất BM25, FAISS và hợp nhất kết quả;
+- migration, transaction và chống nhập trùng trong kho SQLite;
 - prompt giới hạn câu trả lời trong nội dung tài liệu;
 - trích dẫn số trang trong câu trả lời API.
 
@@ -215,7 +216,8 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 
 - PDF chỉ được đọc từ lớp văn bản, chưa tích hợp OCR tổng quát; tài liệu scan cần được OCR trước.
 - Việc đọc Excel và PowerPoint tập trung vào nội dung chữ, không giữ nguyên bố cục trực quan.
-- Chỉ mục hiện nằm trong bộ nhớ tiến trình và cần được tạo lại sau khi khởi động lại ứng dụng.
+- Tài liệu và phân đoạn đã được lưu trong SQLite, nhưng snapshot FAISS/BM25 chưa
+  được tải tự động khi khởi động; index được dựng lại trong lần nhập tiếp theo.
 - Mô hình embedding hoặc reranker cục bộ có thể cần tải dữ liệu trong lần chạy đầu tiên.
 - Câu hỏi gửi tới LLM và dịch vụ tìm kiếm web có thể được chuyển cho bên thứ ba; cần xem xét phạm vi dữ liệu trước khi sử dụng tài liệu nhạy cảm.
 - Máy có 8 GB RAM nên xử lý từng nhóm tài liệu nhỏ để tránh sử dụng quá nhiều bộ nhớ.

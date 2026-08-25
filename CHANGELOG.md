@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here.
 
+## [2.2.0] - 2026-08-25
+
+### Added
+
+- Versioned FAISS/BM25 snapshots with a JSON manifest and SHA-256 integrity checks.
+- Automatic index restoration when the Gradio application or FastAPI service starts.
+- Tests for snapshot round trips, model compatibility, corruption detection, and transactional rollback.
+
+### Changed
+
+- Document ingestion now embeds only new chunks when a compatible snapshot is active.
+- SQLite document writes and snapshot activation now commit in the same transaction.
+- Corrupt or incompatible snapshots are rejected with Vietnamese diagnostic messages.
+
 ## [2.1.0] - 2026-08-12
 
 ### Added

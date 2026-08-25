@@ -20,17 +20,17 @@ def check_serpapi_key():
 def serpapi_search(query, num_results=5):
     """执行 SerpAPI 搜索"""
     if not SERPAPI_KEY:
-        raise ValueError("未设置 SERPAPI_KEY 环境变量")
+        raise ValueError("Chưa cấu hình biến môi trường SERPAPI_KEY")
     try:
         params = {
             "engine": SEARCH_ENGINE, "q": query, "api_key": SERPAPI_KEY,
-            "num": num_results, "hl": "zh-CN", "gl": "cn"
+            "num": num_results, "hl": "vi", "gl": "vn"
         }
         response = requests.get("https://serpapi.com/search", params=params, timeout=15)
         response.raise_for_status()
         return _parse_serpapi_results(response.json())
     except Exception as e:
-        logging.error(f"网络搜索失败: {str(e)}")
+        logging.error("Tìm kiếm web thất bại: %s", e)
         return []
 
 
@@ -56,7 +56,7 @@ def search_web(query, num_results=5):
     """执行网络搜索（结果不加入 FAISS 索引，仅作为上下文）"""
     results = serpapi_search(query, num_results)
     if not results:
-        logging.info("网络搜索没有返回结果")
+        logging.info("Tìm kiếm web không trả về kết quả")
     else:
-        logging.info(f"网络搜索返回 {len(results)} 条结果")
+        logging.info("Tìm kiếm web trả về %s kết quả", len(results))
     return results

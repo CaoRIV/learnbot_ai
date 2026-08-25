@@ -24,6 +24,7 @@ Local PDF Chat RAG is an educational and reference implementation for developers
 
 - **Inspectable pipeline**: core modules follow the order in which a RAG request is processed.
 - **Hybrid retrieval**: combines FAISS dense retrieval with BM25 keyword retrieval.
+- **Persistent indexes**: saves and restores FAISS/BM25 at startup and embeds only newly added chunks.
 - **Optional reranking**: supports a CrossEncoder or model-based relevance scoring.
 - **Multiple API providers**: select SiliconFlow, OpenAI, or Gemini with `LLM_PROVIDER`.
 - **Document support**: PDF, TXT, Markdown, DOCX, XLS/XLSX, and PPTX.
@@ -107,6 +108,7 @@ Main endpoints:
 │   ├── document_loader.py     # Document extraction
 │   ├── text_splitter.py       # Text chunking
 │   ├── embeddings.py          # Embeddings
+│   ├── index_snapshot.py      # FAISS/BM25 snapshot persistence and validation
 │   ├── storage.py             # SQLite repository for documents and metadata
 │   ├── vector_store.py        # FAISS index
 │   ├── bm25_index.py          # BM25 index
@@ -152,13 +154,13 @@ See [`example.env`](example.env) for the complete example. Common variables incl
 | `SERPAPI_KEY` | Optional web-search credential |
 | `RERANK_METHOD` | `cross_encoder` or `llm` |
 | `DATABASE_PATH` | SQLite file path; defaults to `data/learnbot.db` |
+| `INDEX_DIRECTORY` | FAISS/BM25 snapshot directory; defaults to `data/indexes` |
 
 ## Known limitations
 
 - PDF extraction reads the text layer and does not provide general-purpose OCR.
 - Excel and PowerPoint extraction focuses on text rather than visual layout.
-- Documents and chunks are persisted in SQLite, but FAISS/BM25 snapshots are not
-  loaded automatically at startup yet; the index is rebuilt on the next ingestion.
+- Inactive snapshots are retained for manual recovery, so the index directory can grow after many ingestion runs.
 - Embedding and reranking models may be downloaded on first use.
 - Cloud model and web-search requests send the relevant query to third-party services; review your data boundary first.
 

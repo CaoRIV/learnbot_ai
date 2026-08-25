@@ -23,6 +23,7 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 - **Hỏi đáp dựa trên tài liệu**: chỉ sử dụng nội dung truy xuất được để trả lời; nói rõ khi tài liệu không có thông tin.
 - **Trích dẫn nguồn và số trang**: câu trả lời từ PDF sử dụng định dạng `[Tên tài liệu, trang X]`.
 - **Truy xuất kết hợp**: kết hợp tìm kiếm vector bằng FAISS và tìm kiếm từ khóa bằng BM25.
+- **Chỉ mục bền vững**: tự lưu và khôi phục FAISS/BM25 khi khởi động, không embedding lại các chunk cũ khi thêm tài liệu.
 - **Tối ưu cho tiếng Việt**: BM25 tách từ bằng `underthesea` thay vì tokenizer tiếng Trung.
 - **Xếp hạng lại kết quả**: hỗ trợ CrossEncoder hoặc chấm điểm liên quan qua LLM API.
 - **Nhiều dịch vụ LLM**: chọn SiliconFlow, OpenAI hoặc Gemini qua biến `LLM_PROVIDER`.
@@ -146,6 +147,7 @@ Các endpoint chính:
 │   ├── document_loader.py     # Trích xuất nội dung và số trang
 │   ├── text_splitter.py       # Chia văn bản thành các phân đoạn
 │   ├── embeddings.py          # Tạo vector embedding
+│   ├── index_snapshot.py      # Lưu, kiểm tra và khôi phục snapshot FAISS/BM25
 │   ├── storage.py             # Repository SQLite cho tài liệu và metadata
 │   ├── vector_store.py        # Quản lý chỉ mục FAISS
 │   ├── bm25_index.py          # Tách từ tiếng Việt và chỉ mục BM25
@@ -186,6 +188,7 @@ Bộ test bao gồm:
 - bộ tách từ tiếng Việt cho BM25;
 - truy xuất BM25, FAISS và hợp nhất kết quả;
 - migration, transaction và chống nhập trùng trong kho SQLite;
+- lưu/khôi phục snapshot, kiểm tra checksum/model và rollback khi lỗi;
 - prompt giới hạn câu trả lời trong nội dung tài liệu;
 - trích dẫn số trang trong câu trả lời API.
 
@@ -209,6 +212,7 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 | `SERPAPI_KEY` | API key tùy chọn cho tìm kiếm web |
 | `RERANK_METHOD` | Chọn `cross_encoder` hoặc `llm` |
 | `DATABASE_PATH` | Đường dẫn file SQLite, mặc định `data/learnbot.db` |
+| `INDEX_DIRECTORY` | Thư mục snapshot FAISS/BM25, mặc định `data/indexes` |
 
 Ứng dụng không yêu cầu `OLLAMA_HOST` và không gọi Ollama.
 
@@ -216,8 +220,7 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 
 - PDF chỉ được đọc từ lớp văn bản, chưa tích hợp OCR tổng quát; tài liệu scan cần được OCR trước.
 - Việc đọc Excel và PowerPoint tập trung vào nội dung chữ, không giữ nguyên bố cục trực quan.
-- Tài liệu và phân đoạn đã được lưu trong SQLite, nhưng snapshot FAISS/BM25 chưa
-  được tải tự động khi khởi động; index được dựng lại trong lần nhập tiếp theo.
+- Các snapshot không còn hoạt động hiện được giữ lại để phục hồi thủ công, nên thư mục chỉ mục có thể tăng dần sau nhiều lần nhập tài liệu.
 - Mô hình embedding hoặc reranker cục bộ có thể cần tải dữ liệu trong lần chạy đầu tiên.
 - Câu hỏi gửi tới LLM và dịch vụ tìm kiếm web có thể được chuyển cho bên thứ ba; cần xem xét phạm vi dữ liệu trước khi sử dụng tài liệu nhạy cảm.
 - Máy có 8 GB RAM nên xử lý từng nhóm tài liệu nhỏ để tránh sử dụng quá nhiều bộ nhớ.

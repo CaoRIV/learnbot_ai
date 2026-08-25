@@ -31,9 +31,9 @@ def get_cross_encoder():
                     _cross_encoder = CrossEncoder(
                         'sentence-transformers/distiluse-base-multilingual-cased-v2'
                     )
-                    logging.info("交叉编码器加载成功")
+                    logging.info("Đã tải mô hình CrossEncoder")
                 except Exception as e:
-                    logging.error(f"加载交叉编码器失败: {str(e)}")
+                    logging.error("Không thể tải CrossEncoder: %s", e)
                     _cross_encoder = None
     return _cross_encoder
 
@@ -45,7 +45,7 @@ def rerank_with_cross_encoder(query, docs, doc_ids, metadata_list, top_k=5):
 
     encoder = get_cross_encoder()
     if encoder is None:
-        logging.warning("交叉编码器不可用，跳过重排序")
+        logging.warning("CrossEncoder không khả dụng, bỏ qua bước xếp hạng lại")
         return _fallback_results(doc_ids, docs, metadata_list)
 
     cross_inputs = [[query, doc] for doc in docs]
@@ -58,7 +58,7 @@ def rerank_with_cross_encoder(query, docs, doc_ids, metadata_list, top_k=5):
         results = sorted(results, key=lambda x: x[1]['score'], reverse=True)
         return results[:top_k]
     except Exception as e:
-        logging.error(f"交叉编码器重排序失败: {str(e)}")
+        logging.error("CrossEncoder xếp hạng lại thất bại: %s", e)
         return _fallback_results(doc_ids, docs, metadata_list)
 
 
@@ -81,7 +81,7 @@ def get_llm_relevance_score(query, doc):
             match = re.search(r'\b([0-9]|10)\b', result)
             return float(match.group(1)) if match else 5.0
     except Exception as e:
-        logging.error(f"LLM评分失败: {str(e)}")
+        logging.error("LLM chấm điểm liên quan thất bại: %s", e)
         return 5.0
 
 

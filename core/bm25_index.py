@@ -22,6 +22,7 @@ class BM25IndexManager:
         self.doc_mapping = {}
         self.tokenized_corpus = []
         self.raw_corpus = []
+        self.snapshot_id = None
 
     def build_index(self, documents, doc_ids):
         """Xây chỉ mục BM25 từ danh sách tài liệu."""
@@ -29,6 +30,7 @@ class BM25IndexManager:
         self.doc_mapping = {i: doc_id for i, doc_id in enumerate(doc_ids)}
         self.tokenized_corpus = [tokenize_vietnamese(doc) for doc in documents]
         self.bm25_index = BM25Okapi(self.tokenized_corpus)
+        self.snapshot_id = None
         logging.info("Đã xây chỉ mục BM25 cho %s tài liệu", len(documents))
         return True
 
@@ -56,6 +58,18 @@ class BM25IndexManager:
         self.doc_mapping = {}
         self.tokenized_corpus = []
         self.raw_corpus = []
+        self.snapshot_id = None
+
+    def load_state(self, tokenized_corpus, documents, doc_ids):
+        """Khôi phục BM25 từ dữ liệu JSON đã kiểm tra."""
+        if not (len(tokenized_corpus) == len(documents) == len(doc_ids)):
+            raise ValueError("Dữ liệu snapshot BM25 không đồng nhất")
+        self.tokenized_corpus = [list(tokens) for tokens in tokenized_corpus]
+        self.raw_corpus = list(documents)
+        self.doc_mapping = {index: doc_id for index, doc_id in enumerate(doc_ids)}
+        self.bm25_index = (
+            BM25Okapi(self.tokenized_corpus) if self.tokenized_corpus else None
+        )
 
     def replace_with(self, other):
         """Thay toàn bộ dữ liệu bằng một chỉ mục đã xây dựng thành công."""
@@ -65,6 +79,7 @@ class BM25IndexManager:
         self.doc_mapping = other.doc_mapping
         self.tokenized_corpus = other.tokenized_corpus
         self.raw_corpus = other.raw_corpus
+        self.snapshot_id = other.snapshot_id
         logging.info("Đã thay chỉ mục BM25 với %s tài liệu", len(self.raw_corpus))
 
 

@@ -2,6 +2,7 @@ import asyncio
 
 import api_router
 from api_router import QuestionRequest, ask_question, check_status
+from core.index_snapshot import RestoreResult
 from version import __version__
 
 
@@ -35,3 +36,19 @@ def test_ask_endpoint_extracts_pdf_page_citation(monkeypatch):
     assert response["sources"] == [
         {"type": "Tài liệu cục bộ", "source": "huong-dan.pdf", "page": 4}
     ]
+
+
+def test_api_lifespan_restores_active_snapshot(monkeypatch):
+    expected = RestoreResult(
+        True,
+        "Đã khôi phục 3 phân đoạn từ snapshot.",
+        snapshot_id="snapshot-test",
+        chunk_count=3,
+    )
+    monkeypatch.setattr(api_router, "restore_indexes", lambda: expected)
+
+    async def run_lifespan():
+        async with api_router.lifespan(api_router.app):
+            assert api_router.app.state.index_restore_result == expected
+
+    asyncio.run(run_lifespan())

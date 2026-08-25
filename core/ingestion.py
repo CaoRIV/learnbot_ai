@@ -11,9 +11,11 @@ from pathlib import Path
 from typing import Callable, Iterable
 from uuid import uuid4
 
+from config import INDEX_DIRECTORY
 from core.bm25_index import BM25IndexManager, bm25_manager
 from core.document_loader import extract_text_by_page
 from core.embeddings import encode_texts
+from core.index_snapshot import IndexSnapshotStore, restore_indexes
 from core.storage import SQLiteRepository
 from core.text_splitter import split_text
 from core.vector_store import VectorStore, vector_store
@@ -139,6 +141,7 @@ def ingest_documents(
     documents: Iterable[DocumentSource | str | os.PathLike[str]],
     progress: ProgressCallback | None = None,
     repository: SQLiteRepository | None = None,
+    snapshot_store: IndexSnapshotStore | None = None,
 ) -> IngestionResult:
     """Trích xuất, phân đoạn và lập chỉ mục cho một nhóm tài liệu.
 
@@ -159,9 +162,29 @@ def ingest_documents(
 
     with _ingestion_lock:
         storage = repository or SQLiteRepository()
+        snapshots = snapshot_store or IndexSnapshotStore(
+            storage.database_path.parent / "indexes"
+            if repository is not None
+            else INDEX_DIRECTORY
+        )
+        restore_warning = None
         try:
             storage.initialize()
             stored_documents = storage.list_documents()
+            active_snapshot = storage.get_active_snapshot()
+            if active_snapshot is not None and (
+                vector_store.snapshot_id != active_snapshot["id"]
+                or bm25_manager.snapshot_id != active_snapshot["id"]
+            ):
+                restore_result = restore_indexes(
+                    repository=storage,
+                    snapshot_store=snapshots,
+                )
+                if not restore_result.success:
+                    restore_warning = (
+                        f"{restore_result.message} Đang xây lại chỉ mục từ SQLite."
+                    )
+                    active_snapshot = None
         except Exception as exc:
             logging.error("Không thể khởi tạo kho SQLite: %s", exc)
             return IngestionResult(
@@ -180,6 +203,8 @@ def ingest_documents(
         processed_filenames: list[str] = []
         accepted_filenames: list[str] = []
         messages: list[str] = []
+        if restore_warning:
+            messages.append(restore_warning)
         failed_files = 0
         skipped_files = 0
         accepted_hashes: set[str] = set()
@@ -315,27 +340,94 @@ def ingest_documents(
                 skipped_files=skipped_files,
             )
 
+        runtime_matches_snapshot = bool(
+            active_snapshot is not None
+            and vector_store.snapshot_id == active_snapshot["id"]
+            and bm25_manager.snapshot_id == active_snapshot["id"]
+        )
+        new_chunks = [
+            chunk
+            for prepared in prepared_documents
+            for chunk in prepared.chunks
+        ]
+        new_ids = [
+            chunk_id
+            for prepared in prepared_documents
+            for chunk_id in prepared.chunk_ids
+        ]
+        new_metadatas = [
+            metadata
+            for prepared in prepared_documents
+            for metadata in prepared.metadatas
+        ]
+
+        if runtime_matches_snapshot:
+            all_ids = list(vector_store.id_order) + new_ids
+            all_chunks = [
+                vector_store.contents_map[chunk_id]
+                for chunk_id in vector_store.id_order
+            ] + new_chunks
+            all_metadatas = [
+                vector_store.metadatas_map[chunk_id]
+                for chunk_id in vector_store.id_order
+            ] + new_metadatas
+
+        if runtime_matches_snapshot and not prepared_documents:
+            _report_progress(progress, 1.0, "Tài liệu đã có trong chỉ mục.")
+            messages.append(
+                f"\nHoàn tất: 0 tài liệu mới, {skipped_files} tài liệu đã có, "
+                f"{failed_files} thất bại; kho hiện có {vector_store.total_chunks} phân đoạn."
+            )
+            return IngestionResult(
+                message="\n".join(messages),
+                filenames=accepted_filenames,
+                total_files=len(sources),
+                processed_files=0,
+                failed_files=failed_files,
+                chunk_count=vector_store.total_chunks,
+                skipped_files=skipped_files,
+            )
+
         _report_progress(progress, 0.8, "Đang tạo embedding...")
-        embeddings = encode_texts(all_chunks, show_progress=False)
+        if runtime_matches_snapshot:
+            embeddings = encode_texts(new_chunks, show_progress=False)
+            candidate_vector_store = vector_store.clone()
+            candidate_vector_store.add_chunks(
+                new_chunks,
+                new_ids,
+                new_metadatas,
+                embeddings,
+            )
+        else:
+            embeddings = encode_texts(all_chunks, show_progress=False)
+            candidate_vector_store = VectorStore()
+            candidate_vector_store.build_index(
+                all_chunks, all_ids, all_metadatas, embeddings
+            )
 
         _report_progress(progress, 0.9, "Đang xây chỉ mục FAISS và BM25...")
-        candidate_vector_store = VectorStore()
-        candidate_vector_store.build_index(
-            all_chunks, all_ids, all_metadatas, embeddings
-        )
         candidate_bm25_manager = BM25IndexManager()
         candidate_bm25_manager.build_index(all_chunks, all_ids)
 
+        candidate_snapshot = None
         try:
-            if prepared_documents:
-                storage.save_ingestion_batch(
+            candidate_snapshot = snapshots.write_snapshot(
+                candidate_vector_store,
+                candidate_bm25_manager,
+            )
+            storage.save_ingestion_batch(
+                (
                     prepared.as_storage_record()
                     for prepared in prepared_documents
-                )
+                ),
+                snapshot=candidate_snapshot.as_storage_record(),
+            )
         except Exception as exc:
-            logging.error("Không thể lưu batch tài liệu vào SQLite: %s", exc)
+            if candidate_snapshot is not None:
+                snapshots.remove_snapshot(candidate_snapshot)
+            logging.error("Không thể lưu tài liệu và snapshot chỉ mục: %s", exc)
             messages.append(
-                f"\nKhông thể lưu tài liệu vào SQLite; "
+                f"\nKhông thể lưu tài liệu và snapshot chỉ mục; "
                 f"kho tri thức hiện tại được giữ nguyên – {exc}"
             )
             return IngestionResult(
@@ -348,6 +440,8 @@ def ingest_documents(
                 skipped_files=skipped_files,
             )
 
+        candidate_vector_store.snapshot_id = candidate_snapshot.snapshot_id
+        candidate_bm25_manager.snapshot_id = candidate_snapshot.snapshot_id
         vector_store.replace_with(candidate_vector_store)
         bm25_manager.replace_with(candidate_bm25_manager)
         _report_progress(progress, 1.0, "Đã hoàn tất lập chỉ mục.")

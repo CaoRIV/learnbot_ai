@@ -11,7 +11,7 @@
 
 import logging
 import numpy as np
-from faiss import IndexFlatL2, IndexIVFFlat, IndexIVFPQ
+from faiss import IndexFlatL2, IndexIVFFlat, IndexIVFPQ, clone_index
 
 
 class AutoFaissIndex:
@@ -58,7 +58,7 @@ class AutoFaissIndex:
             self.index = IndexIVFPQ(quantizer, self.dimension, self.nlist, self.m, 8)
             self.nprobe = min(32, max(1, int(self.nlist * 0.05)))
 
-        logging.info(f"选择索引类型: {self.index_type}，向量数: {num_vectors}")
+        logging.info("Đã chọn chỉ mục %s cho %s vector", self.index_type, num_vectors)
         return self.index_type
 
     def train(self, vectors):
@@ -95,6 +95,7 @@ class VectorStore:
         self.contents_map = {}      # chunk_id -> 文本内容
         self.metadatas_map = {}     # chunk_id -> 元数据
         self.id_order = []          # 按顺序记录的 chunk_id 列表
+        self.snapshot_id = None     # Snapshot bền vững tương ứng trong SQLite
 
     def build_index(self, chunks, chunk_ids, metadatas, embeddings):
         """
@@ -119,7 +120,56 @@ class VectorStore:
 
         auto_index.add(embeddings)
         self.index = auto_index
-        logging.info(f"FAISS 索引构建完成，共 {self.index.ntotal} 个文本块，类型: {auto_index.index_type}")
+        self.snapshot_id = None
+        logging.info(
+            "Đã xây chỉ mục FAISS gồm %s phân đoạn, loại %s",
+            self.index.ntotal,
+            auto_index.index_type,
+        )
+
+    def add_chunks(self, chunks, chunk_ids, metadatas, embeddings):
+        """Thêm các phân đoạn mới mà không tạo lại embedding cũ."""
+        if not chunks:
+            return
+        if not (len(chunks) == len(chunk_ids) == len(metadatas) == len(embeddings)):
+            raise ValueError("Số phân đoạn, ID, metadata và embedding không khớp")
+        if len(set(chunk_ids)) != len(chunk_ids):
+            raise ValueError("Danh sách phân đoạn mới chứa ID trùng")
+        if any(chunk_id in self.contents_map for chunk_id in chunk_ids):
+            raise ValueError("ID phân đoạn mới đã tồn tại trong kho vector")
+        if self.index is None:
+            self.build_index(chunks, chunk_ids, metadatas, embeddings)
+            return
+        if embeddings.shape[1] != self.index.dimension:
+            raise ValueError("Số chiều embedding mới không khớp chỉ mục FAISS")
+
+        self.index.add(embeddings)
+        for chunk_id, chunk, metadata in zip(chunk_ids, chunks, metadatas):
+            self.contents_map[chunk_id] = chunk
+            self.metadatas_map[chunk_id] = metadata
+            self.id_order.append(chunk_id)
+        self.snapshot_id = None
+        logging.info("Đã thêm %s phân đoạn mới vào kho vector", len(chunks))
+
+    def clone(self):
+        """Tạo bản sao độc lập để xây candidate index an toàn."""
+        cloned = VectorStore()
+        if self.index is not None:
+            auto_index = AutoFaissIndex(dimension=self.index.dimension)
+            auto_index.index = clone_index(self.index.index)
+            auto_index.index_type = self.index.index_type
+            auto_index.nlist = self.index.nlist
+            auto_index.m = self.index.m
+            auto_index.nprobe = self.index.nprobe
+            cloned.index = auto_index
+        cloned.contents_map = dict(self.contents_map)
+        cloned.metadatas_map = {
+            chunk_id: dict(metadata)
+            for chunk_id, metadata in self.metadatas_map.items()
+        }
+        cloned.id_order = list(self.id_order)
+        cloned.snapshot_id = self.snapshot_id
+        return cloned
 
     def search(self, query_embedding, k=10):
         """
@@ -142,7 +192,7 @@ class VectorStore:
                         metadatas.append(self.metadatas_map.get(original_id, {}))
             return docs, doc_ids, metadatas
         except Exception as e:
-            logging.error(f"FAISS 检索错误: {str(e)}")
+            logging.error("Truy xuất FAISS gặp lỗi: %s", e)
             return [], [], []
 
     @property
@@ -158,7 +208,8 @@ class VectorStore:
         self.contents_map.clear()
         self.metadatas_map.clear()
         self.id_order.clear()
-        logging.info("向量存储已清空")
+        self.snapshot_id = None
+        logging.info("Đã xóa kho vector trong bộ nhớ")
 
     def replace_with(self, other):
         """Thay toàn bộ dữ liệu bằng một kho đã xây dựng thành công."""
@@ -168,6 +219,7 @@ class VectorStore:
         self.contents_map = other.contents_map
         self.metadatas_map = other.metadatas_map
         self.id_order = other.id_order
+        self.snapshot_id = other.snapshot_id
         logging.info("Đã thay kho vector với %s phân đoạn", self.total_chunks)
 
 

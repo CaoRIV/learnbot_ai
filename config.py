@@ -30,6 +30,17 @@ def resolve_database_path(value=None):
 DATABASE_PATH = resolve_database_path()
 
 
+def resolve_index_directory(value=None):
+    """Chuẩn hóa thư mục snapshot chỉ mục theo thư mục gốc dự án."""
+    configured_path = Path(value or os.getenv("INDEX_DIRECTORY", "data/indexes"))
+    if not configured_path.is_absolute():
+        configured_path = PROJECT_ROOT / configured_path
+    return configured_path.resolve()
+
+
+INDEX_DIRECTORY = resolve_index_directory()
+
+
 def is_configured_api_key(api_key):
     """Kiểm tra API key có phải là giá trị người dùng đã cấu hình hay không."""
     return bool(

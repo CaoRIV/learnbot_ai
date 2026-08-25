@@ -23,6 +23,7 @@ from config import (
     is_configured_api_key,
 )
 from core.generator import query_answer
+from core.index_snapshot import restore_indexes
 from core.ingestion import (
     DocumentSource,
     SUPPORTED_DOCUMENT_EXTENSIONS,
@@ -51,6 +52,12 @@ class ProgressCallback:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    restore_result = await asyncio.to_thread(restore_indexes)
+    app.state.index_restore_result = restore_result
+    if restore_result.success:
+        logger.info(restore_result.message)
+    else:
+        logger.warning(restore_result.message)
     logger.info("API đã khởi động")
     yield
     logger.info("API đã dừng")
@@ -205,6 +212,7 @@ async def check_status():
         "serpapi_configured": check_serpapi_key(),
         "vector_store_ready": vector_store.is_ready,
         "total_chunks": vector_store.total_chunks,
+        "index_snapshot_id": vector_store.snapshot_id,
         "version": __version__
     }
 

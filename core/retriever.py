@@ -49,7 +49,7 @@ def hybrid_merge(semantic_results, bm25_results, alpha=None):
             score = 1.0 - (i / max(1, num_results))
             merged_dict[doc_id] = {'score': alpha * score, 'content': doc, 'metadata': meta}
     else:
-        logging.warning("语义检索结果为空或格式异常")
+        logging.warning("Kết quả truy xuất ngữ nghĩa trống hoặc sai định dạng")
 
     # 处理 BM25 结果
     if not bm25_results:
@@ -93,7 +93,12 @@ def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=Fa
     seen_web_sources = set()
 
     for i in range(max_iterations):
-        logging.info(f"递归检索 {i + 1}/{max_iterations}，当前 Query: {query}")
+        logging.info(
+            "Truy xuất đệ quy %s/%s, truy vấn hiện tại: %s",
+            i + 1,
+            max_iterations,
+            query,
+        )
 
         # 网络搜索补充
         web_texts = []
@@ -103,7 +108,7 @@ def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=Fa
                     title = res.get('title') or ''
                     url = res.get('url') or ''
                     snippet = res.get('snippet') or ''
-                    web_texts.append(f"标题：{title}\n摘要：{snippet}")
+                    web_texts.append(f"Tiêu đề: {title}\nTóm tắt: {snippet}")
                     source_key = url or f"{title}\n{snippet}"
                     if snippet and source_key not in seen_web_sources:
                         seen_web_sources.add(source_key)
@@ -116,7 +121,7 @@ def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=Fa
                             'timestamp': res.get('timestamp'),
                         })
             except Exception as e:
-                logging.error(f"网络搜索出错: {str(e)}")
+                logging.error("Tìm kiếm web gặp lỗi: %s", e)
 
         # 语义检索
         query_embedding = encode_query(query)
@@ -139,7 +144,7 @@ def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=Fa
             try:
                 reranked = rerank_results(query, docs_iter, ids_iter, meta_iter, top_k=RERANK_TOP_K)
             except Exception as e:
-                logging.error(f"重排序失败: {str(e)}")
+                logging.error("Xếp hạng lại kết quả thất bại: %s", e)
                 reranked = [(did, {'content': d, 'metadata': m, 'score': 1.0})
                             for did, d, m in zip(ids_iter, docs_iter, meta_iter)]
         else:
@@ -179,12 +184,12 @@ Yêu cầu:
                     logging.info("LLM xác định không cần truy vấn thêm")
                     break
                 if len(next_query) > 100:
-                    logging.warning("生成内容过长，不视为有效查询")
+                    logging.warning("Truy vấn do LLM tạo quá dài nên bị bỏ qua")
                     break
                 query = next_query
-                logging.info(f"生成下一轮查询: {query}")
+                logging.info("Đã tạo truy vấn cho vòng tiếp theo: %s", query)
             except Exception as e:
-                logging.error(f"生成新查询失败: {str(e)}")
+                logging.error("Không thể tạo truy vấn mới: %s", e)
                 break
         else:
             break

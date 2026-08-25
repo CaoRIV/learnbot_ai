@@ -20,8 +20,8 @@ def process_thinking_content(text):
     if not isinstance(text, str):
         try:
             processed_text = str(text)
-        except:
-            return "无法处理的内容格式"
+        except Exception:
+            return "Không thể xử lý định dạng nội dung này"
     else:
         processed_text = text
 
@@ -35,7 +35,7 @@ def process_thinking_content(text):
                 after = processed_text[end_idx + 8:]
                 processed_text = (
                     before +
-                    "\n\n<details>\n<summary>思考过程（点击展开）</summary>\n\n" +
+                    "\n\n<details>\n<summary>Quá trình suy luận (nhấn để mở)</summary>\n\n" +
                     thinking_content +
                     "\n\n</details>\n\n" +
                     after
@@ -64,10 +64,10 @@ def process_thinking_content(text):
 
         processed_text = "".join(processed_html)
     except Exception as e:
-        logging.error(f"处理思维链内容时出错: {str(e)}")
+        logging.error("Xử lý nội dung suy luận gặp lỗi: %s", e)
         try:
             return text.replace("<", "&lt;").replace(">", "&gt;")
-        except:
-            return "处理内容时出错"
+        except Exception:
+            return "Không thể xử lý nội dung"
 
     return processed_text

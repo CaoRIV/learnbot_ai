@@ -207,9 +207,30 @@ class SQLiteRepository:
             chunks.append(chunk)
         return chunks
 
+    def list_ready_chunks(self) -> list[dict[str, Any]]:
+        """Tải toàn bộ chunk của tài liệu sẵn sàng theo thứ tự ổn định."""
+        with self.connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT c.*, d.source_name
+                FROM chunks AS c
+                JOIN documents AS d ON d.id = c.document_id
+                WHERE d.status = 'ready'
+                ORDER BY d.created_at, d.id, c.chunk_index
+                """
+            ).fetchall()
+
+        chunks = []
+        for row in rows:
+            chunk = dict(row)
+            chunk["metadata"] = json.loads(chunk.pop("metadata_json"))
+            chunks.append(chunk)
+        return chunks
+
     def save_ingestion_batch(
         self,
         documents: Iterable[dict[str, Any]],
+        snapshot: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """Lưu một batch tài liệu và chunk trong cùng một transaction.
 
@@ -279,7 +300,44 @@ class SQLiteRepository:
                 ).fetchone()
                 saved_documents.append(dict(row))
 
+            if snapshot is not None:
+                self._activate_snapshot_on_connection(connection, snapshot)
+
         return saved_documents
+
+    @staticmethod
+    def _activate_snapshot_on_connection(
+        connection: sqlite3.Connection,
+        snapshot: dict[str, Any],
+    ) -> sqlite3.Row:
+        connection.execute(
+            "UPDATE index_snapshots SET status = 'inactive' WHERE status = 'active'"
+        )
+        connection.execute(
+            """
+            INSERT INTO index_snapshots (
+                id, schema_version, embedding_model, snapshot_path,
+                chunk_count, status
+            ) VALUES (?, ?, ?, ?, ?, 'active')
+            ON CONFLICT(id) DO UPDATE SET
+                schema_version = excluded.schema_version,
+                embedding_model = excluded.embedding_model,
+                snapshot_path = excluded.snapshot_path,
+                chunk_count = excluded.chunk_count,
+                status = 'active'
+            """,
+            (
+                snapshot["id"],
+                snapshot.get("schema_version", SCHEMA_VERSION),
+                snapshot["embedding_model"],
+                snapshot["snapshot_path"],
+                snapshot["chunk_count"],
+            ),
+        )
+        return connection.execute(
+            "SELECT * FROM index_snapshots WHERE id = ?",
+            (snapshot["id"],),
+        ).fetchone()
 
     def activate_snapshot(
         self,
@@ -292,34 +350,16 @@ class SQLiteRepository:
     ) -> dict[str, Any]:
         """Ghi snapshot mới và đảm bảo chỉ có một snapshot đang hoạt động."""
         with self.connection() as connection:
-            connection.execute(
-                "UPDATE index_snapshots SET status = 'inactive' WHERE status = 'active'"
+            row = self._activate_snapshot_on_connection(
+                connection,
+                {
+                    "id": snapshot_id,
+                    "schema_version": schema_version,
+                    "embedding_model": embedding_model,
+                    "snapshot_path": snapshot_path,
+                    "chunk_count": chunk_count,
+                },
             )
-            connection.execute(
-                """
-                INSERT INTO index_snapshots (
-                    id, schema_version, embedding_model, snapshot_path,
-                    chunk_count, status
-                ) VALUES (?, ?, ?, ?, ?, 'active')
-                ON CONFLICT(id) DO UPDATE SET
-                    schema_version = excluded.schema_version,
-                    embedding_model = excluded.embedding_model,
-                    snapshot_path = excluded.snapshot_path,
-                    chunk_count = excluded.chunk_count,
-                    status = 'active'
-                """,
-                (
-                    snapshot_id,
-                    schema_version,
-                    embedding_model,
-                    snapshot_path,
-                    chunk_count,
-                ),
-            )
-            row = connection.execute(
-                "SELECT * FROM index_snapshots WHERE id = ?",
-                (snapshot_id,),
-            ).fetchone()
         return dict(row)
 
     def get_active_snapshot(self) -> dict[str, Any] | None:
@@ -328,3 +368,11 @@ class SQLiteRepository:
                 "SELECT * FROM index_snapshots WHERE status = 'active'"
             ).fetchone()
         return self._as_dict(row)
+
+    def mark_snapshot_invalid(self, snapshot_id: str) -> None:
+        """Đánh dấu snapshot lỗi để lần khởi động sau không nạp lại."""
+        with self.connection() as connection:
+            connection.execute(
+                "UPDATE index_snapshots SET status = 'invalid' WHERE id = ?",
+                (snapshot_id,),
+            )

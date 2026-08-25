@@ -147,7 +147,7 @@ APP_THEME = gr.themes.Base(
     secondary_hue=gr.themes.colors.slate,
     neutral_hue=gr.themes.colors.stone,
     font=[
-        gr.themes.GoogleFont("Be Vietnam Pro", weights=(400, 500, 600, 700)),
+        gr.themes.Font("Segoe UI Variable Text"),
         "Segoe UI",
         "sans-serif",
     ],
@@ -155,224 +155,319 @@ APP_THEME = gr.themes.Base(
     radius_size=gr.themes.sizes.radius_lg,
     spacing_size=gr.themes.sizes.spacing_md,
 ).set(
-    body_background_fill="#f5f5f1",
-    body_background_fill_dark="#111310",
-    body_text_color="#171717",
-    body_text_color_dark="#f5f5f1",
-    body_text_color_subdued="#57534e",
-    body_text_color_subdued_dark="#b7b3aa",
-    background_fill_primary="#ffffff",
-    background_fill_primary_dark="#191b18",
-    background_fill_secondary="#f8f8f5",
-    background_fill_secondary_dark="#20231f",
-    block_background_fill="#ffffff",
-    block_background_fill_dark="#191b18",
-    block_border_color="#e7e5df",
-    block_border_color_dark="#343731",
-    block_radius="18px",
+    body_background_fill="#faf9f5",
+    body_background_fill_dark="#141413",
+    body_text_color="#141413",
+    body_text_color_dark="#faf9f5",
+    body_text_color_subdued="#68665f",
+    body_text_color_subdued_dark="#b0aea5",
+    background_fill_primary="#fffefa",
+    background_fill_primary_dark="#1b1b19",
+    background_fill_secondary="#f3f1e9",
+    background_fill_secondary_dark="#22221f",
+    block_background_fill="#fffefa",
+    block_background_fill_dark="#1b1b19",
+    block_border_color="rgba(20,20,19,0.08)",
+    block_border_color_dark="rgba(250,249,245,0.10)",
+    block_radius="24px",
     block_shadow="none",
-    input_background_fill="#ffffff",
-    input_background_fill_dark="#151714",
-    input_border_color="#d8d5cd",
-    input_border_color_dark="#44483f",
-    input_border_color_focus="#b88920",
-    input_border_color_focus_dark="#e2bd61",
-    input_radius="14px",
-    button_primary_background_fill="#c99b2e",
-    button_primary_background_fill_dark="#e0b955",
-    button_primary_background_fill_hover="#b48724",
-    button_primary_background_fill_hover_dark="#edc96d",
-    button_primary_text_color="#171717",
-    button_primary_text_color_dark="#171717",
-    button_primary_border_color="#c99b2e",
-    button_primary_border_color_dark="#e0b955",
+    input_background_fill="#fffefa",
+    input_background_fill_dark="#181816",
+    input_border_color="rgba(20,20,19,0.12)",
+    input_border_color_dark="rgba(250,249,245,0.14)",
+    input_border_color_focus="#d97757",
+    input_border_color_focus_dark="#d97757",
+    input_radius="18px",
+    button_primary_background_fill="#d97757",
+    button_primary_background_fill_dark="#d97757",
+    button_primary_background_fill_hover="#c76647",
+    button_primary_background_fill_hover_dark="#e18769",
+    button_primary_text_color="#141413",
+    button_primary_text_color_dark="#141413",
+    button_primary_border_color="#d97757",
+    button_primary_border_color_dark="#d97757",
     button_primary_shadow="none",
-    button_primary_shadow_hover="0 8px 20px rgba(159, 113, 12, 0.20)",
-    button_secondary_background_fill="#ffffff",
-    button_secondary_background_fill_dark="#20231f",
-    button_secondary_border_color="#d8d5cd",
-    button_secondary_border_color_dark="#44483f",
-    button_secondary_text_color="#292524",
-    button_secondary_text_color_dark="#f5f5f1",
+    button_primary_shadow_hover="0 14px 34px rgba(168, 75, 47, 0.18)",
+    button_secondary_background_fill="#f1efe7",
+    button_secondary_background_fill_dark="#242421",
+    button_secondary_border_color="rgba(20,20,19,0.08)",
+    button_secondary_border_color_dark="rgba(250,249,245,0.10)",
+    button_secondary_text_color="#141413",
+    button_secondary_text_color_dark="#faf9f5",
     button_transform_hover="none",
-    button_transition="background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease",
+    button_transition="transform 700ms cubic-bezier(0.32,0.72,0,1), background-color 700ms cubic-bezier(0.32,0.72,0,1), box-shadow 700ms cubic-bezier(0.32,0.72,0,1)",
 )
 
 CSS = """
 :root {
-    --app-bg:#f5f5f1;
-    --app-surface:#ffffff;
-    --app-surface-muted:#f8f8f5;
-    --app-border:#e4e1d9;
-    --app-text:#171717;
-    --app-muted:#625f58;
-    --app-accent:#c99b2e;
-    --app-accent-soft:#faf2dd;
-    --app-success:#217a52;
-    --app-shadow:0 18px 48px rgba(36,31,20,.07);
+    --app-bg:#faf9f5;
+    --app-surface:#fffefa;
+    --app-surface-muted:#f1efe7;
+    --app-shell:#ebe8de;
+    --app-text:#141413;
+    --app-muted:#68665f;
+    --app-mid:#b0aea5;
+    --app-accent:#d97757;
+    --app-accent-strong:#bd5d40;
+    --app-accent-soft:#f7e7df;
+    --app-info:#6a9bcc;
+    --app-success:#788c5d;
+    --app-danger:#b95446;
+    --hairline:rgba(20,20,19,.09);
+    --app-shadow:0 30px 80px rgba(76,62,47,.10),0 8px 24px rgba(76,62,47,.05);
+    --app-shadow-raised:0 22px 55px rgba(139,79,55,.16);
+    --motion:cubic-bezier(.32,.72,0,1);
+    --font-display:"Segoe UI Variable Display","Segoe UI",sans-serif;
+    --font-body:"Segoe UI Variable Text","Segoe UI",sans-serif;
 }
 body.dark {
-    --app-bg:#111310;
-    --app-surface:#191b18;
-    --app-surface-muted:#20231f;
-    --app-border:#343731;
-    --app-text:#f5f5f1;
-    --app-muted:#b7b3aa;
-    --app-accent:#e0b955;
-    --app-accent-soft:#322a18;
-    --app-success:#69c99b;
-    --app-shadow:0 20px 50px rgba(0,0,0,.20);
+    --app-bg:#141413;
+    --app-surface:#1b1b19;
+    --app-surface-muted:#22221f;
+    --app-shell:#292824;
+    --app-text:#faf9f5;
+    --app-muted:#b0aea5;
+    --app-mid:#79776f;
+    --app-accent:#d97757;
+    --app-accent-strong:#e18769;
+    --app-accent-soft:#3a241d;
+    --app-info:#83acd3;
+    --app-success:#91a876;
+    --app-danger:#df806f;
+    --hairline:rgba(250,249,245,.11);
+    --app-shadow:0 36px 90px rgba(0,0,0,.30),0 10px 30px rgba(0,0,0,.18);
+    --app-shadow-raised:0 24px 60px rgba(0,0,0,.34);
 }
 html { scroll-behavior:smooth; }
-body { background:var(--app-bg)!important; }
+body {
+    background:
+        radial-gradient(circle at 8% -10%, color-mix(in srgb,var(--app-accent) 12%,transparent), transparent 29rem),
+        radial-gradient(circle at 92% 2%, color-mix(in srgb,var(--app-info) 8%,transparent), transparent 32rem),
+        var(--app-bg)!important;
+    color:var(--app-text)!important;
+    font-family:var(--font-body)!important;
+}
+body::before {
+    content:""; position:fixed; inset:0; z-index:10; pointer-events:none; opacity:.032;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+}
 .gradio-container {
-    max-width:1440px!important;
+    max-width:1500px!important;
     width:100%!important;
     margin:0 auto!important;
-    padding:24px clamp(16px,3vw,44px) 40px!important;
+    padding:clamp(18px,3vw,42px) clamp(16px,4vw,64px) 72px!important;
     overflow-x:hidden;
 }
+.gradio-container > .main { width:100%!important; padding:0!important; }
 footer { display:none!important; }
-button, [role="button"], [role="tab"] { cursor:pointer!important; }
+.skip-link {
+    position:fixed; top:12px; left:12px; z-index:30; padding:10px 16px; border-radius:999px;
+    background:var(--app-text); color:var(--app-bg); font-family:var(--font-display);
+    opacity:0; pointer-events:none; transform:translateY(-150%);
+    transition:opacity 180ms ease,transform 500ms var(--motion);
+}
+.skip-link:focus-visible { opacity:1; pointer-events:auto; transform:translateY(0); }
+h1,h2,h3,h4,h5,h6,strong,label,button,[role="tab"] { font-family:var(--font-display)!important; }
+p { text-wrap:pretty; }
+button, [role="button"], [role="tab"] {
+    cursor:pointer!important; transition:transform 700ms var(--motion),background-color 700ms var(--motion),color 700ms var(--motion),box-shadow 700ms var(--motion)!important;
+}
+button:hover, [role="button"]:hover { transform:translateY(-2px); }
+button:active, [role="button"]:active { transform:scale(.98); }
 button:focus-visible, [role="button"]:focus-visible, [role="tab"]:focus-visible,
 textarea:focus-visible, input:focus-visible {
-    outline:3px solid color-mix(in srgb, var(--app-accent) 55%, transparent)!important;
-    outline-offset:2px!important;
+    outline:3px solid color-mix(in srgb,var(--app-accent) 52%,transparent)!important;
+    outline-offset:3px!important;
 }
-.topbar { align-items:center!important; margin-bottom:18px!important; }
-.brand-shell { display:flex; align-items:flex-start; gap:16px; padding:4px 0; }
+.topbar {
+    width:100%!important; align-items:center!important; margin:0 auto 26px!important; padding:10px 10px 10px 12px!important;
+    border-radius:30px!important; background:color-mix(in srgb,var(--app-surface) 88%,transparent)!important;
+    box-shadow:inset 0 0 0 1px var(--hairline),0 18px 55px rgba(76,62,47,.08)!important;
+}
+.brand-shell { display:flex; align-items:center; gap:16px; padding:2px 0; }
 .brand-mark {
-    display:grid; place-items:center; flex:0 0 48px; width:48px; height:48px;
-    border-radius:15px; color:#171717; background:var(--app-accent);
-    box-shadow:0 10px 24px rgba(159,113,12,.18);
+    display:grid; place-items:center; flex:0 0 54px; width:54px; height:54px;
+    border-radius:18px; color:#faf9f5; background:var(--app-accent);
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.30),0 16px 30px rgba(168,75,47,.20);
 }
-.brand-mark svg { width:25px; height:25px; }
+.brand-mark svg { width:26px; height:26px; }
 .brand-eyebrow {
-    margin:0 0 4px; color:var(--app-muted); font-size:12px; font-weight:700;
-    letter-spacing:.12em; text-transform:uppercase;
+    margin:0 0 5px; color:var(--app-accent-strong); font-family:var(--font-display)!important;
+    font-size:10px; font-weight:600; letter-spacing:.2em; text-transform:uppercase;
 }
 .brand-title {
-    margin:0; color:var(--app-text); font-size:clamp(24px,3vw,36px);
-    line-height:1.12; letter-spacing:-.035em; font-weight:700;
+    margin:0; max-width:780px; color:var(--app-text); font-size:clamp(25px,3.2vw,46px);
+    line-height:1.02; letter-spacing:-.048em; font-weight:600; text-wrap:balance;
 }
-.brand-copy { margin:8px 0 0; max-width:720px; color:var(--app-muted); font-size:14px; line-height:1.6; }
-.trust-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.brand-copy { margin:11px 0 0; max-width:66ch; color:var(--app-muted); font-size:14px; line-height:1.72; }
+.trust-row { display:flex; flex-wrap:wrap; gap:9px; margin-top:15px; }
 .trust-chip {
-    display:inline-flex; align-items:center; min-height:28px; padding:4px 10px;
-    border:1px solid var(--app-border); border-radius:999px; color:var(--app-muted);
-    background:var(--app-surface); font-size:11px; font-weight:600;
+    display:inline-flex; align-items:center; min-height:28px; padding:4px 11px; border-radius:999px;
+    color:var(--app-muted); background:var(--app-surface-muted); box-shadow:inset 0 0 0 1px var(--hairline);
+    font-family:var(--font-display); font-size:10px; font-weight:500; letter-spacing:.02em;
 }
 .theme-toggle-btn {
-    min-width:112px!important; min-height:40px!important; padding:8px 14px!important;
-    border-radius:999px!important; font-size:12px!important; font-weight:600!important;
+    min-width:132px!important; min-height:48px!important; padding:8px 12px 8px 17px!important;
+    border:0!important; border-radius:999px!important; font-size:11px!important; font-weight:600!important;
+    letter-spacing:.03em!important; background:var(--app-surface-muted)!important;
+    box-shadow:inset 0 0 0 1px var(--hairline)!important;
 }
+.theme-toggle-btn::after {
+    content:"◐"; display:grid; place-items:center; width:30px; height:30px; margin-left:8px;
+    border-radius:50%; color:#faf9f5; background:var(--app-text); transition:transform 700ms var(--motion);
+}
+.theme-toggle-btn:hover::after { transform:rotate(180deg) scale(1.05); }
 .main-tabs > .tab-nav, .main-tabs [role="tablist"] {
-    gap:6px!important; padding:5px!important; border:1px solid var(--app-border)!important;
-    border-radius:14px!important; background:var(--app-surface)!important;
+    width:max-content!important; max-width:100%!important; gap:5px!important; margin:0 auto 8px!important;
+    padding:6px!important; border:0!important; border-radius:999px!important;
+    background:var(--app-shell)!important; box-shadow:inset 0 0 0 1px var(--hairline)!important;
 }
+.main-tabs { width:100%!important; }
 .main-tabs [role="tab"] {
-    min-height:38px!important; padding:8px 14px!important; border-radius:10px!important;
-    color:var(--app-muted)!important; font-size:13px!important; font-weight:600!important;
-    transition:background-color 160ms ease,color 160ms ease!important;
+    min-height:42px!important; padding:9px 18px!important; border:0!important; border-radius:999px!important;
+    color:var(--app-muted)!important; font-size:11px!important; font-weight:600!important; letter-spacing:.025em!important;
 }
 .main-tabs [role="tab"][aria-selected="true"] {
-    color:var(--app-text)!important; background:var(--app-accent-soft)!important;
+    color:var(--app-text)!important; background:var(--app-surface)!important;
+    box-shadow:0 8px 22px rgba(76,62,47,.10),inset 0 0 0 1px var(--hairline)!important;
 }
-.workspace-grid { align-items:flex-start!important; gap:18px!important; padding-top:18px!important; }
-.surface-card {
-    padding:20px!important; border:1px solid var(--app-border)!important;
-    border-radius:22px!important; background:var(--app-surface)!important;
-    box-shadow:var(--app-shadow)!important;
+.workspace-grid { align-items:flex-start!important; gap:clamp(18px,2vw,30px)!important; padding-top:28px!important; }
+.bezel-shell {
+    padding:1px!important; border:0!important; border-radius:29px!important; background:var(--app-shell)!important;
+    box-shadow:inset 0 0 0 1px var(--hairline),0 22px 60px rgba(76,62,47,.09)!important;
 }
-.document-panel { position:sticky; top:18px; }
-.section-heading { display:flex; align-items:flex-start; gap:12px; margin:0 0 16px; }
+.bezel-core {
+    padding:clamp(18px,2.2vw,28px)!important; border:0!important; border-radius:28px!important;
+    background:var(--app-surface)!important; box-shadow:inset 0 1px 1px rgba(255,255,255,.34)!important;
+}
+.bezel-core > .bezel-core { padding:0!important; background:transparent!important; box-shadow:none!important; }
+.document-panel { position:sticky; top:20px; }
+.conversation-panel { margin-top:0!important; }
+.section-heading { display:flex; align-items:flex-start; gap:13px; margin:0 0 21px; }
 .section-number {
-    display:grid; place-items:center; flex:0 0 30px; width:30px; height:30px;
-    border-radius:9px; background:var(--app-accent-soft); color:var(--app-text);
-    font-size:11px; font-weight:700;
+    display:grid; place-items:center; flex:0 0 34px; width:34px; height:26px; border-radius:999px;
+    background:var(--app-accent-soft); color:var(--app-accent-strong);
+    font-family:var(--font-display); font-size:9px; font-weight:600; letter-spacing:.12em;
 }
-.section-heading h2 { margin:0; color:var(--app-text); font-size:17px; line-height:1.3; font-weight:700; }
-.section-heading p { margin:4px 0 0; color:var(--app-muted); font-size:12px; line-height:1.5; }
+.section-heading h2 { margin:0; color:var(--app-text); font-size:clamp(18px,1.6vw,23px); line-height:1.18; letter-spacing:-.025em; font-weight:600; }
+.section-heading p { margin:6px 0 0; max-width:48ch; color:var(--app-muted); font-size:13px; line-height:1.65; }
 .format-note {
-    margin:0 0 10px!important; padding:0!important; overflow:visible!important;
-    color:var(--app-muted)!important; font-size:11px!important; line-height:1.5!important;
+    margin:0 0 12px!important; padding:0!important; overflow:visible!important;
+    color:var(--app-muted)!important; font-family:var(--font-display)!important; font-size:9px!important;
+    line-height:1.5!important; letter-spacing:.1em!important; text-transform:uppercase;
 }
 #upload-zone {
-    min-height:168px!important; border:1px dashed #aaa397!important;
-    border-radius:16px!important; background:var(--app-surface-muted)!important;
-    transition:border-color 160ms ease,background-color 160ms ease!important;
+    min-height:184px!important; border:0!important; border-radius:22px!important; background:var(--app-surface-muted)!important;
+    box-shadow:inset 0 0 0 1px var(--hairline),inset 0 1px 1px rgba(255,255,255,.28)!important;
+    transition:transform 700ms var(--motion),background-color 700ms var(--motion),box-shadow 700ms var(--motion)!important;
 }
-#upload-zone:hover { border-color:var(--app-accent)!important; background:var(--app-accent-soft)!important; }
-.upload-action { min-height:44px!important; margin-top:10px!important; }
-.process-details { margin-top:12px!important; border-color:var(--app-border)!important; border-radius:14px!important; }
+#upload-zone:hover { transform:translateY(-3px); background:var(--app-accent-soft)!important; box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--app-accent) 38%,transparent)!important; }
+.upload-action,.send-button {
+    min-height:50px!important; margin-top:12px!important; border:0!important; border-radius:999px!important;
+    color:#141413!important; box-shadow:var(--app-shadow-raised)!important; font-size:12px!important; letter-spacing:.02em!important;
+}
+.upload-action::after,.send-button::after {
+    content:"↗"; display:grid; place-items:center; width:31px; height:31px; margin-left:9px; border-radius:50%;
+    background:rgba(250,249,245,.18); transition:transform 700ms var(--motion);
+}
+.upload-action:hover::after,.send-button:hover::after { transform:translate(3px,-1px) scale(1.06); }
+.process-details { margin-top:14px!important; border:0!important; border-radius:18px!important; background:var(--app-surface-muted)!important; box-shadow:inset 0 0 0 1px var(--hairline)!important; }
 .file-list { margin-top:8px!important; }
 .chat-container {
-    min-height:500px!important; border:1px solid var(--app-border)!important;
-    border-radius:18px!important; background:var(--app-surface-muted)!important;
+    min-height:520px!important; border:0!important; border-radius:22px!important; background:var(--app-surface-muted)!important;
+    box-shadow:inset 0 0 0 1px var(--hairline)!important;
 }
+.chat-container .message {
+    border:0!important; border-radius:20px!important; box-shadow:inset 0 0 0 1px var(--hairline),0 10px 28px rgba(76,62,47,.06)!important;
+}
+.chat-container .message.user { background:var(--app-accent-soft)!important; }
+.chat-container .message.bot { background:var(--app-surface)!important; }
+.chat-container .message p { line-height:1.72!important; }
 .composer-card {
-    margin-top:12px!important; padding:12px!important; border:1px solid var(--app-border)!important;
-    border-radius:18px!important; background:var(--app-surface)!important;
-    box-shadow:0 10px 28px rgba(36,31,20,.06)!important;
+    margin-top:15px!important; padding:1px!important; border:0!important; border-radius:25px!important;
+    background:var(--app-shell)!important; box-shadow:inset 0 0 0 1px var(--hairline),0 18px 42px rgba(76,62,47,.08)!important;
 }
-.composer-card > .composer-card,
-.model-card > .model-card,
-.monitor-panel > .monitor-panel {
-    padding:0!important; border:0!important; border-radius:0!important;
-    background:transparent!important; box-shadow:none!important;
+.composer-card > .composer-card {
+    padding:14px!important; border-radius:24px!important; background:var(--app-surface)!important;
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.3)!important;
 }
-.model-card .styler, .monitor-panel .styler { background:transparent!important; }
 .composer-card textarea { line-height:1.55!important; }
-.composer-options { align-items:end!important; gap:10px!important; }
-.send-button, .clear-button { min-height:42px!important; }
+.composer-options { align-items:end!important; gap:12px!important; }
+.composer-actions { align-items:center!important; gap:10px!important; }
+.clear-button { min-height:46px!important; border:0!important; border-radius:999px!important; }
 .api-info {
-    display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; color:var(--app-muted);
-    font-size:11px;
+    display:flex; flex-wrap:wrap; gap:8px; margin:12px 2px 0; color:var(--app-muted); font-size:10px;
 }
 .api-badge {
-    display:inline-flex; align-items:center; min-height:26px; padding:4px 9px;
-    border:1px solid var(--app-border); border-radius:999px; background:var(--app-surface-muted);
+    display:inline-flex; align-items:center; min-height:27px; padding:4px 10px; border-radius:999px;
+    background:var(--app-surface-muted); box-shadow:inset 0 0 0 1px var(--hairline);
 }
+.api-badge::before { content:""; width:6px; height:6px; margin-right:7px; border-radius:50%; background:var(--app-success); }
 .api-badge strong { margin-left:4px; color:var(--app-text); }
-.footer-note { margin:10px 2px 0; color:var(--app-muted); font-size:11px; line-height:1.55; }
-.chunk-layout { padding-top:18px!important; gap:18px!important; }
-.model-card, .monitor-panel {
-    padding:18px!important; border:1px solid var(--app-border)!important;
-    border-radius:18px!important; background:var(--app-surface)!important;
+.footer-note {
+    display:block; margin:12px 0 0; padding:0 8px 4px; overflow:visible;
+    color:var(--app-muted); font-size:10px; line-height:1.65;
 }
+.chunk-layout { align-items:flex-start!important; padding-top:28px!important; gap:26px!important; }
+.model-card,.monitor-core {
+    padding:18px!important; border:0!important; border-radius:20px!important; background:var(--app-surface-muted)!important;
+    box-shadow:inset 0 0 0 1px var(--hairline)!important;
+}
+.model-card > .model-card,.monitor-core > .monitor-core { padding:0!important; background:transparent!important; box-shadow:none!important; }
 .chunk-table { border-radius:16px!important; overflow:hidden!important; }
 .chunk-detail-box { min-height:200px; font-family:"Cascadia Code",Consolas,monospace; white-space:pre-wrap; }
-.metrics-grid { gap:12px!important; }
+.system-stack { gap:24px!important; padding-top:28px!important; }
+.metrics-grid { gap:14px!important; }
 .metric-card {
-    min-width:180px!important; padding:16px!important; border:1px solid var(--app-border)!important;
-    border-radius:16px!important; background:var(--app-surface-muted)!important;
+    min-width:180px!important; padding:20px!important; border:0!important; border-radius:22px!important;
+    background:var(--app-surface-muted)!important; box-shadow:inset 0 0 0 1px var(--hairline)!important;
+    transition:transform 800ms var(--motion),background-color 800ms var(--motion)!important;
 }
-.metric-title { margin-bottom:8px!important; color:var(--app-muted)!important; font-size:12px!important; }
-.metric-value { margin-bottom:3px!important; color:var(--app-text)!important; font-size:22px!important; font-weight:700!important; }
+.metric-card:nth-child(2) { transform:translateY(18px); }
+.metric-card:nth-child(4) { transform:translateY(10px); }
+.metric-card:hover { transform:translateY(-4px); }
+.metric-title { margin-bottom:12px!important; color:var(--app-muted)!important; font-size:10px!important; letter-spacing:.06em!important; }
+.metric-value { margin-bottom:3px!important; color:var(--app-text)!important; font-size:clamp(23px,2.4vw,34px)!important; font-weight:600!important; font-variant-numeric:tabular-nums; }
 .metric-trend { color:var(--app-success)!important; font-size:11px!important; }
-.progress-container { width:100%; margin:10px 0; overflow:hidden; border-radius:999px; background:var(--app-border); }
-.progress-bar { height:7px; border-radius:999px; background:var(--app-accent); transition:width 240ms ease; }
+.progress-container { width:100%; height:6px; margin:13px 0; overflow:hidden; border-radius:999px; background:var(--app-shell); }
+.progress-bar { width:100%; height:6px; transform:scaleX(0); transform-origin:left center; border-radius:999px; background:var(--app-accent); transition:transform 900ms var(--motion); }
 .log-container {
-    max-height:300px; overflow-y:auto; padding:14px; border:1px solid var(--app-border);
-    border-radius:14px; background:var(--app-surface-muted); font-family:"Cascadia Code",Consolas,monospace; font-size:12px;
+    min-height:116px; max-height:300px; overflow-y:auto; padding:16px; border:0; border-radius:18px;
+    background:var(--app-surface-muted); box-shadow:inset 0 0 0 1px var(--hairline);
+    font-family:"Cascadia Code",Consolas,monospace; font-size:11px;
+}
+.reveal { opacity:1; transform:none; }
+body.ui-ready .reveal { opacity:0; transform:translateY(38px); filter:blur(5px); }
+body.ui-ready .reveal.is-visible {
+    opacity:1; transform:translateY(0); filter:blur(0);
+    transition:opacity 900ms var(--motion),transform 900ms var(--motion),filter 900ms var(--motion);
+    transition-delay:var(--reveal-delay,0ms);
 }
 @media (max-width: 900px) {
-    .gradio-container { padding:14px 12px 28px!important; }
+    .gradio-container { padding:16px 14px 40px!important; }
     .topbar { gap:10px!important; }
-    .document-panel { position:static; }
-    .surface-card { padding:16px!important; border-radius:18px!important; }
-    .chat-container { min-height:420px!important; height:420px!important; }
+    .workspace-grid,.chunk-layout { flex-direction:column!important; }
+    .workspace-grid > *, .chunk-layout > * { width:100%!important; min-width:0!important; }
+    .document-panel,.conversation-panel { position:static; margin-top:0!important; transform:none; }
+    .bezel-shell { border-radius:25px!important; }
+    .bezel-core { padding:20px!important; border-radius:24px!important; }
+    .chat-container { min-height:430px!important; height:430px!important; }
     .metrics-grid { flex-wrap:wrap!important; }
     .metric-card { flex:1 1 44%!important; }
+    .metric-card:nth-child(2),.metric-card:nth-child(4) { transform:none; }
 }
 @media (max-width: 560px) {
+    .gradio-container { padding:12px 10px 36px!important; }
+    .topbar,.main-tabs { width:100%!important; min-width:0!important; }
+    .topbar { margin-bottom:16px!important; padding:16px!important; border-radius:24px!important; }
     .brand-shell { gap:11px; }
-    .brand-mark { flex-basis:42px; width:42px; height:42px; border-radius:13px; }
-    .brand-title { font-size:24px; }
+    .brand-mark { flex-basis:44px; width:44px; height:44px; border-radius:14px; }
+    .brand-title { font-size:25px; line-height:1.08; }
     .brand-copy { font-size:12px; }
     .trust-row { display:none; }
-    .theme-toggle-btn { width:100%!important; }
-    .main-tabs [role="tab"] { padding:8px 9px!important; font-size:12px!important; }
+    .theme-toggle-btn { width:100%!important; min-width:0!important; }
+    .main-tabs > .tab-nav,.main-tabs [role="tablist"] { width:100%!important; justify-content:center!important; }
+    .main-tabs [role="tab"] { padding:8px 11px!important; font-size:10px!important; }
     .composer-options, .composer-actions { flex-direction:column!important; align-items:stretch!important; }
     .composer-options > *, .composer-actions > * {
         width:100%!important; min-width:0!important; flex:1 1 auto!important;
@@ -382,6 +477,7 @@ textarea:focus-visible, input:focus-visible {
 }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior:auto!important; transition-duration:0.01ms!important; animation-duration:0.01ms!important; }
+    body.ui-ready .reveal { opacity:1; transform:none; filter:none; }
 }
 """
 
@@ -407,9 +503,32 @@ THEME_JS = """
             if (translations.has(value)) node.nodeValue = node.nodeValue.replace(value, translations.get(value));
         }
     };
+    const observed = new WeakSet();
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-visible');
+            revealObserver.unobserve(entry.target);
+        });
+    }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
+    const registerReveals = () => {
+        document.querySelectorAll('.reveal').forEach((element, index) => {
+            if (observed.has(element)) return;
+            observed.add(element);
+            element.style.setProperty('--reveal-delay', `${Math.min(index * 80, 240)}ms`);
+            revealObserver.observe(element);
+        });
+    };
     applySavedTheme();
-    window.setTimeout(translateUpload, 120);
-    const observer = new MutationObserver(translateUpload);
+    document.body.classList.add('ui-ready');
+    window.setTimeout(() => {
+        translateUpload();
+        registerReveals();
+    }, 120);
+    const observer = new MutationObserver(() => {
+        translateUpload();
+        registerReveals();
+    });
     observer.observe(document.body, { childList:true, subtree:true });
 })()
 """
@@ -432,7 +551,8 @@ with gr.Blocks(
     title="learnbot_ai – Trợ lý hỏi đáp tài liệu",
     fill_width=True,
 ) as demo:
-    with gr.Row(elem_classes="topbar"):
+    gr.HTML('<a class="skip-link" href="#noi-dung-chinh">Chuyển đến nội dung chính</a>')
+    with gr.Row(elem_classes=["topbar", "reveal"]):
         with gr.Column(scale=10, min_width=300):
             gr.HTML("""
                 <div class="brand-shell">
@@ -444,217 +564,223 @@ with gr.Blocks(
                         </svg>
                     </div>
                     <div>
-                        <p class="brand-eyebrow">learnbot_ai · RAG tiếng Việt</p>
-                        <h1 class="brand-title">Hỏi tài liệu, nhận câu trả lời có căn cứ</h1>
-                        <p class="brand-copy">Tạo kho tri thức từ tài liệu của bạn và truy xuất câu trả lời kèm nguồn, số trang rõ ràng.</p>
+                        <p class="brand-eyebrow">learnbot_ai · không gian tri thức</p>
+                        <h1 class="brand-title">Đọc sâu hơn. Trả lời có căn cứ.</h1>
+                        <p class="brand-copy">Biến tài liệu tiếng Việt thành một kho tri thức có thể đối thoại — mỗi câu trả lời đều đi kèm nguồn và số trang để bạn kiểm chứng.</p>
                         <div class="trust-row" aria-label="Năng lực chính">
-                            <span class="trust-chip">Trích dẫn theo trang</span>
-                            <span class="trust-chip">FAISS + BM25</span>
-                            <span class="trust-chip">LLM qua API</span>
+                            <span class="trust-chip">Nguồn rõ theo trang</span>
+                            <span class="trust-chip">Truy xuất lai FAISS + BM25</span>
+                            <span class="trust-chip">LLM bảo mật qua API</span>
                         </div>
                     </div>
                 </div>
             """)
         with gr.Column(scale=2, min_width=130):
             theme_btn = gr.Button(
-                "Sáng / tối",
+                "Đổi giao diện",
                 min_width=112,
                 elem_classes="theme-toggle-btn",
             )
 
-    with gr.Tabs(elem_classes="main-tabs") as tabs:
+    with gr.Tabs(elem_id="noi-dung-chinh", elem_classes="main-tabs") as tabs:
         # Thẻ hỏi đáp
-        with gr.TabItem("Trò chuyện"):
+        with gr.TabItem("Tra cứu"):
             with gr.Row(equal_height=False, elem_classes="workspace-grid"):
                 with gr.Column(
                     scale=4,
                     min_width=300,
-                    elem_classes=["surface-card", "document-panel"],
+                    elem_classes=["bezel-shell", "document-panel", "reveal"],
                 ):
-                    gr.HTML("""<div class="section-heading">
-                        <span class="section-number">01</span>
-                        <div><h2>Chuẩn bị kho tài liệu</h2><p>Tải tệp lên và lập chỉ mục trước khi đặt câu hỏi.</p></div>
-                    </div>""")
-                    gr.HTML(
-                        "<p class=\"format-note\">PDF · Word · Excel · PowerPoint · TXT · Markdown</p>"
-                    )
-                    file_input = gr.File(
-                        label="Tài liệu nguồn",
-                        file_types=[".pdf", ".txt", ".docx", ".xlsx", ".xls", ".pptx", ".md"],
-                        file_count="multiple",
-                        height=168,
-                        elem_id="upload-zone",
-                    )
-                    upload_btn = gr.Button(
-                        "Lập chỉ mục tài liệu",
-                        variant="primary",
-                        elem_classes="upload-action",
-                    )
-                    with gr.Accordion(
-                        "Kết quả xử lý",
-                        open=True,
-                        elem_classes="process-details",
-                    ):
-                        upload_status = gr.Textbox(
-                            label="Trạng thái xử lý",
-                            interactive=False,
-                            lines=2,
+                    with gr.Group(elem_classes="bezel-core"):
+                        gr.HTML("""<div class="section-heading">
+                            <span class="section-number">01</span>
+                            <div><h2>Mở kho tài liệu</h2><p>Thêm tài liệu rồi lập chỉ mục để bắt đầu tra cứu.</p></div>
+                        </div>""")
+                        gr.HTML(
+                            "<p class=\"format-note\">PDF · Word · Excel · PowerPoint · TXT · Markdown</p>"
                         )
-                        file_list = gr.Textbox(
-                            label="Tài liệu đã xử lý",
-                            interactive=False,
-                            lines=1,
-                            elem_classes="file-list",
+                        file_input = gr.File(
+                            label="Tài liệu nguồn",
+                            file_types=[".pdf", ".txt", ".docx", ".xlsx", ".xls", ".pptx", ".md"],
+                            file_count="multiple",
+                            height=184,
+                            elem_id="upload-zone",
                         )
+                        upload_btn = gr.Button(
+                            "Lập chỉ mục tài liệu",
+                            variant="primary",
+                            elem_classes="upload-action",
+                        )
+                        with gr.Accordion(
+                            "Kết quả xử lý",
+                            open=True,
+                            elem_classes="process-details",
+                        ):
+                            upload_status = gr.Textbox(
+                                label="Trạng thái xử lý",
+                                interactive=False,
+                                lines=2,
+                            )
+                            file_list = gr.Textbox(
+                                label="Tài liệu đã xử lý",
+                                interactive=False,
+                                lines=1,
+                                elem_classes="file-list",
+                            )
 
                 with gr.Column(
                     scale=7,
                     min_width=420,
-                    elem_classes=["surface-card", "conversation-panel"],
+                    elem_classes=["bezel-shell", "conversation-panel", "reveal"],
                 ):
-                    gr.HTML("""<div class="section-heading">
-                        <span class="section-number">02</span>
-                        <div><h2>Tra cứu nội dung</h2><p>Câu trả lời chỉ dựa trên nguồn đã truy xuất.</p></div>
-                    </div>""")
-                    chatbot = gr.Chatbot(
-                        label="Lịch sử trò chuyện",
-                        height=500,
-                        elem_classes="chat-container",
-                        show_label=False,
-                        layout="bubble",
-                        buttons=["copy"],
-                        placeholder="Tải và xử lý tài liệu, sau đó đặt câu hỏi đầu tiên của bạn.",
-                    )
-                    api_info = gr.HTML(
-                        build_api_info_html(False, DEFAULT_MODEL_CHOICE)
-                    )
-                    with gr.Group(elem_classes="composer-card"):
-                        question_input = gr.Textbox(
-                            label="Câu hỏi về tài liệu",
-                            lines=2,
-                            max_lines=6,
-                            placeholder="Ví dụ: Tóm tắt nội dung chính và dẫn nguồn theo từng trang...",
-                            autofocus=True,
+                    with gr.Group(elem_classes="bezel-core"):
+                        gr.HTML("""<div class="section-heading">
+                            <span class="section-number">02</span>
+                            <div><h2>Đối thoại với nguồn</h2><p>Đặt câu hỏi tự nhiên; hệ thống sẽ trả lời từ nội dung đã truy xuất.</p></div>
+                        </div>""")
+                        chatbot = gr.Chatbot(
+                            label="Lịch sử trò chuyện",
+                            height=520,
+                            elem_classes="chat-container",
+                            show_label=False,
+                            layout="bubble",
+                            buttons=["copy"],
+                            placeholder="Kho tri thức đang chờ câu hỏi đầu tiên của bạn.",
                         )
-                        with gr.Row(elem_classes="composer-options"):
-                            web_search_checkbox = gr.Checkbox(
-                                label="Tìm thêm trên web",
-                                value=False,
-                                info="Cần SERPAPI_KEY",
+                        api_info = gr.HTML(
+                            build_api_info_html(False, DEFAULT_MODEL_CHOICE)
+                        )
+                        with gr.Group(elem_classes="composer-card"):
+                            question_input = gr.Textbox(
+                                label="Câu hỏi về tài liệu",
+                                lines=2,
+                                max_lines=6,
+                                placeholder="Ví dụ: So sánh hai luận điểm chính và dẫn nguồn theo từng trang...",
+                                autofocus=False,
                             )
-                            model_choice = gr.Dropdown(
-                                choices=MODEL_CHOICES,
-                                value=DEFAULT_MODEL_CHOICE,
-                                label="Dịch vụ LLM",
-                                info="Mô hình gọi qua API",
-                            )
-                        with gr.Row(elem_classes="composer-actions"):
-                            ask_btn = gr.Button(
-                                "Gửi câu hỏi",
-                                variant="primary",
-                                scale=2,
-                                elem_classes="send-button",
-                            )
-                            clear_btn = gr.Button(
-                                "Xóa hội thoại",
-                                variant="secondary",
-                                elem_classes="clear-button",
-                                scale=1,
-                            )
-                    status_display = gr.HTML("")
-                    gr.Markdown("""<div class="footer-note">
-                        Nhấn Enter để gửi, Shift + Enter để xuống dòng. Hãy đối chiếu trích dẫn khi dùng thông tin quan trọng.
-                    </div>""")
+                            with gr.Row(elem_classes="composer-options"):
+                                web_search_checkbox = gr.Checkbox(
+                                    label="Tìm thêm trên web",
+                                    value=False,
+                                    info="Cần SERPAPI_KEY",
+                                )
+                                model_choice = gr.Dropdown(
+                                    choices=MODEL_CHOICES,
+                                    value=DEFAULT_MODEL_CHOICE,
+                                    label="Dịch vụ LLM",
+                                    info="Mô hình gọi qua API",
+                                )
+                            with gr.Row(elem_classes="composer-actions"):
+                                ask_btn = gr.Button(
+                                    "Gửi câu hỏi",
+                                    variant="primary",
+                                    scale=2,
+                                    elem_classes="send-button",
+                                )
+                                clear_btn = gr.Button(
+                                    "Xóa hội thoại",
+                                    variant="secondary",
+                                    elem_classes="clear-button",
+                                    scale=1,
+                                )
+                        status_display = gr.HTML("")
+                        gr.Markdown("""<div class="footer-note">
+                            Enter để gửi · Shift + Enter để xuống dòng · Luôn kiểm tra trích dẫn trước khi dùng thông tin quan trọng.
+                        </div>""")
 
         # Thẻ xem phân đoạn
-        with gr.TabItem("Phân đoạn"):
+        with gr.TabItem("Kho phân đoạn"):
             with gr.Row(elem_classes="chunk-layout"):
                 with gr.Column(
                     scale=1,
                     min_width=280,
-                    elem_classes="surface-card",
+                    elem_classes=["bezel-shell", "reveal"],
                 ):
-                    gr.HTML("""<div class="section-heading">
-                        <span class="section-number">A</span>
-                        <div><h2>Cấu hình truy xuất</h2><p>Mô hình và kỹ thuật đang được sử dụng.</p></div>
-                    </div>""")
-                    models_info = get_system_models_info()
-                    with gr.Group(elem_classes="model-card"):
-                        for key, value in models_info.items():
-                            with gr.Row():
-                                gr.Markdown(f"**{key}**:")
-                                gr.Markdown(f"{value}")
+                    with gr.Group(elem_classes="bezel-core"):
+                        gr.HTML("""<div class="section-heading">
+                            <span class="section-number">A</span>
+                            <div><h2>Cấu hình truy xuất</h2><p>Mô hình và kỹ thuật đang vận hành phía sau câu trả lời.</p></div>
+                        </div>""")
+                        models_info = get_system_models_info()
+                        with gr.Group(elem_classes="model-card"):
+                            for key, value in models_info.items():
+                                with gr.Row():
+                                    gr.Markdown(f"**{key}**:")
+                                    gr.Markdown(f"{value}")
                 with gr.Column(
                     scale=2,
                     min_width=460,
-                    elem_classes="surface-card",
+                    elem_classes=["bezel-shell", "reveal"],
                 ):
-                    gr.HTML("""<div class="section-heading">
-                        <span class="section-number">B</span>
-                        <div><h2>Dữ liệu đã lập chỉ mục</h2><p>Kiểm tra nội dung trước khi hệ thống truy xuất.</p></div>
-                    </div>""")
-                    refresh_chunks_btn = gr.Button(
-                        "Làm mới danh sách",
-                        variant="primary",
-                    )
-                    chunks_status = gr.Markdown("Chọn nút trên để xem các phân đoạn đã lập chỉ mục.")
-                    chunks_data = gr.Dataframe(
-                        headers=["Nguồn", "Trang", "Thứ tự", "Số ký tự", "Số từ", "Nội dung xem trước"],
-                        elem_classes="chunk-table",
-                        interactive=False,
-                        wrap=True,
-                        row_count=10,
-                    )
-                    chunk_detail_text = gr.Textbox(
-                        label="Nội dung đầy đủ",
-                        placeholder="Chọn một hàng trong bảng để xem toàn bộ nội dung.",
-                        lines=8,
-                        elem_classes="chunk-detail-box",
-                    )
+                    with gr.Group(elem_classes="bezel-core"):
+                        gr.HTML("""<div class="section-heading">
+                            <span class="section-number">B</span>
+                            <div><h2>Dữ liệu đã lập chỉ mục</h2><p>Kiểm tra từng đoạn nội dung trước khi hệ thống sử dụng.</p></div>
+                        </div>""")
+                        refresh_chunks_btn = gr.Button(
+                            "Làm mới danh sách",
+                            variant="primary",
+                        )
+                        chunks_status = gr.Markdown("Chọn nút trên để xem các phân đoạn đã lập chỉ mục.")
+                        chunks_data = gr.Dataframe(
+                            headers=["Nguồn", "Trang", "Thứ tự", "Số ký tự", "Số từ", "Nội dung xem trước"],
+                            elem_classes="chunk-table",
+                            interactive=False,
+                            wrap=True,
+                            row_count=10,
+                        )
+                        chunk_detail_text = gr.Textbox(
+                            label="Nội dung đầy đủ",
+                            placeholder="Chọn một hàng trong bảng để xem toàn bộ nội dung.",
+                            lines=8,
+                            elem_classes="chunk-detail-box",
+                        )
 
         # Thẻ giám sát hệ thống
-        with gr.TabItem("Hệ thống"):
-            with gr.Column():
-                with gr.Group(elem_classes="monitor-panel"):
-                    gr.HTML("""<div class="section-heading">
-                        <span class="section-number">01</span>
-                        <div><h2>Tài nguyên hệ thống</h2><p>Theo dõi mức sử dụng của tiến trình hiện tại.</p></div>
-                    </div>""")
-                    refresh_monitor_btn = gr.Button("Cập nhật số liệu", variant="primary")
-                    with gr.Row(elem_classes="metrics-grid"):
-                        with gr.Column(elem_classes="metric-card"):
-                            gr.Markdown("Mức sử dụng CPU", elem_classes="metric-title")
-                            cpu_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
-                            cpu_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="width:0%"></div></div>')
-                            cpu_info = gr.Markdown("Số lõi: đang tải...", elem_classes="metric-trend")
-                        with gr.Column(elem_classes="metric-card"):
-                            gr.Markdown("Mức sử dụng bộ nhớ", elem_classes="metric-title")
-                            memory_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
-                            memory_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="width:0%"></div></div>')
-                            memory_info = gr.Markdown("Tổng bộ nhớ: đang tải...", elem_classes="metric-trend")
-                        with gr.Column(elem_classes="metric-card"):
-                            gr.Markdown("Dung lượng ổ đĩa", elem_classes="metric-title")
-                            disk_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
-                            disk_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="width:0%"></div></div>')
-                            disk_info = gr.Markdown("Tổng dung lượng: đang tải...", elem_classes="metric-trend")
-                        with gr.Column(elem_classes="metric-card"):
-                            gr.Markdown("Kho vector", elem_classes="metric-title")
-                            vector_db_value = gr.Markdown("Phân đoạn: 0", elem_classes="metric-value")
-                            vector_db_info = gr.Markdown("Vector: 0", elem_classes="metric-trend")
+        with gr.TabItem("Vận hành"):
+            with gr.Column(elem_classes="system-stack"):
+                with gr.Group(elem_classes=["bezel-shell", "reveal"]):
+                    with gr.Group(elem_classes="bezel-core"):
+                        gr.HTML("""<div class="section-heading">
+                            <span class="section-number">01</span>
+                            <div><h2>Nhịp vận hành</h2><p>Theo dõi tài nguyên của tiến trình hiện tại theo thời gian thực.</p></div>
+                        </div>""")
+                        refresh_monitor_btn = gr.Button("Cập nhật số liệu", variant="primary")
+                        with gr.Row(elem_classes="metrics-grid"):
+                            with gr.Column(elem_classes="metric-card"):
+                                gr.Markdown("Mức sử dụng CPU", elem_classes="metric-title")
+                                cpu_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
+                                cpu_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="transform:scaleX(0)"></div></div>')
+                                cpu_info = gr.Markdown("Số lõi: đang tải...", elem_classes="metric-trend")
+                            with gr.Column(elem_classes="metric-card"):
+                                gr.Markdown("Mức sử dụng bộ nhớ", elem_classes="metric-title")
+                                memory_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
+                                memory_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="transform:scaleX(0)"></div></div>')
+                                memory_info = gr.Markdown("Tổng bộ nhớ: đang tải...", elem_classes="metric-trend")
+                            with gr.Column(elem_classes="metric-card"):
+                                gr.Markdown("Dung lượng ổ đĩa", elem_classes="metric-title")
+                                disk_value = gr.Markdown("Đang tải...", elem_classes="metric-value")
+                                disk_progress = gr.HTML('<div class="progress-container"><div class="progress-bar" style="transform:scaleX(0)"></div></div>')
+                                disk_info = gr.Markdown("Tổng dung lượng: đang tải...", elem_classes="metric-trend")
+                            with gr.Column(elem_classes="metric-card"):
+                                gr.Markdown("Kho vector", elem_classes="metric-title")
+                                vector_db_value = gr.Markdown("Phân đoạn: 0", elem_classes="metric-value")
+                                vector_db_info = gr.Markdown("Vector: 0", elem_classes="metric-trend")
 
-                with gr.Group(elem_classes="monitor-panel"):
-                    gr.HTML("""<div class="section-heading">
-                        <span class="section-number">02</span>
-                        <div><h2>Nhật ký hệ thống</h2><p>Thông báo vận hành gần nhất của ứng dụng.</p></div>
-                    </div>""")
-                    with gr.Row():
-                        log_level = gr.Dropdown(
-                            choices=["Tất cả", "Thông tin", "Cảnh báo", "Lỗi"],
-                            value="Tất cả",
-                            label="Mức nhật ký",
-                        )
-                        clear_logs_btn = gr.Button("Xóa nhật ký", variant="secondary")
-                    log_display = gr.HTML("", elem_classes="log-container")
+                with gr.Group(elem_classes=["bezel-shell", "reveal"]):
+                    with gr.Group(elem_classes="bezel-core"):
+                        gr.HTML("""<div class="section-heading">
+                            <span class="section-number">02</span>
+                            <div><h2>Nhật ký hệ thống</h2><p>Thông báo vận hành gần nhất của ứng dụng.</p></div>
+                        </div>""")
+                        with gr.Row():
+                            log_level = gr.Dropdown(
+                                choices=["Tất cả", "Thông tin", "Cảnh báo", "Lỗi"],
+                                value="Tất cả",
+                                label="Mức nhật ký",
+                            )
+                            clear_logs_btn = gr.Button("Xóa nhật ký", variant="secondary")
+                        log_display = gr.HTML("", elem_classes="log-container")
 
     # Hàm xử lý sự kiện
     def clear_chat_history():
@@ -710,8 +836,13 @@ with gr.Blocks(
             doc_count = len(vector_store.contents_map)
             vec_count = vector_store.total_chunks
 
-            def bar(pct, color="var(--tech-cyan)"):
-                return f'<div class="progress-container"><div class="progress-bar" style="width:{pct}%;background:{color}"></div></div>'
+            def bar(pct, color="var(--app-accent)"):
+                scale = max(0.0, min(100.0, float(pct))) / 100
+                return (
+                    '<div class="progress-container">'
+                    f'<div class="progress-bar" style="transform:scaleX({scale});background:{color}"></div>'
+                    '</div>'
+                )
 
             c_color = "#4CAF50" if cpu_pct < 50 else "#FFC107" if cpu_pct < 80 else "#f44336"
             m_color = "#4CAF50" if mem.percent < 50 else "#FFC107" if mem.percent < 80 else "#f44336"

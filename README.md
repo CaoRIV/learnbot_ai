@@ -106,7 +106,30 @@ Mở `.env`, đặt `LLM_PROVIDER` thành một trong ba giá trị sau và đi�
 
 Không đưa API key thật lên Git. Các giá trị mẫu bắt đầu bằng `Your_` không được xem là thông tin xác thực hợp lệ.
 
-### 4. Khởi động giao diện Gradio
+### 4. Khởi động giao diện Next.js
+
+Giao diện chính mới sử dụng Next.js và kết nối với FastAPI. Mở hai cửa sổ PowerShell.
+
+Cửa sổ thứ nhất — backend:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m uvicorn api_router:app --host 127.0.0.1 --port 17995
+```
+
+Cửa sổ thứ hai — frontend:
+
+```powershell
+cd frontend
+pnpm install
+pnpm dev
+```
+
+Mở `http://127.0.0.1:3000`. Nếu backend chạy ở địa chỉ khác, sao chép `frontend/.env.local.example` thành `frontend/.env.local` rồi cập nhật `NEXT_PUBLIC_API_BASE_URL`.
+
+### 5. Khởi động giao diện Gradio
+
+Giao diện Gradio được giữ lại để chạy nhanh chỉ với Python:
 
 ```bash
 python rag_demo.py
@@ -121,7 +144,7 @@ Quy trình sử dụng:
 3. Nhập câu hỏi bằng tiếng Việt.
 4. Chọn dịch vụ LLM rồi nhấn **Gửi câu hỏi**.
 
-### 5. Khởi động REST API
+### 6. Khởi động REST API
 
 ```bash
 python api_router.py
@@ -141,6 +164,11 @@ Các endpoint chính:
 ├── config.py                  # Biến môi trường, mô hình và tham số RAG
 ├── rag_demo.py                # Giao diện Gradio
 ├── api_router.py              # REST API bằng FastAPI
+├── frontend/                  # Giao diện Next.js + TypeScript
+│   ├── src/app/               # App Router, metadata và design tokens
+│   ├── src/components/        # Workspace hội thoại và icon SVG
+│   └── src/lib/api.ts         # Lớp kết nối FastAPI có kiểu dữ liệu
+├── design-system/             # Quy chuẩn UI/UX và page override
 ├── llm_provider.py            # Lớp kết nối SiliconFlow/OpenAI/Gemini
 ├── migrations/                # Migration schema SQLite có phiên bản
 ├── core/

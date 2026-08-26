@@ -36,3 +36,12 @@ output/playwright/
 data/*.db
 data/*.db-*
 data/indexes/
+
+# Frontend Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/.next-*/
+frontend/out/
+frontend/.env.local
+frontend/*.tsbuildinfo
+.pnpm-store/

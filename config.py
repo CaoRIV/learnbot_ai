@@ -107,6 +107,14 @@ def choose_default_provider(provider=None):
 
 
 # Tham số RAG
+EMBED_MODEL_NAME = os.getenv(
+    "EMBED_MODEL_NAME",
+    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+)
+RERANK_MODEL_NAME = os.getenv(
+    "RERANK_MODEL_NAME",
+    "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+)
 CHUNK_SIZE = 400
 CHUNK_OVERLAP = 40
 HYBRID_ALPHA = 0.7
@@ -123,5 +131,5 @@ except ValueError:
     MAX_UPLOAD_SIZE_MB = 25
 
 # Cấu hình runtime nhẹ, phù hợp Windows
-os.environ["HF_ENDPOINT"] = os.getenv("HF_ENDPOINT", "https://hf-mirror.com")
+os.environ["HF_ENDPOINT"] = os.getenv("HF_ENDPOINT", "https://huggingface.co")
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"

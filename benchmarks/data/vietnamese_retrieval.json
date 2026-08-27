@@ -1,0 +1,321 @@
+{
+  "name": "learnbot-vietnamese-retrieval",
+  "version": "1.0.0",
+  "description": "Tập benchmark nhỏ cho truy xuất tài liệu tiếng Việt, gồm các câu hỏi có nhãn chunk, tài liệu và trang.",
+  "chunks": [
+    {
+      "id": "edu-admissions",
+      "content": "Hồ sơ tuyển sinh trực tuyến phải được nộp trước 17 giờ ngày 30 tháng 6. Thí sinh bổ sung giấy tờ còn thiếu qua cổng tuyển sinh, không gửi qua email.",
+      "source": "quy-che-tuyen-sinh.pdf",
+      "page": 3
+    },
+    {
+      "id": "edu-tuition",
+      "content": "Học phí học kỳ được thanh toán bằng chuyển khoản ngân hàng hoặc tại quầy tài chính. Sinh viên phải ghi mã số sinh viên trong nội dung thanh toán.",
+      "source": "huong-dan-hoc-phi.pdf",
+      "page": 5
+    },
+    {
+      "id": "edu-scholarship",
+      "content": "Học bổng khuyến khích học tập yêu cầu điểm trung bình học kỳ từ 3,2 trở lên và điểm rèn luyện tối thiểu 80.",
+      "source": "chinh-sach-hoc-bong.pdf",
+      "page": 7
+    },
+    {
+      "id": "edu-library",
+      "content": "Thư viện mở cửa từ 8 giờ đến 20 giờ từ thứ Hai đến thứ Sáu. Thứ Bảy thư viện đóng cửa lúc 17 giờ và không phục vụ vào Chủ nhật.",
+      "source": "noi-quy-thu-vien.pdf",
+      "page": 2
+    },
+    {
+      "id": "it-password",
+      "content": "Người dùng đặt lại mật khẩu tại cổng tài khoản nội bộ. Liên kết xác minh chỉ có hiệu lực trong 15 phút.",
+      "source": "so-tay-cong-nghe.pdf",
+      "page": 4
+    },
+    {
+      "id": "it-backup",
+      "content": "Bản sao lưu cơ sở dữ liệu được tạo tự động lúc 2 giờ sáng mỗi ngày và được lưu giữ trong 30 ngày.",
+      "source": "quy-trinh-sao-luu.pdf",
+      "page": 6
+    },
+    {
+      "id": "it-2fa",
+      "content": "Xác thực hai yếu tố là bắt buộc đối với tài khoản quản trị. Mã khôi phục phải được cất tại vị trí an toàn ngoài máy tính làm việc.",
+      "source": "chinh-sach-an-toan-thong-tin.pdf",
+      "page": 9
+    },
+    {
+      "id": "it-api",
+      "content": "API cho phép tối đa 120 yêu cầu mỗi phút cho một khóa truy cập. Khi vượt giới hạn, máy chủ trả về mã trạng thái HTTP 429.",
+      "source": "tai-lieu-api.pdf",
+      "page": 11
+    },
+    {
+      "id": "hr-leave",
+      "content": "Nhân viên gửi đơn nghỉ phép trước ít nhất ba ngày làm việc. Trường hợp khẩn cấp phải thông báo trực tiếp cho quản lý trong ngày.",
+      "source": "so-tay-nhan-su.pdf",
+      "page": 12
+    },
+    {
+      "id": "hr-remote",
+      "content": "Nhân viên được đăng ký làm việc từ xa tối đa hai ngày mỗi tuần sau khi có phê duyệt của trưởng bộ phận.",
+      "source": "so-tay-nhan-su.pdf",
+      "page": 15
+    },
+    {
+      "id": "hr-expense",
+      "content": "Đề nghị hoàn trả công tác phí phải kèm hóa đơn hợp lệ và gửi trong vòng mười ngày kể từ ngày kết thúc chuyến đi.",
+      "source": "quy-che-tai-chinh.pdf",
+      "page": 8
+    },
+    {
+      "id": "hr-probation",
+      "content": "Thời gian thử việc tiêu chuẩn là 60 ngày. Việc đánh giá kết quả được thực hiện chậm nhất năm ngày trước khi kết thúc thử việc.",
+      "source": "so-tay-nhan-su.pdf",
+      "page": 18
+    },
+    {
+      "id": "safety-fire",
+      "content": "Khi có báo cháy, mọi người di chuyển theo cầu thang bộ đến điểm tập kết phía Đông. Không sử dụng thang máy trong quá trình sơ tán.",
+      "source": "huong-dan-an-toan.pdf",
+      "page": 3
+    },
+    {
+      "id": "safety-firstaid",
+      "content": "Tủ sơ cứu được đặt cạnh phòng bảo vệ tầng một. Mọi lần sử dụng vật tư y tế phải được ghi vào sổ theo dõi.",
+      "source": "huong-dan-an-toan.pdf",
+      "page": 6
+    },
+    {
+      "id": "safety-ppe",
+      "content": "Người vào khu vực xưởng phải đội mũ bảo hộ, đeo kính bảo vệ và mang giày chống trượt trong toàn bộ thời gian làm việc.",
+      "source": "noi-quy-nha-xuong.pdf",
+      "page": 2
+    },
+    {
+      "id": "maintenance-oil",
+      "content": "Dầu động cơ máy xúc được thay sau mỗi 500 giờ vận hành. Kỹ thuật viên phải kiểm tra mức dầu trước mỗi ca làm việc.",
+      "source": "bao-tri-may-xuc.pdf",
+      "page": 14
+    },
+    {
+      "id": "maintenance-hydraulic",
+      "content": "Áp suất hệ thống thủy lực tiêu chuẩn nằm trong khoảng 28 đến 32 MPa. Áp suất thấp có thể do rò rỉ hoặc lọc dầu bị tắc.",
+      "source": "bao-tri-may-xuc.pdf",
+      "page": 21
+    },
+    {
+      "id": "maintenance-battery",
+      "content": "Ắc quy lưu kho phải được sạc bổ sung mỗi ba tháng. Trước khi sạc cần kiểm tra thông gió và làm sạch các đầu cực.",
+      "source": "huong-dan-ac-quy.pdf",
+      "page": 5
+    },
+    {
+      "id": "agri-water",
+      "content": "Cây cà chua trong nhà kính được tưới nhỏ giọt vào sáng sớm. Độ ẩm đất mục tiêu nằm trong khoảng 60 đến 70 phần trăm.",
+      "source": "ky-thuat-nha-kinh.pdf",
+      "page": 10
+    },
+    {
+      "id": "agri-rice",
+      "content": "Lúa được bón thúc lần đầu từ 7 đến 10 ngày sau khi cấy. Không bón phân khi ruộng đang ngập sâu hoặc trước mưa lớn.",
+      "source": "ky-thuat-trong-lua.pdf",
+      "page": 13
+    },
+    {
+      "id": "agri-coffee",
+      "content": "Quả cà phê chỉ nên thu hoạch khi tỷ lệ quả chín đạt ít nhất 90 phần trăm. Quả xanh và tạp chất cần được loại bỏ trước khi chế biến.",
+      "source": "quy-trinh-ca-phe.pdf",
+      "page": 16
+    },
+    {
+      "id": "environment-waste",
+      "content": "Rác tái chế được bỏ vào thùng màu xanh, rác hữu cơ vào thùng màu nâu và chất thải nguy hại vào thùng màu đỏ có nắp kín.",
+      "source": "huong-dan-phan-loai-rac.pdf",
+      "page": 4
+    },
+    {
+      "id": "contract-warranty",
+      "content": "Thiết bị được bảo hành trong 24 tháng kể từ ngày nghiệm thu. Bảo hành không áp dụng cho hư hỏng do sử dụng sai hướng dẫn.",
+      "source": "dieu-khoan-hop-dong.pdf",
+      "page": 19
+    },
+    {
+      "id": "rag-citation",
+      "content": "Câu trả lời từ tài liệu PDF phải ghi tên tài liệu và số trang theo định dạng ngoặc vuông. Hệ thống không được tự tạo nguồn không xuất hiện trong ngữ cảnh.",
+      "source": "quy-tac-tro-ly-rag.pdf",
+      "page": 8
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-admissions",
+      "question": "Hạn cuối nộp hồ sơ tuyển sinh trực tuyến là khi nào?",
+      "expected_chunk_ids": ["edu-admissions"],
+      "expected_source": "quy-che-tuyen-sinh.pdf",
+      "expected_page": 3
+    },
+    {
+      "id": "q-tuition",
+      "question": "Sinh viên có thể đóng học phí bằng những cách nào?",
+      "expected_chunk_ids": ["edu-tuition"],
+      "expected_source": "huong-dan-hoc-phi.pdf",
+      "expected_page": 5
+    },
+    {
+      "id": "q-scholarship",
+      "question": "Điểm trung bình tối thiểu để nhận học bổng khuyến khích là bao nhiêu?",
+      "expected_chunk_ids": ["edu-scholarship"],
+      "expected_source": "chinh-sach-hoc-bong.pdf",
+      "expected_page": 7
+    },
+    {
+      "id": "q-library",
+      "question": "Thư viện đóng cửa lúc mấy giờ vào thứ Bảy?",
+      "expected_chunk_ids": ["edu-library"],
+      "expected_source": "noi-quy-thu-vien.pdf",
+      "expected_page": 2
+    },
+    {
+      "id": "q-password",
+      "question": "Liên kết xác minh để đặt lại mật khẩu có hiệu lực bao lâu?",
+      "expected_chunk_ids": ["it-password"],
+      "expected_source": "so-tay-cong-nghe.pdf",
+      "expected_page": 4
+    },
+    {
+      "id": "q-backup",
+      "question": "Bản sao lưu cơ sở dữ liệu được giữ lại trong bao nhiêu ngày?",
+      "expected_chunk_ids": ["it-backup"],
+      "expected_source": "quy-trinh-sao-luu.pdf",
+      "expected_page": 6
+    },
+    {
+      "id": "q-2fa",
+      "question": "Những tài khoản nào bắt buộc phải bật xác thực hai yếu tố?",
+      "expected_chunk_ids": ["it-2fa"],
+      "expected_source": "chinh-sach-an-toan-thong-tin.pdf",
+      "expected_page": 9
+    },
+    {
+      "id": "q-api",
+      "question": "Máy chủ trả mã HTTP nào khi khóa API vượt giới hạn yêu cầu?",
+      "expected_chunk_ids": ["it-api"],
+      "expected_source": "tai-lieu-api.pdf",
+      "expected_page": 11
+    },
+    {
+      "id": "q-leave",
+      "question": "Đơn nghỉ phép thông thường cần gửi trước mấy ngày làm việc?",
+      "expected_chunk_ids": ["hr-leave"],
+      "expected_source": "so-tay-nhan-su.pdf",
+      "expected_page": 12
+    },
+    {
+      "id": "q-remote",
+      "question": "Mỗi tuần nhân viên được làm việc từ xa tối đa bao nhiêu ngày?",
+      "expected_chunk_ids": ["hr-remote"],
+      "expected_source": "so-tay-nhan-su.pdf",
+      "expected_page": 15
+    },
+    {
+      "id": "q-expense",
+      "question": "Hồ sơ hoàn trả công tác phí phải nộp trong thời hạn nào?",
+      "expected_chunk_ids": ["hr-expense"],
+      "expected_source": "quy-che-tai-chinh.pdf",
+      "expected_page": 8
+    },
+    {
+      "id": "q-probation",
+      "question": "Thời gian thử việc tiêu chuẩn kéo dài bao lâu?",
+      "expected_chunk_ids": ["hr-probation"],
+      "expected_source": "so-tay-nhan-su.pdf",
+      "expected_page": 18
+    },
+    {
+      "id": "q-fire",
+      "question": "Khi báo cháy phải tập trung ở đâu và có được dùng thang máy không?",
+      "expected_chunk_ids": ["safety-fire"],
+      "expected_source": "huong-dan-an-toan.pdf",
+      "expected_page": 3
+    },
+    {
+      "id": "q-firstaid",
+      "question": "Tủ sơ cứu nằm ở vị trí nào?",
+      "expected_chunk_ids": ["safety-firstaid"],
+      "expected_source": "huong-dan-an-toan.pdf",
+      "expected_page": 6
+    },
+    {
+      "id": "q-ppe",
+      "question": "Người vào xưởng phải sử dụng những trang bị bảo hộ nào?",
+      "expected_chunk_ids": ["safety-ppe"],
+      "expected_source": "noi-quy-nha-xuong.pdf",
+      "expected_page": 2
+    },
+    {
+      "id": "q-oil",
+      "question": "Sau bao nhiêu giờ vận hành thì thay dầu động cơ máy xúc?",
+      "expected_chunk_ids": ["maintenance-oil"],
+      "expected_source": "bao-tri-may-xuc.pdf",
+      "expected_page": 14
+    },
+    {
+      "id": "q-hydraulic",
+      "question": "Khoảng áp suất tiêu chuẩn của hệ thống thủy lực là bao nhiêu?",
+      "expected_chunk_ids": ["maintenance-hydraulic"],
+      "expected_source": "bao-tri-may-xuc.pdf",
+      "expected_page": 21
+    },
+    {
+      "id": "q-battery",
+      "question": "Ắc quy lưu kho cần được sạc bổ sung với chu kỳ nào?",
+      "expected_chunk_ids": ["maintenance-battery"],
+      "expected_source": "huong-dan-ac-quy.pdf",
+      "expected_page": 5
+    },
+    {
+      "id": "q-water",
+      "question": "Độ ẩm đất mục tiêu khi tưới cà chua nhà kính là bao nhiêu?",
+      "expected_chunk_ids": ["agri-water"],
+      "expected_source": "ky-thuat-nha-kinh.pdf",
+      "expected_page": 10
+    },
+    {
+      "id": "q-rice",
+      "question": "Lúa được bón thúc lần đầu vào thời điểm nào sau khi cấy?",
+      "expected_chunk_ids": ["agri-rice"],
+      "expected_source": "ky-thuat-trong-lua.pdf",
+      "expected_page": 13
+    },
+    {
+      "id": "q-coffee",
+      "question": "Tỷ lệ quả cà phê chín tối thiểu để bắt đầu thu hoạch là bao nhiêu?",
+      "expected_chunk_ids": ["agri-coffee"],
+      "expected_source": "quy-trinh-ca-phe.pdf",
+      "expected_page": 16
+    },
+    {
+      "id": "q-waste",
+      "question": "Chất thải nguy hại phải được bỏ vào thùng màu gì?",
+      "expected_chunk_ids": ["environment-waste"],
+      "expected_source": "huong-dan-phan-loai-rac.pdf",
+      "expected_page": 4
+    },
+    {
+      "id": "q-warranty",
+      "question": "Thời hạn bảo hành thiết bị được tính từ ngày nghiệm thu là bao lâu?",
+      "expected_chunk_ids": ["contract-warranty"],
+      "expected_source": "dieu-khoan-hop-dong.pdf",
+      "expected_page": 19
+    },
+    {
+      "id": "q-citation",
+      "question": "Câu trả lời lấy từ PDF phải trình bày trích dẫn theo quy tắc nào?",
+      "expected_chunk_ids": ["rag-citation"],
+      "expected_source": "quy-tac-tro-ly-rag.pdf",
+      "expected_page": 8
+    }
+  ]
+}

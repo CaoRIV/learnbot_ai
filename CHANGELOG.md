@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here.
 
+## [2.3.0] - 2026-08-27
+
+### Added
+
+- A versioned Vietnamese retrieval benchmark with 24 labeled questions, document names, pages, and expected chunks.
+- A network-independent benchmark runner for BM25, FAISS, hybrid retrieval, and optional local CrossEncoder reranking.
+- Recall@K, MRR, mean latency, P95 latency, JSON/Markdown reports, dataset fingerprints, and CI-friendly recall thresholds.
+- A checked-in v2.3.0 baseline report for BM25, FAISS, and hybrid retrieval.
+
+### Changed
+
+- Embedding and reranker model names are now centralized in environment-aware configuration.
+- Hybrid merging accepts an explicit metadata map so isolated benchmarks do not depend on the runtime singleton.
+
 ## [2.2.0] - 2026-08-25
 
 ### Added

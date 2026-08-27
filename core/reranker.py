@@ -12,7 +12,7 @@ import logging
 import re
 import threading
 from functools import lru_cache
-from config import RERANK_METHOD
+from config import RERANK_METHOD, RERANK_MODEL_NAME
 from llm_provider import call_llm
 
 # 交叉编码器（懒加载 + 线程安全）
@@ -28,9 +28,7 @@ def get_cross_encoder():
             if _cross_encoder is None:
                 try:
                     from sentence_transformers import CrossEncoder
-                    _cross_encoder = CrossEncoder(
-                        'sentence-transformers/distiluse-base-multilingual-cased-v2'
-                    )
+                    _cross_encoder = CrossEncoder(RERANK_MODEL_NAME)
                     logging.info("Đã tải mô hình CrossEncoder")
                 except Exception as e:
                     logging.error("Không thể tải CrossEncoder: %s", e)

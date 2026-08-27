@@ -96,7 +96,11 @@ có checksum, tự khôi phục khi khởi động và chỉ các chunk mới c�
 **Mục tiêu:** Có số liệu để biết thay đổi embedding, BM25 hoặc reranker có thực
 sự tốt hơn không.
 
-**Việc cần làm:**
+**Tiến độ:** Hoàn tất. Dataset phiên bản 1.0.0 có 24 câu hỏi được gắn nhãn
+chunk/tài liệu/trang. Lệnh benchmark đo BM25, FAISS, hybrid và CrossEncoder tùy
+chọn; báo cáo gồm Recall@K, MRR, độ trễ trung bình, P95 và fingerprint dataset.
+
+**Hạng mục đã hoàn tất:**
 
 - Tạo một tập nhỏ khoảng 20–50 câu hỏi tiếng Việt có đáp án/chunk đúng.
 - Ghi rõ tài liệu và trang đúng cho từng câu hỏi.

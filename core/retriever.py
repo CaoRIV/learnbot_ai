@@ -16,7 +16,7 @@ from core.reranker import rerank_results
 from features.web_search import check_serpapi_key, search_web
 
 
-def hybrid_merge(semantic_results, bm25_results, alpha=None):
+def hybrid_merge(semantic_results, bm25_results, alpha=None, metadata_by_id=None):
     """
     合并语义检索和 BM25 检索结果
 
@@ -32,6 +32,8 @@ def hybrid_merge(semantic_results, bm25_results, alpha=None):
     """
     if alpha is None:
         alpha = HYBRID_ALPHA
+    if metadata_by_id is None:
+        metadata_by_id = vector_store.metadatas_map
 
     merged_dict = {}
 
@@ -67,7 +69,7 @@ def hybrid_merge(semantic_results, bm25_results, alpha=None):
         if doc_id in merged_dict:
             merged_dict[doc_id]['score'] += (1 - alpha) * norm_score
         else:
-            metadata = vector_store.metadatas_map.get(doc_id, {})
+            metadata = metadata_by_id.get(doc_id, {})
             merged_dict[doc_id] = {
                 'score': (1 - alpha) * norm_score,
                 'content': result['content'], 'metadata': metadata

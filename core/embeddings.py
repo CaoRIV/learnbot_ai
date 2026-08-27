@@ -8,9 +8,7 @@ import logging
 import numpy as np
 from functools import lru_cache
 
-EMBED_MODEL_NAME = (
-    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-)
+from config import EMBED_MODEL_NAME
 
 
 @lru_cache(maxsize=1)
@@ -20,9 +18,12 @@ def get_embed_model():
 
     logging.info("Đang tải mô hình embedding: %s", EMBED_MODEL_NAME)
     model = SentenceTransformer(EMBED_MODEL_NAME)
+    get_dimension = getattr(model, "get_embedding_dimension", None)
+    if not callable(get_dimension):
+        get_dimension = model.get_sentence_embedding_dimension
     logging.info(
         "Đã tải mô hình embedding, số chiều đầu ra: %s",
-        model.get_sentence_embedding_dimension(),
+        get_dimension(),
     )
     return model
 

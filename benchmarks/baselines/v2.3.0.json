@@ -1,0 +1,3547 @@
+{
+  "dataset": {
+    "name": "learnbot-vietnamese-retrieval",
+    "version": "1.0.0",
+    "sha256": "a5168608548b6660b5a3c5bffaa41219224dcc6dee802dc8ac8b86a59752518f",
+    "chunk_count": 24,
+    "question_count": 24
+  },
+  "config": {
+    "top_k": 5,
+    "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "reranker_model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+    "hybrid_alpha": 0.7,
+    "index_build_ms": {
+      "bm25": 595.7162999548018,
+      "faiss": 4843.866699957289
+    }
+  },
+  "methods": {
+    "bm25": {
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "mean_latency_ms": 1.1529625044204295,
+      "p95_latency_ms": 1.340300077572465,
+      "hit_count": 24,
+      "question_count": 24,
+      "queries": [
+        {
+          "question_id": "q-admissions",
+          "question": "Hạn cuối nộp hồ sơ tuyển sinh trực tuyến là khi nào?",
+          "expected_chunk_ids": [
+            "edu-admissions"
+          ],
+          "expected_source": "quy-che-tuyen-sinh.pdf",
+          "expected_page": 3,
+          "retrieved_ids": [
+            "edu-admissions",
+            "hr-probation",
+            "it-2fa",
+            "agri-coffee",
+            "agri-rice"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.4732000418007374,
+          "retrieved": [
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 11.014386413917677
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 2.996455469128583
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 2.3001486786216336
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 1.1798308656165624
+            },
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13,
+              "score": 1.1319249566674094
+            }
+          ]
+        },
+        {
+          "question_id": "q-tuition",
+          "question": "Sinh viên có thể đóng học phí bằng những cách nào?",
+          "expected_chunk_ids": [
+            "edu-tuition"
+          ],
+          "expected_source": "huong-dan-hoc-phi.pdf",
+          "expected_page": 5,
+          "retrieved_ids": [
+            "edu-tuition",
+            "maintenance-hydraulic"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.2113000266253948,
+          "retrieved": [
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5,
+              "score": 9.821397454668164
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 2.7080940298243172
+            }
+          ]
+        },
+        {
+          "question_id": "q-scholarship",
+          "question": "Điểm trung bình tối thiểu để nhận học bổng khuyến khích là bao nhiêu?",
+          "expected_chunk_ids": [
+            "edu-scholarship"
+          ],
+          "expected_source": "chinh-sach-hoc-bong.pdf",
+          "expected_page": 7,
+          "retrieved_ids": [
+            "edu-scholarship",
+            "it-2fa",
+            "hr-probation",
+            "safety-fire"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.2951999669894576,
+          "retrieved": [
+            {
+              "id": "edu-scholarship",
+              "source": "chinh-sach-hoc-bong.pdf",
+              "page": 7,
+              "score": 15.699514615134884
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 2.3001486786216336
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 2.1625347608165537
+            },
+            {
+              "id": "safety-fire",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 3,
+              "score": 2.1202511083917885
+            }
+          ]
+        },
+        {
+          "question_id": "q-library",
+          "question": "Thư viện đóng cửa lúc mấy giờ vào thứ Bảy?",
+          "expected_chunk_ids": [
+            "edu-library"
+          ],
+          "expected_source": "noi-quy-thu-vien.pdf",
+          "expected_page": 2,
+          "retrieved_ids": [
+            "edu-library",
+            "it-backup",
+            "environment-waste",
+            "maintenance-oil",
+            "safety-ppe"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 0.9493000106886029,
+          "retrieved": [
+            {
+              "id": "edu-library",
+              "source": "noi-quy-thu-vien.pdf",
+              "page": 2,
+              "score": 12.153902368407064
+            },
+            {
+              "id": "it-backup",
+              "source": "quy-trinh-sao-luu.pdf",
+              "page": 6,
+              "score": 4.059755741059165
+            },
+            {
+              "id": "environment-waste",
+              "source": "huong-dan-phan-loai-rac.pdf",
+              "page": 4,
+              "score": 2.423791308541584
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14,
+              "score": 1.5873774169364452
+            },
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2,
+              "score": 1.5544056386829332
+            }
+          ]
+        },
+        {
+          "question_id": "q-password",
+          "question": "Liên kết xác minh để đặt lại mật khẩu có hiệu lực bao lâu?",
+          "expected_chunk_ids": [
+            "it-password"
+          ],
+          "expected_source": "so-tay-cong-nghe.pdf",
+          "expected_page": 4,
+          "retrieved_ids": [
+            "it-password",
+            "safety-firstaid",
+            "hr-remote",
+            "safety-fire",
+            "environment-waste"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.2681999942287803,
+          "retrieved": [
+            {
+              "id": "it-password",
+              "source": "so-tay-cong-nghe.pdf",
+              "page": 4,
+              "score": 18.68601489075989
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 2.252371765977892
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 1.6217782920300816
+            },
+            {
+              "id": "safety-fire",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 3,
+              "score": 1.4632265987746735
+            },
+            {
+              "id": "environment-waste",
+              "source": "huong-dan-phan-loai-rac.pdf",
+              "page": 4,
+              "score": 1.4081596164007164
+            }
+          ]
+        },
+        {
+          "question_id": "q-backup",
+          "question": "Bản sao lưu cơ sở dữ liệu được giữ lại trong bao nhiêu ngày?",
+          "expected_chunk_ids": [
+            "it-backup"
+          ],
+          "expected_source": "quy-trinh-sao-luu.pdf",
+          "expected_page": 6,
+          "retrieved_ids": [
+            "it-backup",
+            "it-password",
+            "hr-probation",
+            "contract-warranty",
+            "hr-remote"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.2226999970152974,
+          "retrieved": [
+            {
+              "id": "it-backup",
+              "source": "quy-trinh-sao-luu.pdf",
+              "page": 6,
+              "score": 8.16618271836398
+            },
+            {
+              "id": "it-password",
+              "source": "so-tay-cong-nghe.pdf",
+              "page": 4,
+              "score": 3.114339228135707
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 1.561686219425238
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19,
+              "score": 1.4951243674467527
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 1.3884364048637874
+            }
+          ]
+        },
+        {
+          "question_id": "q-2fa",
+          "question": "Những tài khoản nào bắt buộc phải bật xác thực hai yếu tố?",
+          "expected_chunk_ids": [
+            "it-2fa"
+          ],
+          "expected_source": "chinh-sach-an-toan-thong-tin.pdf",
+          "expected_page": 9,
+          "retrieved_ids": [
+            "it-2fa",
+            "hr-remote",
+            "it-password",
+            "maintenance-oil",
+            "edu-tuition"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.1672999244183302,
+          "retrieved": [
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 13.579464957420587
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 2.349996387519223
+            },
+            {
+              "id": "it-password",
+              "source": "so-tay-cong-nghe.pdf",
+              "page": 4,
+              "score": 2.349996387519223
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14,
+              "score": 0.33789299435570314
+            },
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5,
+              "score": 0.33789299435570314
+            }
+          ]
+        },
+        {
+          "question_id": "q-api",
+          "question": "Máy chủ trả mã HTTP nào khi khóa API vượt giới hạn yêu cầu?",
+          "expected_chunk_ids": [
+            "it-api"
+          ],
+          "expected_source": "tai-lieu-api.pdf",
+          "expected_page": 11,
+          "retrieved_ids": [
+            "it-api",
+            "edu-scholarship",
+            "agri-coffee",
+            "agri-rice",
+            "hr-remote"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.2242000084370375,
+          "retrieved": [
+            {
+              "id": "it-api",
+              "source": "tai-lieu-api.pdf",
+              "page": 11,
+              "score": 16.213582092085414
+            },
+            {
+              "id": "edu-scholarship",
+              "source": "chinh-sach-hoc-bong.pdf",
+              "page": 7,
+              "score": 2.4564671205457884
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 1.1798308656165624
+            },
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13,
+              "score": 1.1319249566674094
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 0.9062100122130625
+            }
+          ]
+        },
+        {
+          "question_id": "q-leave",
+          "question": "Đơn nghỉ phép thông thường cần gửi trước mấy ngày làm việc?",
+          "expected_chunk_ids": [
+            "hr-leave"
+          ],
+          "expected_source": "so-tay-nhan-su.pdf",
+          "expected_page": 12,
+          "retrieved_ids": [
+            "hr-leave",
+            "maintenance-battery",
+            "edu-admissions",
+            "agri-coffee",
+            "hr-expense"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.106100040487945,
+          "retrieved": [
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12,
+              "score": 10.851963357681397
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 2.996455469128583
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 2.976568096187116
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 2.937866315391661
+            },
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8,
+              "score": 2.8252808454414957
+            }
+          ]
+        },
+        {
+          "question_id": "q-remote",
+          "question": "Mỗi tuần nhân viên được làm việc từ xa tối đa bao nhiêu ngày?",
+          "expected_chunk_ids": [
+            "hr-remote"
+          ],
+          "expected_source": "so-tay-nhan-su.pdf",
+          "expected_page": 15,
+          "retrieved_ids": [
+            "hr-remote",
+            "hr-leave",
+            "maintenance-oil",
+            "it-backup",
+            "it-api"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.1754999868571758,
+          "retrieved": [
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 15.587670189755224
+            },
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12,
+              "score": 4.603951463765891
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14,
+              "score": 3.857367188657147
+            },
+            {
+              "id": "it-backup",
+              "source": "quy-trinh-sao-luu.pdf",
+              "page": 6,
+              "score": 3.358472536419116
+            },
+            {
+              "id": "it-api",
+              "source": "tai-lieu-api.pdf",
+              "page": 11,
+              "score": 3.341578485934234
+            }
+          ]
+        },
+        {
+          "question_id": "q-expense",
+          "question": "Hồ sơ hoàn trả công tác phí phải nộp trong thời hạn nào?",
+          "expected_chunk_ids": [
+            "hr-expense"
+          ],
+          "expected_source": "quy-che-tai-chinh.pdf",
+          "expected_page": 8,
+          "retrieved_ids": [
+            "hr-expense",
+            "edu-admissions",
+            "hr-leave",
+            "edu-tuition",
+            "safety-ppe"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.0933999437838793,
+          "retrieved": [
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8,
+              "score": 8.957026283527943
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 5.213961651883006
+            },
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12,
+              "score": 0.5057465394604279
+            },
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5,
+              "score": 0.5057465394604279
+            },
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2,
+              "score": 0.4952415627777227
+            }
+          ]
+        },
+        {
+          "question_id": "q-probation",
+          "question": "Thời gian thử việc tiêu chuẩn kéo dài bao lâu?",
+          "expected_chunk_ids": [
+            "hr-probation"
+          ],
+          "expected_source": "so-tay-nhan-su.pdf",
+          "expected_page": 18,
+          "retrieved_ids": [
+            "hr-probation",
+            "safety-ppe",
+            "maintenance-hydraulic"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 0.8796000620350242,
+          "retrieved": [
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 12.756690091775992
+            },
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2,
+              "score": 2.252371765977892
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 2.1625347608165537
+            }
+          ]
+        },
+        {
+          "question_id": "q-fire",
+          "question": "Khi báo cháy phải tập trung ở đâu và có được dùng thang máy không?",
+          "expected_chunk_ids": [
+            "safety-fire"
+          ],
+          "expected_source": "huong-dan-an-toan.pdf",
+          "expected_page": 3,
+          "retrieved_ids": [
+            "safety-fire",
+            "it-password",
+            "hr-remote",
+            "rag-citation",
+            "agri-rice"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.3176000211387873,
+          "retrieved": [
+            {
+              "id": "safety-fire",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 3,
+              "score": 11.255597314901816
+            },
+            {
+              "id": "it-password",
+              "source": "so-tay-cong-nghe.pdf",
+              "page": 4,
+              "score": 4.564626334272199
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 3.2070120114453067
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8,
+              "score": 2.7604536045749963
+            },
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13,
+              "score": 2.664020218568342
+            }
+          ]
+        },
+        {
+          "question_id": "q-firstaid",
+          "question": "Tủ sơ cứu nằm ở vị trí nào?",
+          "expected_chunk_ids": [
+            "safety-firstaid"
+          ],
+          "expected_source": "huong-dan-an-toan.pdf",
+          "expected_page": 6,
+          "retrieved_ids": [
+            "safety-firstaid",
+            "it-2fa",
+            "agri-water",
+            "maintenance-hydraulic"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 0.7283000741153955,
+          "retrieved": [
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 5.64118981383348
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 2.880424868607206
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10,
+              "score": 2.206539236401705
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 2.1625347608165537
+            }
+          ]
+        },
+        {
+          "question_id": "q-ppe",
+          "question": "Người vào xưởng phải sử dụng những trang bị bảo hộ nào?",
+          "expected_chunk_ids": [
+            "safety-ppe"
+          ],
+          "expected_source": "noi-quy-nha-xuong.pdf",
+          "expected_page": 2,
+          "retrieved_ids": [
+            "safety-ppe",
+            "safety-fire",
+            "environment-waste",
+            "safety-firstaid",
+            "it-password"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.0636000661179423,
+          "retrieved": [
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2,
+              "score": 6.566726231327903
+            },
+            {
+              "id": "safety-fire",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 3,
+              "score": 3.503392965395805
+            },
+            {
+              "id": "environment-waste",
+              "source": "huong-dan-phan-loai-rac.pdf",
+              "page": 4,
+              "score": 2.423791308541584
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 2.1917256857282297
+            },
+            {
+              "id": "it-password",
+              "source": "so-tay-cong-nghe.pdf",
+              "page": 4,
+              "score": 1.9415060744821646
+            }
+          ]
+        },
+        {
+          "question_id": "q-oil",
+          "question": "Sau bao nhiêu giờ vận hành thì thay dầu động cơ máy xúc?",
+          "expected_chunk_ids": [
+            "maintenance-oil"
+          ],
+          "expected_source": "bao-tri-may-xuc.pdf",
+          "expected_page": 14,
+          "retrieved_ids": [
+            "maintenance-oil",
+            "edu-library",
+            "maintenance-hydraulic",
+            "hr-remote",
+            "it-backup"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.1520999250933528,
+          "retrieved": [
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14,
+              "score": 14.429123891438001
+            },
+            {
+              "id": "edu-library",
+              "source": "noi-quy-thu-vien.pdf",
+              "page": 2,
+              "score": 2.423791308541584
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 2.1625347608165537
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 1.9415060744821646
+            },
+            {
+              "id": "it-backup",
+              "source": "quy-trinh-sao-luu.pdf",
+              "page": 6,
+              "score": 1.6577032341979103
+            }
+          ]
+        },
+        {
+          "question_id": "q-hydraulic",
+          "question": "Khoảng áp suất tiêu chuẩn của hệ thống thủy lực là bao nhiêu?",
+          "expected_chunk_ids": [
+            "maintenance-hydraulic"
+          ],
+          "expected_source": "bao-tri-may-xuc.pdf",
+          "expected_page": 21,
+          "retrieved_ids": [
+            "maintenance-hydraulic",
+            "hr-probation",
+            "hr-remote",
+            "it-2fa",
+            "agri-water"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.1110000777989626,
+          "retrieved": [
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 13.081934342353762
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 4.325069521633107
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 2.942848042242117
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 2.3001486786216336
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10,
+              "score": 2.206539236401705
+            }
+          ]
+        },
+        {
+          "question_id": "q-battery",
+          "question": "Ắc quy lưu kho cần được sạc bổ sung với chu kỳ nào?",
+          "expected_chunk_ids": [
+            "maintenance-battery"
+          ],
+          "expected_source": "huong-dan-ac-quy.pdf",
+          "expected_page": 5,
+          "retrieved_ids": [
+            "maintenance-battery",
+            "agri-coffee",
+            "edu-admissions",
+            "it-backup",
+            "safety-firstaid"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.1496999068185687,
+          "retrieved": [
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 16.960444929495694
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 2.732890674761296
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 2.5346522780696876
+            },
+            {
+              "id": "it-backup",
+              "source": "quy-trinh-sao-luu.pdf",
+              "page": 6,
+              "score": 0.965797972127571
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 0.9231165913774744
+            }
+          ]
+        },
+        {
+          "question_id": "q-water",
+          "question": "Độ ẩm đất mục tiêu khi tưới cà chua nhà kính là bao nhiêu?",
+          "expected_chunk_ids": [
+            "agri-water"
+          ],
+          "expected_source": "ky-thuat-nha-kinh.pdf",
+          "expected_page": 10,
+          "retrieved_ids": [
+            "agri-water",
+            "hr-probation",
+            "it-2fa",
+            "agri-coffee",
+            "agri-rice"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.1511000338941813,
+          "retrieved": [
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10,
+              "score": 16.579199116548573
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 2.996455469128583
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 2.3001486786216336
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 1.1798308656165624
+            },
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13,
+              "score": 1.1319249566674094
+            }
+          ]
+        },
+        {
+          "question_id": "q-rice",
+          "question": "Lúa được bón thúc lần đầu vào thời điểm nào sau khi cấy?",
+          "expected_chunk_ids": [
+            "agri-rice"
+          ],
+          "expected_source": "ky-thuat-trong-lua.pdf",
+          "expected_page": 13,
+          "retrieved_ids": [
+            "agri-rice",
+            "hr-remote",
+            "safety-firstaid",
+            "maintenance-oil",
+            "agri-coffee"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.1530000483617187,
+          "retrieved": [
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13,
+              "score": 12.892107396986635
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 3.5267397938973897
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 3.1754883573553663
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14,
+              "score": 2.5649435661443274
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 1.79247043198607
+            }
+          ]
+        },
+        {
+          "question_id": "q-coffee",
+          "question": "Tỷ lệ quả cà phê chín tối thiểu để bắt đầu thu hoạch là bao nhiêu?",
+          "expected_chunk_ids": [
+            "agri-coffee"
+          ],
+          "expected_source": "quy-trinh-ca-phe.pdf",
+          "expected_page": 16,
+          "retrieved_ids": [
+            "agri-coffee",
+            "edu-scholarship",
+            "it-2fa",
+            "hr-probation"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.340300077572465,
+          "retrieved": [
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 14.451983559507594
+            },
+            {
+              "id": "edu-scholarship",
+              "source": "chinh-sach-hoc-bong.pdf",
+              "page": 7,
+              "score": 3.07617896560327
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 2.3001486786216336
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 2.1625347608165537
+            }
+          ]
+        },
+        {
+          "question_id": "q-waste",
+          "question": "Chất thải nguy hại phải được bỏ vào thùng màu gì?",
+          "expected_chunk_ids": [
+            "environment-waste"
+          ],
+          "expected_source": "huong-dan-phan-loai-rac.pdf",
+          "expected_page": 4,
+          "retrieved_ids": [
+            "environment-waste",
+            "agri-water",
+            "safety-ppe",
+            "edu-library",
+            "safety-firstaid"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 0.9580999612808228,
+          "retrieved": [
+            {
+              "id": "environment-waste",
+              "source": "huong-dan-phan-loai-rac.pdf",
+              "page": 4,
+              "score": 19.475365018781964
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10,
+              "score": 2.1603479534948447
+            },
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2,
+              "score": 1.8852801806123616
+            },
+            {
+              "id": "edu-library",
+              "source": "noi-quy-thu-vien.pdf",
+              "page": 2,
+              "score": 1.4081596164007164
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 1.2539911333069027
+            }
+          ]
+        },
+        {
+          "question_id": "q-warranty",
+          "question": "Thời hạn bảo hành thiết bị được tính từ ngày nghiệm thu là bao lâu?",
+          "expected_chunk_ids": [
+            "contract-warranty"
+          ],
+          "expected_source": "dieu-khoan-hop-dong.pdf",
+          "expected_page": 19,
+          "retrieved_ids": [
+            "contract-warranty",
+            "hr-probation",
+            "it-2fa",
+            "hr-remote",
+            "it-backup"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.234699971973896,
+          "retrieved": [
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19,
+              "score": 11.841242952940808
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 3.7242209802417916
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 2.964769054707655
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 2.2946464170768497
+            },
+            {
+              "id": "it-backup",
+              "source": "quy-trinh-sao-luu.pdf",
+              "page": 6,
+              "score": 1.974819214738119
+            }
+          ]
+        },
+        {
+          "question_id": "q-citation",
+          "question": "Câu trả lời lấy từ PDF phải trình bày trích dẫn theo quy tắc nào?",
+          "expected_chunk_ids": [
+            "rag-citation"
+          ],
+          "expected_source": "quy-tac-tro-ly-rag.pdf",
+          "expected_page": 8,
+          "retrieved_ids": [
+            "rag-citation",
+            "safety-fire",
+            "hr-expense",
+            "edu-library",
+            "edu-scholarship"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 1.245599938556552,
+          "retrieved": [
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8,
+              "score": 10.792706059651309
+            },
+            {
+              "id": "safety-fire",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 3,
+              "score": 2.1202511083917885
+            },
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8,
+              "score": 1.1994383645784903
+            },
+            {
+              "id": "edu-library",
+              "source": "noi-quy-thu-vien.pdf",
+              "page": 2,
+              "score": 1.147455401350136
+            },
+            {
+              "id": "edu-scholarship",
+              "source": "chinh-sach-hoc-bong.pdf",
+              "page": 7,
+              "score": 0.9472674558707491
+            }
+          ]
+        }
+      ]
+    },
+    "faiss": {
+      "recall_at_k": 1.0,
+      "mrr": 0.9722222222222223,
+      "mean_latency_ms": 23.08030832015599,
+      "p95_latency_ms": 27.933500008657575,
+      "hit_count": 24,
+      "question_count": 24,
+      "queries": [
+        {
+          "question_id": "q-admissions",
+          "question": "Hạn cuối nộp hồ sơ tuyển sinh trực tuyến là khi nào?",
+          "expected_chunk_ids": [
+            "edu-admissions"
+          ],
+          "expected_source": "quy-che-tuyen-sinh.pdf",
+          "expected_page": 3,
+          "retrieved_ids": [
+            "edu-admissions",
+            "hr-remote",
+            "hr-probation",
+            "edu-tuition",
+            "contract-warranty"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.717999923974276,
+          "retrieved": [
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18
+            },
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19
+            }
+          ]
+        },
+        {
+          "question_id": "q-tuition",
+          "question": "Sinh viên có thể đóng học phí bằng những cách nào?",
+          "expected_chunk_ids": [
+            "edu-tuition"
+          ],
+          "expected_source": "huong-dan-hoc-phi.pdf",
+          "expected_page": 5,
+          "retrieved_ids": [
+            "edu-tuition",
+            "edu-scholarship",
+            "edu-admissions",
+            "rag-citation",
+            "hr-expense"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 20.750700030475855,
+          "retrieved": [
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5
+            },
+            {
+              "id": "edu-scholarship",
+              "source": "chinh-sach-hoc-bong.pdf",
+              "page": 7
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8
+            },
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8
+            }
+          ]
+        },
+        {
+          "question_id": "q-scholarship",
+          "question": "Điểm trung bình tối thiểu để nhận học bổng khuyến khích là bao nhiêu?",
+          "expected_chunk_ids": [
+            "edu-scholarship"
+          ],
+          "expected_source": "chinh-sach-hoc-bong.pdf",
+          "expected_page": 7,
+          "retrieved_ids": [
+            "edu-scholarship",
+            "edu-tuition",
+            "edu-admissions",
+            "maintenance-hydraulic",
+            "rag-citation"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 22.86099991761148,
+          "retrieved": [
+            {
+              "id": "edu-scholarship",
+              "source": "chinh-sach-hoc-bong.pdf",
+              "page": 7
+            },
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8
+            }
+          ]
+        },
+        {
+          "question_id": "q-library",
+          "question": "Thư viện đóng cửa lúc mấy giờ vào thứ Bảy?",
+          "expected_chunk_ids": [
+            "edu-library"
+          ],
+          "expected_source": "noi-quy-thu-vien.pdf",
+          "expected_page": 2,
+          "retrieved_ids": [
+            "edu-library",
+            "hr-leave",
+            "maintenance-battery",
+            "edu-admissions",
+            "contract-warranty"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 20.856200018897653,
+          "retrieved": [
+            {
+              "id": "edu-library",
+              "source": "noi-quy-thu-vien.pdf",
+              "page": 2
+            },
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19
+            }
+          ]
+        },
+        {
+          "question_id": "q-password",
+          "question": "Liên kết xác minh để đặt lại mật khẩu có hiệu lực bao lâu?",
+          "expected_chunk_ids": [
+            "it-password"
+          ],
+          "expected_source": "so-tay-cong-nghe.pdf",
+          "expected_page": 4,
+          "retrieved_ids": [
+            "it-password",
+            "it-2fa",
+            "contract-warranty",
+            "maintenance-battery",
+            "hr-remote"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 22.433899925090373,
+          "retrieved": [
+            {
+              "id": "it-password",
+              "source": "so-tay-cong-nghe.pdf",
+              "page": 4
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15
+            }
+          ]
+        },
+        {
+          "question_id": "q-backup",
+          "question": "Bản sao lưu cơ sở dữ liệu được giữ lại trong bao nhiêu ngày?",
+          "expected_chunk_ids": [
+            "it-backup"
+          ],
+          "expected_source": "quy-trinh-sao-luu.pdf",
+          "expected_page": 6,
+          "retrieved_ids": [
+            "it-backup",
+            "hr-probation",
+            "maintenance-battery",
+            "hr-remote",
+            "safety-firstaid"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 22.73800002876669,
+          "retrieved": [
+            {
+              "id": "it-backup",
+              "source": "quy-trinh-sao-luu.pdf",
+              "page": 6
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6
+            }
+          ]
+        },
+        {
+          "question_id": "q-2fa",
+          "question": "Những tài khoản nào bắt buộc phải bật xác thực hai yếu tố?",
+          "expected_chunk_ids": [
+            "it-2fa"
+          ],
+          "expected_source": "chinh-sach-an-toan-thong-tin.pdf",
+          "expected_page": 9,
+          "retrieved_ids": [
+            "it-2fa",
+            "rag-citation",
+            "safety-firstaid",
+            "edu-admissions",
+            "edu-tuition"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 22.351099993102252,
+          "retrieved": [
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3
+            },
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5
+            }
+          ]
+        },
+        {
+          "question_id": "q-api",
+          "question": "Máy chủ trả mã HTTP nào khi khóa API vượt giới hạn yêu cầu?",
+          "expected_chunk_ids": [
+            "it-api"
+          ],
+          "expected_source": "tai-lieu-api.pdf",
+          "expected_page": 11,
+          "retrieved_ids": [
+            "it-api",
+            "it-password",
+            "edu-admissions",
+            "it-2fa",
+            "safety-firstaid"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 22.152400109916925,
+          "retrieved": [
+            {
+              "id": "it-api",
+              "source": "tai-lieu-api.pdf",
+              "page": 11
+            },
+            {
+              "id": "it-password",
+              "source": "so-tay-cong-nghe.pdf",
+              "page": 4
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6
+            }
+          ]
+        },
+        {
+          "question_id": "q-leave",
+          "question": "Đơn nghỉ phép thông thường cần gửi trước mấy ngày làm việc?",
+          "expected_chunk_ids": [
+            "hr-leave"
+          ],
+          "expected_source": "so-tay-nhan-su.pdf",
+          "expected_page": 12,
+          "retrieved_ids": [
+            "hr-leave",
+            "hr-remote",
+            "hr-expense",
+            "edu-admissions",
+            "maintenance-battery"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 20.11120005045086,
+          "retrieved": [
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15
+            },
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            }
+          ]
+        },
+        {
+          "question_id": "q-remote",
+          "question": "Mỗi tuần nhân viên được làm việc từ xa tối đa bao nhiêu ngày?",
+          "expected_chunk_ids": [
+            "hr-remote"
+          ],
+          "expected_source": "so-tay-nhan-su.pdf",
+          "expected_page": 15,
+          "retrieved_ids": [
+            "hr-remote",
+            "hr-leave",
+            "maintenance-oil",
+            "hr-expense",
+            "safety-ppe"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 22.62389997486025,
+          "retrieved": [
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15
+            },
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14
+            },
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8
+            },
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2
+            }
+          ]
+        },
+        {
+          "question_id": "q-expense",
+          "question": "Hồ sơ hoàn trả công tác phí phải nộp trong thời hạn nào?",
+          "expected_chunk_ids": [
+            "hr-expense"
+          ],
+          "expected_source": "quy-che-tai-chinh.pdf",
+          "expected_page": 8,
+          "retrieved_ids": [
+            "hr-expense",
+            "maintenance-battery",
+            "edu-admissions",
+            "it-2fa",
+            "edu-tuition"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 21.796599961817265,
+          "retrieved": [
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9
+            },
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5
+            }
+          ]
+        },
+        {
+          "question_id": "q-probation",
+          "question": "Thời gian thử việc tiêu chuẩn kéo dài bao lâu?",
+          "expected_chunk_ids": [
+            "hr-probation"
+          ],
+          "expected_source": "so-tay-nhan-su.pdf",
+          "expected_page": 18,
+          "retrieved_ids": [
+            "hr-probation",
+            "contract-warranty",
+            "maintenance-battery",
+            "hr-remote",
+            "maintenance-oil"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 20.73069999460131,
+          "retrieved": [
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14
+            }
+          ]
+        },
+        {
+          "question_id": "q-fire",
+          "question": "Khi báo cháy phải tập trung ở đâu và có được dùng thang máy không?",
+          "expected_chunk_ids": [
+            "safety-fire"
+          ],
+          "expected_source": "huong-dan-an-toan.pdf",
+          "expected_page": 3,
+          "retrieved_ids": [
+            "safety-fire",
+            "safety-firstaid",
+            "maintenance-battery",
+            "hr-leave",
+            "it-2fa"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 22.284500068053603,
+          "retrieved": [
+            {
+              "id": "safety-fire",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 3
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9
+            }
+          ]
+        },
+        {
+          "question_id": "q-firstaid",
+          "question": "Tủ sơ cứu nằm ở vị trí nào?",
+          "expected_chunk_ids": [
+            "safety-firstaid"
+          ],
+          "expected_source": "huong-dan-an-toan.pdf",
+          "expected_page": 6,
+          "retrieved_ids": [
+            "safety-firstaid",
+            "it-2fa",
+            "rag-citation",
+            "environment-waste",
+            "safety-fire"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 19.674499984830618,
+          "retrieved": [
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8
+            },
+            {
+              "id": "environment-waste",
+              "source": "huong-dan-phan-loai-rac.pdf",
+              "page": 4
+            },
+            {
+              "id": "safety-fire",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 3
+            }
+          ]
+        },
+        {
+          "question_id": "q-ppe",
+          "question": "Người vào xưởng phải sử dụng những trang bị bảo hộ nào?",
+          "expected_chunk_ids": [
+            "safety-ppe"
+          ],
+          "expected_source": "noi-quy-nha-xuong.pdf",
+          "expected_page": 2,
+          "retrieved_ids": [
+            "safety-firstaid",
+            "it-2fa",
+            "safety-ppe",
+            "maintenance-battery",
+            "contract-warranty"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 3,
+          "latency_ms": 23.37399998214096,
+          "retrieved": [
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9
+            },
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19
+            }
+          ]
+        },
+        {
+          "question_id": "q-oil",
+          "question": "Sau bao nhiêu giờ vận hành thì thay dầu động cơ máy xúc?",
+          "expected_chunk_ids": [
+            "maintenance-oil"
+          ],
+          "expected_source": "bao-tri-may-xuc.pdf",
+          "expected_page": 14,
+          "retrieved_ids": [
+            "maintenance-oil",
+            "maintenance-battery",
+            "maintenance-hydraulic",
+            "contract-warranty",
+            "safety-ppe"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 29.510999913327396,
+          "retrieved": [
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19
+            },
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2
+            }
+          ]
+        },
+        {
+          "question_id": "q-hydraulic",
+          "question": "Khoảng áp suất tiêu chuẩn của hệ thống thủy lực là bao nhiêu?",
+          "expected_chunk_ids": [
+            "maintenance-hydraulic"
+          ],
+          "expected_source": "bao-tri-may-xuc.pdf",
+          "expected_page": 21,
+          "retrieved_ids": [
+            "maintenance-hydraulic",
+            "maintenance-battery",
+            "agri-water",
+            "rag-citation",
+            "safety-firstaid"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 27.933500008657575,
+          "retrieved": [
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6
+            }
+          ]
+        },
+        {
+          "question_id": "q-battery",
+          "question": "Ắc quy lưu kho cần được sạc bổ sung với chu kỳ nào?",
+          "expected_chunk_ids": [
+            "maintenance-battery"
+          ],
+          "expected_source": "huong-dan-ac-quy.pdf",
+          "expected_page": 5,
+          "retrieved_ids": [
+            "maintenance-battery",
+            "safety-firstaid",
+            "rag-citation",
+            "maintenance-oil",
+            "it-2fa"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 26.520099956542253,
+          "retrieved": [
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9
+            }
+          ]
+        },
+        {
+          "question_id": "q-water",
+          "question": "Độ ẩm đất mục tiêu khi tưới cà chua nhà kính là bao nhiêu?",
+          "expected_chunk_ids": [
+            "agri-water"
+          ],
+          "expected_source": "ky-thuat-nha-kinh.pdf",
+          "expected_page": 10,
+          "retrieved_ids": [
+            "agri-water",
+            "agri-coffee",
+            "maintenance-battery",
+            "maintenance-hydraulic",
+            "agri-rice"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 24.961499962955713,
+          "retrieved": [
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21
+            },
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13
+            }
+          ]
+        },
+        {
+          "question_id": "q-rice",
+          "question": "Lúa được bón thúc lần đầu vào thời điểm nào sau khi cấy?",
+          "expected_chunk_ids": [
+            "agri-rice"
+          ],
+          "expected_source": "ky-thuat-trong-lua.pdf",
+          "expected_page": 13,
+          "retrieved_ids": [
+            "agri-rice",
+            "agri-water",
+            "agri-coffee",
+            "maintenance-battery",
+            "rag-citation"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.630299954675138,
+          "retrieved": [
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8
+            }
+          ]
+        },
+        {
+          "question_id": "q-coffee",
+          "question": "Tỷ lệ quả cà phê chín tối thiểu để bắt đầu thu hoạch là bao nhiêu?",
+          "expected_chunk_ids": [
+            "agri-coffee"
+          ],
+          "expected_source": "quy-trinh-ca-phe.pdf",
+          "expected_page": 16,
+          "retrieved_ids": [
+            "agri-coffee",
+            "agri-water",
+            "agri-rice",
+            "maintenance-battery",
+            "maintenance-hydraulic"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 27.28839998599142,
+          "retrieved": [
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10
+            },
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21
+            }
+          ]
+        },
+        {
+          "question_id": "q-waste",
+          "question": "Chất thải nguy hại phải được bỏ vào thùng màu gì?",
+          "expected_chunk_ids": [
+            "environment-waste"
+          ],
+          "expected_source": "huong-dan-phan-loai-rac.pdf",
+          "expected_page": 4,
+          "retrieved_ids": [
+            "environment-waste",
+            "agri-water",
+            "maintenance-battery",
+            "safety-firstaid",
+            "agri-coffee"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 19.67439998406917,
+          "retrieved": [
+            {
+              "id": "environment-waste",
+              "source": "huong-dan-phan-loai-rac.pdf",
+              "page": 4
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16
+            }
+          ]
+        },
+        {
+          "question_id": "q-warranty",
+          "question": "Thời hạn bảo hành thiết bị được tính từ ngày nghiệm thu là bao lâu?",
+          "expected_chunk_ids": [
+            "contract-warranty"
+          ],
+          "expected_source": "dieu-khoan-hop-dong.pdf",
+          "expected_page": 19,
+          "retrieved_ids": [
+            "contract-warranty",
+            "maintenance-battery",
+            "hr-probation",
+            "maintenance-oil",
+            "it-backup"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 22.952199913561344,
+          "retrieved": [
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14
+            },
+            {
+              "id": "it-backup",
+              "source": "quy-trinh-sao-luu.pdf",
+              "page": 6
+            }
+          ]
+        },
+        {
+          "question_id": "q-citation",
+          "question": "Câu trả lời lấy từ PDF phải trình bày trích dẫn theo quy tắc nào?",
+          "expected_chunk_ids": [
+            "rag-citation"
+          ],
+          "expected_source": "quy-tac-tro-ly-rag.pdf",
+          "expected_page": 8,
+          "retrieved_ids": [
+            "rag-citation",
+            "safety-firstaid",
+            "it-2fa",
+            "maintenance-hydraulic",
+            "agri-coffee"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 22.999300039373338,
+          "retrieved": [
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16
+            }
+          ]
+        }
+      ]
+    },
+    "hybrid": {
+      "recall_at_k": 1.0,
+      "mrr": 0.9791666666666666,
+      "mean_latency_ms": 24.743824998343673,
+      "p95_latency_ms": 30.296700075268745,
+      "hit_count": 24,
+      "question_count": 24,
+      "queries": [
+        {
+          "question_id": "q-admissions",
+          "question": "Hạn cuối nộp hồ sơ tuyển sinh trực tuyến là khi nào?",
+          "expected_chunk_ids": [
+            "edu-admissions"
+          ],
+          "expected_source": "quy-che-tuyen-sinh.pdf",
+          "expected_page": 3,
+          "retrieved_ids": [
+            "edu-admissions",
+            "hr-remote",
+            "hr-probation",
+            "edu-tuition",
+            "contract-warranty"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.520599934272468,
+          "retrieved": [
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 1.0
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 0.5016147724400414
+            },
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-tuition",
+          "question": "Sinh viên có thể đóng học phí bằng những cách nào?",
+          "expected_chunk_ids": [
+            "edu-tuition"
+          ],
+          "expected_source": "huong-dan-hoc-phi.pdf",
+          "expected_page": 5,
+          "retrieved_ids": [
+            "edu-tuition",
+            "edu-scholarship",
+            "edu-admissions",
+            "rag-citation",
+            "hr-expense"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 21.694399998523295,
+          "retrieved": [
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5,
+              "score": 1.0
+            },
+            {
+              "id": "edu-scholarship",
+              "source": "chinh-sach-hoc-bong.pdf",
+              "page": 7,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 0.42
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-scholarship",
+          "question": "Điểm trung bình tối thiểu để nhận học bổng khuyến khích là bao nhiêu?",
+          "expected_chunk_ids": [
+            "edu-scholarship"
+          ],
+          "expected_source": "chinh-sach-hoc-bong.pdf",
+          "expected_page": 7,
+          "retrieved_ids": [
+            "edu-scholarship",
+            "edu-tuition",
+            "edu-admissions",
+            "maintenance-hydraulic",
+            "rag-citation"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.605299997143447,
+          "retrieved": [
+            {
+              "id": "edu-scholarship",
+              "source": "chinh-sach-hoc-bong.pdf",
+              "page": 7,
+              "score": 1.0
+            },
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 0.42
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-library",
+          "question": "Thư viện đóng cửa lúc mấy giờ vào thứ Bảy?",
+          "expected_chunk_ids": [
+            "edu-library"
+          ],
+          "expected_source": "noi-quy-thu-vien.pdf",
+          "expected_page": 2,
+          "retrieved_ids": [
+            "edu-library",
+            "hr-leave",
+            "maintenance-battery",
+            "edu-admissions",
+            "contract-warranty"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 21.53200004249811,
+          "retrieved": [
+            {
+              "id": "edu-library",
+              "source": "noi-quy-thu-vien.pdf",
+              "page": 2,
+              "score": 1.0
+            },
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.42
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-password",
+          "question": "Liên kết xác minh để đặt lại mật khẩu có hiệu lực bao lâu?",
+          "expected_chunk_ids": [
+            "it-password"
+          ],
+          "expected_source": "so-tay-cong-nghe.pdf",
+          "expected_page": 4,
+          "retrieved_ids": [
+            "it-password",
+            "it-2fa",
+            "contract-warranty",
+            "maintenance-battery",
+            "hr-remote"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.971999995410442,
+          "retrieved": [
+            {
+              "id": "it-password",
+              "source": "so-tay-cong-nghe.pdf",
+              "page": 4,
+              "score": 1.0
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19,
+              "score": 0.42
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 0.16603730599880936
+            }
+          ]
+        },
+        {
+          "question_id": "q-backup",
+          "question": "Bản sao lưu cơ sở dữ liệu được giữ lại trong bao nhiêu ngày?",
+          "expected_chunk_ids": [
+            "it-backup"
+          ],
+          "expected_source": "quy-trinh-sao-luu.pdf",
+          "expected_page": 6,
+          "retrieved_ids": [
+            "it-backup",
+            "hr-probation",
+            "maintenance-battery",
+            "hr-remote",
+            "safety-firstaid"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.58260005712509,
+          "retrieved": [
+            {
+              "id": "it-backup",
+              "source": "quy-trinh-sao-luu.pdf",
+              "page": 6,
+              "score": 1.0
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 0.617371464977633
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.42
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 0.33100680891237566
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-2fa",
+          "question": "Những tài khoản nào bắt buộc phải bật xác thực hai yếu tố?",
+          "expected_chunk_ids": [
+            "it-2fa"
+          ],
+          "expected_source": "chinh-sach-an-toan-thong-tin.pdf",
+          "expected_page": 9,
+          "retrieved_ids": [
+            "it-2fa",
+            "rag-citation",
+            "safety-firstaid",
+            "edu-admissions",
+            "edu-tuition"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.648299975320697,
+          "retrieved": [
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 1.0
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 0.42
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5,
+              "score": 0.14746479324660852
+            }
+          ]
+        },
+        {
+          "question_id": "q-api",
+          "question": "Máy chủ trả mã HTTP nào khi khóa API vượt giới hạn yêu cầu?",
+          "expected_chunk_ids": [
+            "it-api"
+          ],
+          "expected_source": "tai-lieu-api.pdf",
+          "expected_page": 11,
+          "retrieved_ids": [
+            "it-api",
+            "it-password",
+            "edu-admissions",
+            "it-2fa",
+            "safety-firstaid"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.642299929633737,
+          "retrieved": [
+            {
+              "id": "it-api",
+              "source": "tai-lieu-api.pdf",
+              "page": 11,
+              "score": 1.0
+            },
+            {
+              "id": "it-password",
+              "source": "so-tay-cong-nghe.pdf",
+              "page": 4,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 0.42
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-leave",
+          "question": "Đơn nghỉ phép thông thường cần gửi trước mấy ngày làm việc?",
+          "expected_chunk_ids": [
+            "hr-leave"
+          ],
+          "expected_source": "so-tay-nhan-su.pdf",
+          "expected_page": 12,
+          "retrieved_ids": [
+            "hr-leave",
+            "hr-remote",
+            "hr-expense",
+            "edu-admissions",
+            "maintenance-battery"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 21.989400032907724,
+          "retrieved": [
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12,
+              "score": 1.0
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8,
+              "score": 0.49810423106824253
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 0.36228653188586923
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.22283631367979842
+            }
+          ]
+        },
+        {
+          "question_id": "q-remote",
+          "question": "Mỗi tuần nhân viên được làm việc từ xa tối đa bao nhiêu ngày?",
+          "expected_chunk_ids": [
+            "hr-remote"
+          ],
+          "expected_source": "so-tay-nhan-su.pdf",
+          "expected_page": 15,
+          "retrieved_ids": [
+            "hr-remote",
+            "hr-leave",
+            "maintenance-oil",
+            "hr-expense",
+            "safety-ppe"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.924400098621845,
+          "retrieved": [
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 1.0
+            },
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12,
+              "score": 0.6486075611246593
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14,
+              "score": 0.4942388145572713
+            },
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-expense",
+          "question": "Hồ sơ hoàn trả công tác phí phải nộp trong thời hạn nào?",
+          "expected_chunk_ids": [
+            "hr-expense"
+          ],
+          "expected_source": "quy-che-tai-chinh.pdf",
+          "expected_page": 8,
+          "retrieved_ids": [
+            "hr-expense",
+            "edu-admissions",
+            "maintenance-battery",
+            "it-2fa",
+            "edu-tuition"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 30.296700075268745,
+          "retrieved": [
+            {
+              "id": "hr-expense",
+              "source": "quy-che-tai-chinh.pdf",
+              "page": 8,
+              "score": 1.0
+            },
+            {
+              "id": "edu-admissions",
+              "source": "quy-che-tuyen-sinh.pdf",
+              "page": 3,
+              "score": 0.5946325673333637
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "edu-tuition",
+              "source": "huong-dan-hoc-phi.pdf",
+              "page": 5,
+              "score": 0.1569390997676483
+            }
+          ]
+        },
+        {
+          "question_id": "q-probation",
+          "question": "Thời gian thử việc tiêu chuẩn kéo dài bao lâu?",
+          "expected_chunk_ids": [
+            "hr-probation"
+          ],
+          "expected_source": "so-tay-nhan-su.pdf",
+          "expected_page": 18,
+          "retrieved_ids": [
+            "hr-probation",
+            "contract-warranty",
+            "maintenance-battery",
+            "hr-remote",
+            "maintenance-oil"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 24.327600025571883,
+          "retrieved": [
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 1.0
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.42
+            },
+            {
+              "id": "hr-remote",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 15,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-fire",
+          "question": "Khi báo cháy phải tập trung ở đâu và có được dùng thang máy không?",
+          "expected_chunk_ids": [
+            "safety-fire"
+          ],
+          "expected_source": "huong-dan-an-toan.pdf",
+          "expected_page": 3,
+          "retrieved_ids": [
+            "safety-fire",
+            "safety-firstaid",
+            "maintenance-battery",
+            "hr-leave",
+            "it-2fa"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 26.968599995598197,
+          "retrieved": [
+            {
+              "id": "safety-fire",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 3,
+              "score": 1.0
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.42
+            },
+            {
+              "id": "hr-leave",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 12,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-firstaid",
+          "question": "Tủ sơ cứu nằm ở vị trí nào?",
+          "expected_chunk_ids": [
+            "safety-firstaid"
+          ],
+          "expected_source": "huong-dan-an-toan.pdf",
+          "expected_page": 6,
+          "retrieved_ids": [
+            "safety-firstaid",
+            "it-2fa",
+            "rag-citation",
+            "environment-waste",
+            "safety-fire"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 28.721599956043065,
+          "retrieved": [
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 1.0
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 0.7131817735441421
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8,
+              "score": 0.42
+            },
+            {
+              "id": "environment-waste",
+              "source": "huong-dan-phan-loai-rac.pdf",
+              "page": 4,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "safety-fire",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 3,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-ppe",
+          "question": "Người vào xưởng phải sử dụng những trang bị bảo hộ nào?",
+          "expected_chunk_ids": [
+            "safety-ppe"
+          ],
+          "expected_source": "noi-quy-nha-xuong.pdf",
+          "expected_page": 2,
+          "retrieved_ids": [
+            "safety-firstaid",
+            "safety-ppe",
+            "it-2fa",
+            "maintenance-battery",
+            "safety-fire"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 2,
+          "latency_ms": 32.477499917149544,
+          "retrieved": [
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 0.8001286916122141
+            },
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2,
+              "score": 0.72
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "safety-fire",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 3,
+              "score": 0.16005203393505993
+            }
+          ]
+        },
+        {
+          "question_id": "q-oil",
+          "question": "Sau bao nhiêu giờ vận hành thì thay dầu động cơ máy xúc?",
+          "expected_chunk_ids": [
+            "maintenance-oil"
+          ],
+          "expected_source": "bao-tri-may-xuc.pdf",
+          "expected_page": 14,
+          "retrieved_ids": [
+            "maintenance-oil",
+            "maintenance-battery",
+            "maintenance-hydraulic",
+            "contract-warranty",
+            "safety-ppe"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.79150001797825,
+          "retrieved": [
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14,
+              "score": 1.0
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 0.46496187246891196
+            },
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "safety-ppe",
+              "source": "noi-quy-nha-xuong.pdf",
+              "page": 2,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-hydraulic",
+          "question": "Khoảng áp suất tiêu chuẩn của hệ thống thủy lực là bao nhiêu?",
+          "expected_chunk_ids": [
+            "maintenance-hydraulic"
+          ],
+          "expected_source": "bao-tri-may-xuc.pdf",
+          "expected_page": 21,
+          "retrieved_ids": [
+            "maintenance-hydraulic",
+            "maintenance-battery",
+            "agri-water",
+            "rag-citation",
+            "safety-firstaid"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 23.664699983783066,
+          "retrieved": [
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 1.0
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10,
+              "score": 0.47060121489658907
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-battery",
+          "question": "Ắc quy lưu kho cần được sạc bổ sung với chu kỳ nào?",
+          "expected_chunk_ids": [
+            "maintenance-battery"
+          ],
+          "expected_source": "huong-dan-ac-quy.pdf",
+          "expected_page": 5,
+          "retrieved_ids": [
+            "maintenance-battery",
+            "safety-firstaid",
+            "rag-citation",
+            "maintenance-oil",
+            "it-2fa"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 24.284399929456413,
+          "retrieved": [
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 1.0
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 0.5763282849338243
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8,
+              "score": 0.42
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-water",
+          "question": "Độ ẩm đất mục tiêu khi tưới cà chua nhà kính là bao nhiêu?",
+          "expected_chunk_ids": [
+            "agri-water"
+          ],
+          "expected_source": "ky-thuat-nha-kinh.pdf",
+          "expected_page": 10,
+          "retrieved_ids": [
+            "agri-water",
+            "agri-coffee",
+            "maintenance-battery",
+            "maintenance-hydraulic",
+            "agri-rice"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 24.823800078593194,
+          "retrieved": [
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10,
+              "score": 1.0
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 0.5813489962450401
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.42
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13,
+              "score": 0.160482140579473
+            }
+          ]
+        },
+        {
+          "question_id": "q-rice",
+          "question": "Lúa được bón thúc lần đầu vào thời điểm nào sau khi cấy?",
+          "expected_chunk_ids": [
+            "agri-rice"
+          ],
+          "expected_source": "ky-thuat-trong-lua.pdf",
+          "expected_page": 13,
+          "retrieved_ids": [
+            "agri-rice",
+            "agri-water",
+            "agri-coffee",
+            "maintenance-battery",
+            "rag-citation"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 26.77840006072074,
+          "retrieved": [
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13,
+              "score": 1.0
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 0.4617108788375057
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-coffee",
+          "question": "Tỷ lệ quả cà phê chín tối thiểu để bắt đầu thu hoạch là bao nhiêu?",
+          "expected_chunk_ids": [
+            "agri-coffee"
+          ],
+          "expected_source": "quy-trinh-ca-phe.pdf",
+          "expected_page": 16,
+          "retrieved_ids": [
+            "agri-coffee",
+            "agri-water",
+            "agri-rice",
+            "maintenance-battery",
+            "maintenance-hydraulic"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 25.041299988515675,
+          "retrieved": [
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 1.0
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "agri-rice",
+              "source": "ky-thuat-trong-lua.pdf",
+              "page": 13,
+              "score": 0.42
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-waste",
+          "question": "Chất thải nguy hại phải được bỏ vào thùng màu gì?",
+          "expected_chunk_ids": [
+            "environment-waste"
+          ],
+          "expected_source": "huong-dan-phan-loai-rac.pdf",
+          "expected_page": 4,
+          "retrieved_ids": [
+            "environment-waste",
+            "agri-water",
+            "maintenance-battery",
+            "safety-firstaid",
+            "agri-coffee"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 22.002299898304045,
+          "retrieved": [
+            {
+              "id": "environment-waste",
+              "source": "huong-dan-phan-loai-rac.pdf",
+              "page": 4,
+              "score": 1.0
+            },
+            {
+              "id": "agri-water",
+              "source": "ky-thuat-nha-kinh.pdf",
+              "page": 10,
+              "score": 0.5932781637429348
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.42
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 0.2993165745355359
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 0.13999999999999996
+            }
+          ]
+        },
+        {
+          "question_id": "q-warranty",
+          "question": "Thời hạn bảo hành thiết bị được tính từ ngày nghiệm thu là bao lâu?",
+          "expected_chunk_ids": [
+            "contract-warranty"
+          ],
+          "expected_source": "dieu-khoan-hop-dong.pdf",
+          "expected_page": 19,
+          "retrieved_ids": [
+            "contract-warranty",
+            "maintenance-battery",
+            "hr-probation",
+            "maintenance-oil",
+            "it-backup"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 25.148099986836314,
+          "retrieved": [
+            {
+              "id": "contract-warranty",
+              "source": "dieu-khoan-hop-dong.pdf",
+              "page": 19,
+              "score": 1.0
+            },
+            {
+              "id": "maintenance-battery",
+              "source": "huong-dan-ac-quy.pdf",
+              "page": 5,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "hr-probation",
+              "source": "so-tay-nhan-su.pdf",
+              "page": 18,
+              "score": 0.5143538020892529
+            },
+            {
+              "id": "maintenance-oil",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 14,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "it-backup",
+              "source": "quy-trinh-sao-luu.pdf",
+              "page": 6,
+              "score": 0.1900323966644312
+            }
+          ]
+        },
+        {
+          "question_id": "q-citation",
+          "question": "Câu trả lời lấy từ PDF phải trình bày trích dẫn theo quy tắc nào?",
+          "expected_chunk_ids": [
+            "rag-citation"
+          ],
+          "expected_source": "quy-tac-tro-ly-rag.pdf",
+          "expected_page": 8,
+          "retrieved_ids": [
+            "rag-citation",
+            "safety-firstaid",
+            "it-2fa",
+            "maintenance-hydraulic",
+            "agri-coffee"
+          ],
+          "recall": 1.0,
+          "first_relevant_rank": 1,
+          "latency_ms": 24.41399998497218,
+          "retrieved": [
+            {
+              "id": "rag-citation",
+              "source": "quy-tac-tro-ly-rag.pdf",
+              "page": 8,
+              "score": 1.0
+            },
+            {
+              "id": "safety-firstaid",
+              "source": "huong-dan-an-toan.pdf",
+              "page": 6,
+              "score": 0.5599999999999999
+            },
+            {
+              "id": "it-2fa",
+              "source": "chinh-sach-an-toan-thong-tin.pdf",
+              "page": 9,
+              "score": 0.42
+            },
+            {
+              "id": "maintenance-hydraulic",
+              "source": "bao-tri-may-xuc.pdf",
+              "page": 21,
+              "score": 0.27999999999999997
+            },
+            {
+              "id": "agri-coffee",
+              "source": "quy-trinh-ca-phe.pdf",
+              "page": 16,
+              "score": 0.13999999999999996
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

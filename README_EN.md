@@ -104,6 +104,7 @@ Main endpoints:
 ├── api_router.py              # FastAPI interface
 ├── llm_provider.py            # SiliconFlow/OpenAI/Gemini API abstraction
 ├── migrations/                # Versioned SQLite schema migrations
+├── benchmarks/                # Labeled dataset, runner, and retrieval baselines
 ├── core/
 │   ├── document_loader.py     # Document extraction
 │   ├── text_splitter.py       # Text chunking
@@ -136,6 +137,22 @@ The current suite covers:
 
 GitHub Actions compiles the Python sources and runs the test suite for every pull request.
 
+## Vietnamese retrieval benchmark
+
+The default dataset contains 24 questions labeled with the expected chunk,
+document, and page. The runner evaluates retrieval without calling an LLM API or
+web search:
+
+```bash
+python -m benchmarks.retrieval_benchmark --methods bm25,faiss,hybrid --top-k 5
+```
+
+Use `--offline` when the embedding model is already cached, add
+`hybrid_rerank` to evaluate the local CrossEncoder, and use
+`--fail-under-recall 0.8` for a CI-friendly quality gate. JSON and Markdown
+reports are written to `benchmarks/results/`; the checked-in baseline is
+[`benchmarks/baselines/v2.3.0.md`](benchmarks/baselines/v2.3.0.md).
+
 ## Configuration
 
 See [`example.env`](example.env) for the complete example. Common variables include:
@@ -153,6 +170,8 @@ See [`example.env`](example.env) for the complete example. Common variables incl
 | `LLM_PROVIDER` | `siliconflow`, `openai`, or `gemini` |
 | `SERPAPI_KEY` | Optional web-search credential |
 | `RERANK_METHOD` | `cross_encoder` or `llm` |
+| `EMBED_MODEL_NAME` | Embedding model used by FAISS and the benchmark |
+| `RERANK_MODEL_NAME` | Local CrossEncoder model used for reranking |
 | `DATABASE_PATH` | SQLite file path; defaults to `data/learnbot.db` |
 | `INDEX_DIRECTORY` | FAISS/BM25 snapshot directory; defaults to `data/indexes` |
 
@@ -163,6 +182,7 @@ See [`example.env`](example.env) for the complete example. Common variables incl
 - Inactive snapshots are retained for manual recovery, so the index directory can grow after many ingestion runs.
 - Embedding and reranking models may be downloaded on first use.
 - Cloud model and web-search requests send the relevant query to third-party services; review your data boundary first.
+- The initial benchmark is a small regression dataset and is not representative of every production document domain.
 
 ## Contributing
 

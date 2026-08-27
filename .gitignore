@@ -24,6 +24,7 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+benchmarks/results/
 
 # Local browser verification artifacts
 .playwright-cli/

@@ -23,3 +23,8 @@ def test_database_path_is_resolved_from_project_root():
     expected = config.PROJECT_ROOT / "custom-data" / "learnbot.db"
 
     assert config.resolve_database_path("custom-data/learnbot.db") == expected
+
+
+def test_retrieval_model_names_are_centralized_in_config():
+    assert config.EMBED_MODEL_NAME.startswith("sentence-transformers/")
+    assert config.RERANK_MODEL_NAME.startswith("cross-encoder/")

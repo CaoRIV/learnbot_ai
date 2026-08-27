@@ -24,6 +24,7 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 - **Trích dẫn nguồn và số trang**: câu trả lời từ PDF sử dụng định dạng `[Tên tài liệu, trang X]`.
 - **Truy xuất kết hợp**: kết hợp tìm kiếm vector bằng FAISS và tìm kiếm từ khóa bằng BM25.
 - **Chỉ mục bền vững**: tự lưu và khôi phục FAISS/BM25 khi khởi động, không embedding lại các chunk cũ khi thêm tài liệu.
+- **Đo chất lượng retrieval**: benchmark tiếng Việt có nhãn, đo Recall@5, MRR và độ trễ mà không gọi LLM API.
 - **Tối ưu cho tiếng Việt**: BM25 tách từ bằng `underthesea` thay vì tokenizer tiếng Trung.
 - **Xếp hạng lại kết quả**: hỗ trợ CrossEncoder hoặc chấm điểm liên quan qua LLM API.
 - **Nhiều dịch vụ LLM**: chọn SiliconFlow, OpenAI hoặc Gemini qua biến `LLM_PROVIDER`.
@@ -171,6 +172,7 @@ Các endpoint chính:
 ├── design-system/             # Quy chuẩn UI/UX và page override
 ├── llm_provider.py            # Lớp kết nối SiliconFlow/OpenAI/Gemini
 ├── migrations/                # Migration schema SQLite có phiên bản
+├── benchmarks/                # Dataset, lệnh benchmark và baseline retrieval
 ├── core/
 │   ├── document_loader.py     # Trích xuất nội dung và số trang
 │   ├── text_splitter.py       # Chia văn bản thành các phân đoạn
@@ -219,8 +221,32 @@ Bộ test bao gồm:
 - lưu/khôi phục snapshot, kiểm tra checksum/model và rollback khi lỗi;
 - prompt giới hạn câu trả lời trong nội dung tài liệu;
 - trích dẫn số trang trong câu trả lời API.
+- dataset benchmark, metrics retrieval và bảo toàn metadata nguồn/trang.
 
 GitHub Actions sẽ biên dịch mã Python và chạy test cho mỗi Pull Request.
+
+## Benchmark retrieval tiếng Việt
+
+Dataset mặc định có 24 câu hỏi với chunk, tài liệu và trang đúng. Benchmark xây
+index riêng, không gọi LLM API hoặc tìm kiếm web.
+
+Chạy BM25, FAISS và hybrid retrieval:
+
+```powershell
+python -m benchmarks.retrieval_benchmark --methods bm25,faiss,hybrid --top-k 5
+```
+
+Nếu model embedding đã có trong cache, có thể chặn hoàn toàn truy cập mạng:
+
+```powershell
+python -m benchmarks.retrieval_benchmark --methods bm25,faiss,hybrid --top-k 5 --offline
+```
+
+Thêm `hybrid_rerank` vào `--methods` để đo CrossEncoder cục bộ. Dùng
+`--fail-under-recall 0.8` nếu muốn lệnh trả mã lỗi khi một phương pháp không đạt
+ngưỡng. Báo cáo JSON chi tiết và Markdown tóm tắt được ghi vào
+`benchmarks/results/`. Baseline hiện tại nằm tại
+[`benchmarks/baselines/v2.3.0.md`](benchmarks/baselines/v2.3.0.md).
 
 ## Biến môi trường
 
@@ -239,6 +265,8 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 | `GEMINI_MODEL_NAME` | ID mô hình Gemini |
 | `SERPAPI_KEY` | API key tùy chọn cho tìm kiếm web |
 | `RERANK_METHOD` | Chọn `cross_encoder` hoặc `llm` |
+| `EMBED_MODEL_NAME` | Model embedding dùng cho FAISS và benchmark |
+| `RERANK_MODEL_NAME` | Model CrossEncoder dùng để xếp hạng lại |
 | `DATABASE_PATH` | Đường dẫn file SQLite, mặc định `data/learnbot.db` |
 | `INDEX_DIRECTORY` | Thư mục snapshot FAISS/BM25, mặc định `data/indexes` |
 
@@ -252,6 +280,7 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 - Mô hình embedding hoặc reranker cục bộ có thể cần tải dữ liệu trong lần chạy đầu tiên.
 - Câu hỏi gửi tới LLM và dịch vụ tìm kiếm web có thể được chuyển cho bên thứ ba; cần xem xét phạm vi dữ liệu trước khi sử dụng tài liệu nhạy cảm.
 - Máy có 8 GB RAM nên xử lý từng nhóm tài liệu nhỏ để tránh sử dụng quá nhiều bộ nhớ.
+- Dataset benchmark ban đầu có quy mô nhỏ và mang tính kiểm tra hồi quy; chưa đại diện đầy đủ cho mọi miền tài liệu thực tế.
 
 ## Đóng góp
 

@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 import math
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 
 def _normalize_page(value: Any) -> Optional[int]:
@@ -87,3 +87,21 @@ class RetrievedEvidence:
     content: str
     citation: Citation
     metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+def filter_relevant_evidence(
+    evidence: Iterable[RetrievedEvidence],
+    min_score: float,
+) -> List[RetrievedEvidence]:
+    """Chỉ giữ bằng chứng đạt ngưỡng; cho phép nguồn web chưa có điểm."""
+    threshold = float(min_score)
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError("Ngưỡng liên quan phải nằm trong khoảng từ 0 đến 1")
+
+    relevant = []
+    for item in evidence:
+        score = item.citation.score
+        is_unscored_web = item.citation.source_type == "web" and score is None
+        if is_unscored_web or (score is not None and score >= threshold):
+            relevant.append(item)
+    return relevant

@@ -4,7 +4,8 @@ from dataclasses import dataclass
 import logging
 from typing import Tuple
 
-from core.evidence import Citation
+from config import MIN_RELEVANCE_SCORE
+from core.evidence import Citation, filter_relevant_evidence
 from core.retriever import retrieve_evidence
 from core.vector_store import vector_store
 from features.conflict_detector import detect_conflicts
@@ -134,10 +135,20 @@ def query_answer_result(
         if progress:
             progress(0.3, desc="Đang truy xuất thông tin...")
 
-        evidence = retrieve_evidence(
+        retrieved_evidence = retrieve_evidence(
             initial_query=question,
             enable_web_search=enable_web_search,
             model_choice=model_choice,
+        )
+        evidence = filter_relevant_evidence(
+            retrieved_evidence,
+            min_score=MIN_RELEVANCE_SCORE,
+        )
+        logging.info(
+            "Đã giữ %s/%s bằng chứng với ngưỡng liên quan %.2f",
+            len(evidence),
+            len(retrieved_evidence),
+            MIN_RELEVANCE_SCORE,
         )
         all_contexts = [item.content for item in evidence]
         all_doc_ids = [item.citation.chunk_id for item in evidence]

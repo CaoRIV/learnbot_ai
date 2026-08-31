@@ -30,6 +30,7 @@ export type SystemStatus = {
   vector_store_ready: boolean;
   total_chunks: number;
   index_snapshot_id?: string | null;
+  min_relevance_score: number;
   version: string;
 };
 
@@ -52,6 +53,7 @@ export type AnswerResult = {
     enable_web_search: boolean;
     model: string;
     citation_count: number;
+    min_relevance_score: number;
   };
 };
 

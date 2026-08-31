@@ -17,6 +17,7 @@ from config import (
     GEMINI_API_KEY,
     LLM_PROVIDER,
     MAX_UPLOAD_SIZE_MB,
+    MIN_RELEVANCE_SCORE,
     OPENAI_API_KEY,
     SILICONFLOW_API_KEY,
     is_configured_api_key,
@@ -194,6 +195,7 @@ async def ask_question(req: QuestionRequest):
                 "enable_web_search": req.enable_web_search,
                 "model": req.model_choice or LLM_PROVIDER,
                 "citation_count": len(citations),
+                "min_relevance_score": MIN_RELEVANCE_SCORE,
             }
         }
     except Exception as e:
@@ -213,6 +215,7 @@ async def check_status():
         "vector_store_ready": vector_store.is_ready,
         "total_chunks": vector_store.total_chunks,
         "index_snapshot_id": vector_store.snapshot_id,
+        "min_relevance_score": MIN_RELEVANCE_SCORE,
         "version": __version__
     }
 

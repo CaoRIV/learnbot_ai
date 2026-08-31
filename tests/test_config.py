@@ -28,3 +28,13 @@ def test_database_path_is_resolved_from_project_root():
 def test_retrieval_model_names_are_centralized_in_config():
     assert config.EMBED_MODEL_NAME.startswith("sentence-transformers/")
     assert config.RERANK_MODEL_NAME.startswith("cross-encoder/")
+
+
+def test_min_relevance_score_accepts_only_zero_to_one(caplog):
+    assert config.resolve_min_relevance_score("0.42") == 0.42
+    assert config.resolve_min_relevance_score("0") == 0.0
+    assert config.resolve_min_relevance_score("1") == 1.0
+
+    assert config.resolve_min_relevance_score("khong-hop-le") == 0.35
+    assert config.resolve_min_relevance_score("1.1") == 0.35
+    assert "MIN_RELEVANCE_SCORE" in caplog.text

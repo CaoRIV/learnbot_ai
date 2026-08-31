@@ -22,6 +22,7 @@ def test_status_reports_current_version_without_credentials(monkeypatch):
     assert status["openai_configured"] is False
     assert status["gemini_configured"] is False
     assert status["llm_provider"] == "siliconflow"
+    assert status["min_relevance_score"] == api_router.MIN_RELEVANCE_SCORE
 
 
 def test_ask_endpoint_uses_structured_citations_instead_of_answer_regex(monkeypatch):
@@ -59,6 +60,7 @@ def test_ask_endpoint_uses_structured_citations_instead_of_answer_regex(monkeypa
         {"type": "Tài liệu cục bộ", "source": "huong-dan.pdf", "page": 4}
     ]
     assert response["metadata"]["citation_count"] == 1
+    assert response["metadata"]["min_relevance_score"] == api_router.MIN_RELEVANCE_SCORE
 
 
 def test_openapi_exposes_structured_citation_contract():

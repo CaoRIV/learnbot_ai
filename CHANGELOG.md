@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here.
 
+## [2.4.0] - 2026-08-31
+
+### Added
+
+- Structured retrieval citations with document name, page, chunk ID, rerank score, source type, and optional web URL.
+- A typed `citations` field in the `/api/ask` response while retaining the legacy `sources` field.
+- Tests proving that API citations come from indexed metadata instead of LLM-generated answer text.
+
+### Changed
+
+- The answer pipeline now carries retrieval evidence and scores through generation without changing the legacy string-returning Gradio API.
+- Removed regex-based citation extraction from generated answers.
+
 ## [2.3.0] - 2026-08-27
 
 ### Added

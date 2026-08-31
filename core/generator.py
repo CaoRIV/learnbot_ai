@@ -1,12 +1,23 @@
 """Xây prompt và sinh câu trả lời bằng provider LLM qua API."""
 
+from dataclasses import dataclass
 import logging
+from typing import Tuple
 
-from core.retriever import recursive_retrieval
+from core.evidence import Citation
+from core.retriever import retrieve_evidence
 from core.vector_store import vector_store
 from features.conflict_detector import detect_conflicts
 from features.thinking_chain import process_thinking_content
 from llm_provider import call_llm
+
+
+@dataclass(frozen=True)
+class AnswerResult:
+    """Kết quả hỏi đáp cùng các citation bắt nguồn từ retrieval."""
+
+    answer: str
+    citations: Tuple[Citation, ...] = ()
 
 
 def call_llm_simple(prompt, model_choice=None):
@@ -106,26 +117,31 @@ def _build_context(all_contexts, all_doc_ids, all_metadata, enable_web_search):
     return "\n\n".join(context_parts), sources_for_conflict
 
 
-def query_answer(
+def query_answer_result(
     question,
     enable_web_search=False,
     model_choice=None,
     progress=None,
 ):
-    """Pipeline hỏi đáp: retrieval, tạo context, gọi provider và xử lý kết quả."""
+    """Pipeline hỏi đáp trả về nội dung và citation có cấu trúc."""
     try:
         knowledge_base_exists = vector_store.is_ready
         if not knowledge_base_exists and not enable_web_search:
-            return "⚠️ Kho tri thức đang trống. Vui lòng tải tài liệu lên trước."
+            return AnswerResult(
+                "⚠️ Kho tri thức đang trống. Vui lòng tải tài liệu lên trước."
+            )
 
         if progress:
             progress(0.3, desc="Đang truy xuất thông tin...")
 
-        all_contexts, all_doc_ids, all_metadata = recursive_retrieval(
+        evidence = retrieve_evidence(
             initial_query=question,
             enable_web_search=enable_web_search,
             model_choice=model_choice,
         )
+        all_contexts = [item.content for item in evidence]
+        all_doc_ids = [item.citation.chunk_id for item in evidence]
+        all_metadata = [item.metadata for item in evidence]
         context, sources = _build_context(
             all_contexts,
             all_doc_ids,
@@ -155,10 +171,28 @@ def query_answer(
             temperature=0.7,
             max_tokens=1536,
         )
-        return process_thinking_content(result)
+        return AnswerResult(
+            answer=process_thinking_content(result),
+            citations=tuple(item.citation for item in evidence),
+        )
     except Exception as exc:
         logging.exception("Pipeline hỏi đáp gặp lỗi")
-        return f"Lỗi hệ thống: {exc}"
+        return AnswerResult(f"Lỗi hệ thống: {exc}")
+
+
+def query_answer(
+    question,
+    enable_web_search=False,
+    model_choice=None,
+    progress=None,
+):
+    """Wrapper trả chuỗi để giữ tương thích với Gradio và caller cũ."""
+    return query_answer_result(
+        question,
+        enable_web_search=enable_web_search,
+        model_choice=model_choice,
+        progress=progress,
+    ).answer
 
 
 def stream_answer(

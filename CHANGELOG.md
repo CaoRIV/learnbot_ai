@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here.
 
+## [2.5.0] - 2026-08-31
+
+### Added
+
+- A configurable `MIN_RELEVANCE_SCORE` quality gate for retrieved evidence, defaulting to `0.35` on a 0–1 scale.
+- Relevance-threshold metadata in `/api/status` and `/api/ask` responses.
+- Tests for threshold boundaries, invalid configuration, unscored web evidence, and prompt/citation filtering.
+
+### Changed
+
+- Only local evidence meeting the minimum rerank score is included in the LLM context and structured citations.
+- Unscored web results remain eligible because web search must be explicitly enabled by the user.
+
 ## [2.4.0] - 2026-08-31
 
 ### Added

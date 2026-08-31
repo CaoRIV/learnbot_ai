@@ -26,6 +26,7 @@ Local PDF Chat RAG is an educational and reference implementation for developers
 - **Hybrid retrieval**: combines FAISS dense retrieval with BM25 keyword retrieval.
 - **Persistent indexes**: saves and restores FAISS/BM25 at startup and embeds only newly added chunks.
 - **Structured citations**: returns document, page, chunk ID, and retrieval score from indexed metadata.
+- **Evidence threshold**: only chunks meeting `MIN_RELEVANCE_SCORE` are passed to the LLM and returned as citations.
 - **Optional reranking**: supports a CrossEncoder or model-based relevance scoring.
 - **Multiple API providers**: select SiliconFlow, OpenAI, or Gemini with `LLM_PROVIDER`.
 - **Document support**: PDF, TXT, Markdown, DOCX, XLS/XLSX, and PPTX.
@@ -178,6 +179,7 @@ See [`example.env`](example.env) for the complete example. Common variables incl
 | `RERANK_METHOD` | `cross_encoder` or `llm` |
 | `EMBED_MODEL_NAME` | Embedding model used by FAISS and the benchmark |
 | `RERANK_MODEL_NAME` | Local CrossEncoder model used for reranking |
+| `MIN_RELEVANCE_SCORE` | Minimum 0–1 rerank score for local evidence; defaults to `0.35` |
 | `DATABASE_PATH` | SQLite file path; defaults to `data/learnbot.db` |
 | `INDEX_DIRECTORY` | FAISS/BM25 snapshot directory; defaults to `data/indexes` |
 

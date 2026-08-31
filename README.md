@@ -22,6 +22,7 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 
 - **Hỏi đáp dựa trên tài liệu**: chỉ sử dụng nội dung truy xuất được để trả lời; nói rõ khi tài liệu không có thông tin.
 - **Trích dẫn có cấu trúc**: API trả tên tài liệu, trang, chunk ID và điểm retrieval trực tiếp từ metadata chỉ mục; câu trả lời từ PDF vẫn dùng định dạng `[Tên tài liệu, trang X]`.
+- **Lọc bằng chứng theo độ liên quan**: chỉ các chunk đạt `MIN_RELEVANCE_SCORE` mới được đưa vào context và citation.
 - **Truy xuất kết hợp**: kết hợp tìm kiếm vector bằng FAISS và tìm kiếm từ khóa bằng BM25.
 - **Chỉ mục bền vững**: tự lưu và khôi phục FAISS/BM25 khi khởi động, không embedding lại các chunk cũ khi thêm tài liệu.
 - **Đo chất lượng retrieval**: benchmark tiếng Việt có nhãn, đo Recall@5, MRR và độ trễ mà không gọi LLM API.
@@ -182,7 +183,8 @@ LLM sinh ra mà lấy trực tiếp từ metadata của kết quả retrieval:
   "metadata": {
     "enable_web_search": false,
     "model": "siliconflow",
-    "citation_count": 1
+    "citation_count": 1,
+    "min_relevance_score": 0.35
   }
 }
 ```
@@ -296,6 +298,7 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 | `RERANK_METHOD` | Chọn `cross_encoder` hoặc `llm` |
 | `EMBED_MODEL_NAME` | Model embedding dùng cho FAISS và benchmark |
 | `RERANK_MODEL_NAME` | Model CrossEncoder dùng để xếp hạng lại |
+| `MIN_RELEVANCE_SCORE` | Ngưỡng điểm rerank 0–1 để đưa bằng chứng cục bộ vào context, mặc định `0.35` |
 | `DATABASE_PATH` | Đường dẫn file SQLite, mặc định `data/learnbot.db` |
 | `INDEX_DIRECTORY` | Thư mục snapshot FAISS/BM25, mặc định `data/indexes` |
 
@@ -310,6 +313,7 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 - Câu hỏi gửi tới LLM và dịch vụ tìm kiếm web có thể được chuyển cho bên thứ ba; cần xem xét phạm vi dữ liệu trước khi sử dụng tài liệu nhạy cảm.
 - Máy có 8 GB RAM nên xử lý từng nhóm tài liệu nhỏ để tránh sử dụng quá nhiều bộ nhớ.
 - Dataset benchmark ban đầu có quy mô nhỏ và mang tính kiểm tra hồi quy; chưa đại diện đầy đủ cho mọi miền tài liệu thực tế.
+- Ngưỡng liên quan mặc định là điểm khởi đầu thận trọng; nên hiệu chỉnh bằng benchmark trên tài liệu thực tế. Nguồn web hiện chưa có điểm rerank nên vẫn được giữ khi người dùng chủ động bật tìm kiếm web.
 
 ## Đóng góp
 

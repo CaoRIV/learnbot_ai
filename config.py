@@ -123,6 +123,33 @@ RERANK_TOP_K = 5
 MAX_RETRIEVAL_ITERATIONS = 3
 RERANK_METHOD = os.getenv("RERANK_METHOD", "cross_encoder")
 
+DEFAULT_MIN_RELEVANCE_SCORE = 0.35
+
+
+def resolve_min_relevance_score(value=None):
+    """Đọc ngưỡng liên quan 0–1 và dùng mặc định khi cấu hình sai."""
+    configured_value = (
+        os.getenv("MIN_RELEVANCE_SCORE", str(DEFAULT_MIN_RELEVANCE_SCORE))
+        if value is None
+        else value
+    )
+    try:
+        score = float(configured_value)
+    except (TypeError, ValueError):
+        score = None
+
+    if score is None or not 0.0 <= score <= 1.0:
+        logging.warning(
+            "MIN_RELEVANCE_SCORE=%s không hợp lệ; sử dụng giá trị mặc định %.2f",
+            configured_value,
+            DEFAULT_MIN_RELEVANCE_SCORE,
+        )
+        return DEFAULT_MIN_RELEVANCE_SCORE
+    return score
+
+
+MIN_RELEVANCE_SCORE = resolve_min_relevance_score()
+
 # Giới hạn tài liệu tải lên để tránh chiếm quá nhiều RAM trên máy cấu hình thấp.
 try:
     MAX_UPLOAD_SIZE_MB = max(1, int(os.getenv("MAX_UPLOAD_SIZE_MB", "25")))

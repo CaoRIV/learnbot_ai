@@ -119,10 +119,17 @@ chọn; báo cáo gồm Recall@K, MRR, độ trễ trung bình, P95 và fingerpr
 **Mục tiêu:** Người dùng có thể kiểm tra câu trả lời và hệ thống không suy đoán
 khi không có tài liệu phù hợp.
 
+**Tiến độ:** Hoàn tất Phase 3A. Retrieval đã trả bằng chứng có cấu trúc gồm tên
+tài liệu, trang, chunk ID, điểm xếp hạng, loại nguồn và URL tùy chọn. REST API
+trả trường `citations` từ metadata chỉ mục, đồng thời giữ `sources` cũ để tương
+thích. Phase 3B–3D (ngưỡng liên quan, từ chối khi thiếu bằng chứng và hiển thị
+citation trong UI) chưa triển khai.
+
 **Việc cần làm:**
 
-- Chuẩn hóa citation theo tên tài liệu, trang và chunk ID.
-- Hiển thị citation trong UI và API response.
+- [x] Chuẩn hóa citation theo tên tài liệu, trang, chunk ID và điểm retrieval.
+- [x] Trả citation có cấu trúc trong API response.
+- [ ] Hiển thị citation có cấu trúc trong UI.
 - Thêm ngưỡng liên quan tối thiểu cho context.
 - Nếu không đủ bằng chứng, trả lời rõ: chưa tìm thấy thông tin trong tài liệu.
 - Giữ nội dung retrieved là dữ liệu không tin cậy, không cho phép ghi đè prompt

@@ -25,6 +25,7 @@ Local PDF Chat RAG is an educational and reference implementation for developers
 - **Inspectable pipeline**: core modules follow the order in which a RAG request is processed.
 - **Hybrid retrieval**: combines FAISS dense retrieval with BM25 keyword retrieval.
 - **Persistent indexes**: saves and restores FAISS/BM25 at startup and embeds only newly added chunks.
+- **Structured citations**: returns document, page, chunk ID, and retrieval score from indexed metadata.
 - **Optional reranking**: supports a CrossEncoder or model-based relevance scoring.
 - **Multiple API providers**: select SiliconFlow, OpenAI, or Gemini with `LLM_PROVIDER`.
 - **Document support**: PDF, TXT, Markdown, DOCX, XLS/XLSX, and PPTX.
@@ -96,6 +97,10 @@ Main endpoints:
 - `POST /api/upload`: upload and process a document;
 - `POST /api/ask`: ask a question against processed documents.
 
+`POST /api/ask` returns typed `citations` from retrieval metadata and retains
+the legacy `sources` field for compatibility. Citations are not extracted from
+LLM-generated prose.
+
 ## Repository layout
 
 ```text
@@ -107,6 +112,7 @@ Main endpoints:
 ├── benchmarks/                # Labeled dataset, runner, and retrieval baselines
 ├── core/
 │   ├── document_loader.py     # Document extraction
+│   ├── evidence.py            # Structured evidence and citation contract
 │   ├── text_splitter.py       # Text chunking
 │   ├── embeddings.py          # Embeddings
 │   ├── index_snapshot.py      # FAISS/BM25 snapshot persistence and validation

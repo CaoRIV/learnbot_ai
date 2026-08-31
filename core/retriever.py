@@ -9,6 +9,7 @@
 
 import logging
 from config import HYBRID_ALPHA, RETRIEVAL_TOP_K, RERANK_TOP_K, MAX_RETRIEVAL_ITERATIONS
+from core.evidence import Citation, RetrievedEvidence
 from core.vector_store import vector_store
 from core.bm25_index import bm25_manager
 from core.embeddings import encode_query
@@ -78,20 +79,25 @@ def hybrid_merge(semantic_results, bm25_results, alpha=None, metadata_by_id=None
     return sorted(merged_dict.items(), key=lambda x: x[1]['score'], reverse=True)
 
 
-def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=False, model_choice=None):
+def _recursive_retrieval_with_scores(
+    initial_query,
+    max_iterations=None,
+    enable_web_search=False,
+    model_choice=None,
+):
     """
     递归检索与查询优化
 
     流程：1.语义+BM25检索 → 2.混合排序 → 3.重排序 → 4.LLM判断是否改写query继续
 
     Returns:
-        (all_contexts, all_doc_ids, all_metadata)
+        (all_contexts, all_doc_ids, all_metadata, all_scores)
     """
     if max_iterations is None:
         max_iterations = MAX_RETRIEVAL_ITERATIONS
 
     query = initial_query
-    all_contexts, all_doc_ids, all_metadata = [], [], []
+    all_contexts, all_doc_ids, all_metadata, all_scores = [], [], [], []
     seen_web_sources = set()
 
     for i in range(max_iterations):
@@ -122,6 +128,7 @@ def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=Fa
                             'url': url,
                             'timestamp': res.get('timestamp'),
                         })
+                        all_scores.append(None)
             except Exception as e:
                 logging.error("Tìm kiếm web gặp lỗi: %s", e)
 
@@ -159,6 +166,7 @@ def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=Fa
                 all_doc_ids.append(doc_id)
                 all_contexts.append(data['content'])
                 all_metadata.append(data['metadata'])
+                all_scores.append(data.get('score'))
             current_contexts.append(data['content'])
 
         if i == max_iterations - 1:
@@ -196,4 +204,58 @@ Yêu cầu:
         else:
             break
 
-    return all_contexts, all_doc_ids, all_metadata
+    return all_contexts, all_doc_ids, all_metadata, all_scores
+
+
+def recursive_retrieval(initial_query, max_iterations=None, enable_web_search=False, model_choice=None):
+    """API retrieval cũ, giữ nguyên tuple ba phần để tương thích ngược."""
+    contexts, doc_ids, metadata, _scores = _recursive_retrieval_with_scores(
+        initial_query=initial_query,
+        max_iterations=max_iterations,
+        enable_web_search=enable_web_search,
+        model_choice=model_choice,
+    )
+    return contexts, doc_ids, metadata
+
+
+def retrieve_evidence(initial_query, max_iterations=None, enable_web_search=False, model_choice=None):
+    """Truy xuất các phân đoạn kèm citation chuẩn hóa từ metadata nguồn."""
+    contexts, doc_ids, metadata_list, scores = _recursive_retrieval_with_scores(
+        initial_query=initial_query,
+        max_iterations=max_iterations,
+        enable_web_search=enable_web_search,
+        model_choice=model_choice,
+    )
+    evidence = []
+    for content, doc_id, metadata, score in zip(
+        contexts,
+        doc_ids,
+        metadata_list,
+        scores,
+    ):
+        item_metadata = dict(metadata or {})
+        is_web = item_metadata.get("source") == "web"
+        if is_web:
+            document = (
+                item_metadata.get("title")
+                or item_metadata.get("url")
+                or "Nguồn web"
+            )
+        else:
+            document = item_metadata.get("source") or "Không rõ nguồn"
+        citation = Citation(
+            document=document,
+            page=None if is_web else item_metadata.get("page"),
+            chunk_id=doc_id,
+            score=score,
+            source_type="web" if is_web else "document",
+            url=item_metadata.get("url") if is_web else None,
+        )
+        evidence.append(
+            RetrievedEvidence(
+                content=content,
+                citation=citation,
+                metadata=item_metadata,
+            )
+        )
+    return evidence

@@ -4,9 +4,8 @@ import asyncio
 from contextlib import asynccontextmanager
 import logging
 import os
-import re
 import tempfile
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,7 +21,7 @@ from config import (
     SILICONFLOW_API_KEY,
     is_configured_api_key,
 )
-from core.generator import query_answer
+from core.generator import query_answer_result
 from core.index_snapshot import restore_indexes
 from core.ingestion import (
     DocumentSource,
@@ -83,8 +82,18 @@ class QuestionRequest(BaseModel):
     model_choice: Optional[str] = None
 
 
+class CitationResponse(BaseModel):
+    document: str
+    page: Optional[int] = None
+    chunk_id: str
+    score: Optional[float] = None
+    type: Literal["document", "web"]
+    url: Optional[str] = None
+
+
 class AnswerResponse(BaseModel):
     answer: str
+    citations: List[CitationResponse]
     sources: List[Dict[str, Any]]
     metadata: Dict[str, Any]
 
@@ -168,32 +177,23 @@ async def ask_question(req: QuestionRequest):
     if not req.question:
         raise HTTPException(400, "Câu hỏi không được để trống")
     try:
-        answer = await asyncio.to_thread(query_answer, req.question, req.enable_web_search, req.model_choice)
-        sources = []
-        url_matches = re.findall(
-            r'\[(Nguồn web|Tài liệu cục bộ):[^\]]+\]\s*(?:\(URL:\s*([^)]+)\))?',
-            answer,
+        result = await asyncio.to_thread(
+            query_answer_result,
+            req.question,
+            req.enable_web_search,
+            req.model_choice,
         )
-        for source_type, url in url_matches:
-            sources.append({"type": source_type, "url": url} if url else {"type": source_type})
-        for source, page in re.findall(
-            r'\[([^\],\n]+),\s*trang\s*(\d+)\]',
-            answer,
-            flags=re.IGNORECASE,
-        ):
-            citation = {
-                "type": "Tài liệu cục bộ",
-                "source": source.strip(),
-                "page": int(page),
-            }
-            if citation not in sources:
-                sources.append(citation)
+        citations = [citation.as_dict() for citation in result.citations]
+        sources = [citation.as_legacy_source() for citation in result.citations]
 
         return {
-            "answer": answer, "sources": sources,
+            "answer": result.answer,
+            "citations": citations,
+            "sources": sources,
             "metadata": {
                 "enable_web_search": req.enable_web_search,
                 "model": req.model_choice or LLM_PROVIDER,
+                "citation_count": len(citations),
             }
         }
     except Exception as e:

@@ -21,7 +21,7 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 ## Tính năng chính
 
 - **Hỏi đáp dựa trên tài liệu**: chỉ sử dụng nội dung truy xuất được để trả lời; nói rõ khi tài liệu không có thông tin.
-- **Trích dẫn nguồn và số trang**: câu trả lời từ PDF sử dụng định dạng `[Tên tài liệu, trang X]`.
+- **Trích dẫn có cấu trúc**: API trả tên tài liệu, trang, chunk ID và điểm retrieval trực tiếp từ metadata chỉ mục; câu trả lời từ PDF vẫn dùng định dạng `[Tên tài liệu, trang X]`.
 - **Truy xuất kết hợp**: kết hợp tìm kiếm vector bằng FAISS và tìm kiếm từ khóa bằng BM25.
 - **Chỉ mục bền vững**: tự lưu và khôi phục FAISS/BM25 khi khởi động, không embedding lại các chunk cũ khi thêm tài liệu.
 - **Đo chất lượng retrieval**: benchmark tiếng Việt có nhãn, đo Recall@5, MRR và độ trễ mà không gọi LLM API.
@@ -159,6 +159,34 @@ Các endpoint chính:
 | `POST` | `/api/upload` | Tải lên và xử lý tài liệu |
 | `POST` | `/api/ask` | Đặt câu hỏi dựa trên tài liệu đã xử lý |
 
+`POST /api/ask` trả cả `citations` có cấu trúc và `sources` theo định dạng cũ để
+frontend hiện tại tiếp tục tương thích. Citation không được bóc từ nội dung do
+LLM sinh ra mà lấy trực tiếp từ metadata của kết quả retrieval:
+
+```json
+{
+  "answer": "...",
+  "citations": [
+    {
+      "document": "giao-trinh.pdf",
+      "page": 7,
+      "chunk_id": "document-id:7:0",
+      "score": 0.875,
+      "type": "document",
+      "url": null
+    }
+  ],
+  "sources": [
+    {"type": "Tài liệu cục bộ", "source": "giao-trinh.pdf", "page": 7}
+  ],
+  "metadata": {
+    "enable_web_search": false,
+    "model": "siliconflow",
+    "citation_count": 1
+  }
+}
+```
+
 ## Cấu trúc dự án
 
 ```text
@@ -175,6 +203,7 @@ Các endpoint chính:
 ├── benchmarks/                # Dataset, lệnh benchmark và baseline retrieval
 ├── core/
 │   ├── document_loader.py     # Trích xuất nội dung và số trang
+│   ├── evidence.py            # Contract bằng chứng và citation có cấu trúc
 │   ├── text_splitter.py       # Chia văn bản thành các phân đoạn
 │   ├── embeddings.py          # Tạo vector embedding
 │   ├── index_snapshot.py      # Lưu, kiểm tra và khôi phục snapshot FAISS/BM25
@@ -220,7 +249,7 @@ Bộ test bao gồm:
 - migration, transaction và chống nhập trùng trong kho SQLite;
 - lưu/khôi phục snapshot, kiểm tra checksum/model và rollback khi lỗi;
 - prompt giới hạn câu trả lời trong nội dung tài liệu;
-- trích dẫn số trang trong câu trả lời API.
+- citation có cấu trúc lấy từ metadata retrieval, không phân tích từ văn bản LLM;
 - dataset benchmark, metrics retrieval và bảo toàn metadata nguồn/trang.
 
 GitHub Actions sẽ biên dịch mã Python và chạy test cho mỗi Pull Request.

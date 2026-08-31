@@ -11,6 +11,15 @@ export type Citation = {
   url?: string;
 };
 
+export type StructuredCitation = {
+  document: string;
+  page: number | null;
+  chunk_id: string;
+  score: number | null;
+  type: "document" | "web";
+  url: string | null;
+};
+
 export type SystemStatus = {
   status: string;
   siliconflow_configured: boolean;
@@ -37,10 +46,12 @@ export type UploadResult = {
 
 export type AnswerResult = {
   answer: string;
+  citations: StructuredCitation[];
   sources: Citation[];
   metadata: {
     enable_web_search: boolean;
     model: string;
+    citation_count: number;
   };
 };
 

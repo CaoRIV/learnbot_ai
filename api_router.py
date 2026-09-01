@@ -22,7 +22,7 @@ from config import (
     SILICONFLOW_API_KEY,
     is_configured_api_key,
 )
-from core.generator import query_answer_result
+from core.generator import AnswerStatus, query_answer_result
 from core.index_snapshot import restore_indexes
 from core.ingestion import (
     DocumentSource,
@@ -94,6 +94,7 @@ class CitationResponse(BaseModel):
 
 class AnswerResponse(BaseModel):
     answer: str
+    answer_status: AnswerStatus
     citations: List[CitationResponse]
     sources: List[Dict[str, Any]]
     metadata: Dict[str, Any]
@@ -189,6 +190,7 @@ async def ask_question(req: QuestionRequest):
 
         return {
             "answer": result.answer,
+            "answer_status": result.answer_status,
             "citations": citations,
             "sources": sources,
             "metadata": {

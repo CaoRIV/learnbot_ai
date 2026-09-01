@@ -25,6 +25,7 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 - **Hỏi đáp dựa trên tài liệu**: chỉ sử dụng nội dung truy xuất được để trả lời; nói rõ khi tài liệu không có thông tin.
 - **Trích dẫn có cấu trúc**: API trả tên tài liệu, trang, chunk ID và điểm retrieval trực tiếp từ metadata chỉ mục; câu trả lời từ PDF vẫn dùng định dạng `[Tên tài liệu, trang X]`.
 - **Lọc bằng chứng theo độ liên quan**: chỉ các chunk đạt `MIN_RELEVANCE_SCORE` mới được đưa vào context và citation.
+- **Từ chối khi thiếu bằng chứng**: không gọi bước sinh câu trả lời nếu không còn context đạt ngưỡng; API trả trạng thái có cấu trúc thay vì để LLM suy đoán.
 - **Truy xuất kết hợp**: kết hợp tìm kiếm vector bằng FAISS và tìm kiếm từ khóa bằng BM25.
 - **Chỉ mục bền vững**: tự lưu và khôi phục FAISS/BM25 khi khởi động, không embedding lại các chunk cũ khi thêm tài liệu.
 - **Đo chất lượng retrieval**: benchmark tiếng Việt có nhãn, đo Recall@5, MRR và độ trễ mà không gọi LLM API.
@@ -166,9 +167,13 @@ Các endpoint chính:
 frontend hiện tại tiếp tục tương thích. Citation không được bóc từ nội dung do
 LLM sinh ra mà lấy trực tiếp từ metadata của kết quả retrieval:
 
+`answer_status` có một trong bốn giá trị: `answered`, `insufficient_evidence`,
+`empty_knowledge_base` hoặc `error`.
+
 ```json
 {
   "answer": "...",
+  "answer_status": "answered",
   "citations": [
     {
       "document": "giao-trinh.pdf",

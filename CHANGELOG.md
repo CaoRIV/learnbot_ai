@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here.
 
+## [2.6.0] - 2026-09-01
+
+### Added
+
+- Deterministic Vietnamese refusal responses for empty knowledge bases and retrieval results with no evidence above the relevance threshold.
+- Machine-readable `answer_status` values: `answered`, `insufficient_evidence`, `empty_knowledge_base`, and `error`.
+- Acceptance tests proving out-of-scope questions do not reach answer generation and return no citations.
+
+### Changed
+
+- The answer-generation LLM and conflict detector are skipped when no eligible evidence remains after filtering.
+- Gradio-compatible streaming now reports a distinct Vietnamese status for insufficient evidence and empty knowledge bases.
+
 ## [2.5.0] - 2026-08-31
 
 ### Added

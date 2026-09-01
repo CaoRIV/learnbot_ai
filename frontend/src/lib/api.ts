@@ -4,6 +4,12 @@ const API_BASE_URL =
 
 export type Provider = "siliconflow" | "openai" | "gemini";
 
+export type AnswerStatus =
+  | "answered"
+  | "insufficient_evidence"
+  | "empty_knowledge_base"
+  | "error";
+
 export type Citation = {
   type: string;
   source?: string;
@@ -47,6 +53,7 @@ export type UploadResult = {
 
 export type AnswerResult = {
   answer: string;
+  answer_status: AnswerStatus;
   citations: StructuredCitation[];
   sources: Citation[];
   metadata: {

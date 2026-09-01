@@ -56,6 +56,7 @@ def test_ask_endpoint_uses_structured_citations_instead_of_answer_regex(monkeypa
             "url": None,
         }
     ]
+    assert response["answer_status"] == "answered"
     assert response["sources"] == [
         {"type": "Tài liệu cục bộ", "source": "huong-dan.pdf", "page": 4}
     ]
@@ -66,6 +67,7 @@ def test_ask_endpoint_uses_structured_citations_instead_of_answer_regex(monkeypa
 def test_openapi_exposes_structured_citation_contract():
     schema = api_router.app.openapi()
     citation_schema = schema["components"]["schemas"]["CitationResponse"]
+    answer_schema = schema["components"]["schemas"]["AnswerResponse"]
 
     assert set(citation_schema["required"]) == {
         "document",
@@ -73,6 +75,29 @@ def test_openapi_exposes_structured_citation_contract():
         "type",
     }
     assert citation_schema["properties"]["type"]["enum"] == ["document", "web"]
+    assert answer_schema["properties"]["answer_status"]["enum"] == [
+        "answered",
+        "insufficient_evidence",
+        "empty_knowledge_base",
+        "error",
+    ]
+
+
+def test_ask_endpoint_exposes_insufficient_evidence_status(monkeypatch):
+    monkeypatch.setattr(
+        api_router,
+        "query_answer_result",
+        lambda *args, **kwargs: AnswerResult(
+            answer="Không đủ bằng chứng.",
+            answer_status="insufficient_evidence",
+        ),
+    )
+
+    response = asyncio.run(ask_question(QuestionRequest(question="Ngoài phạm vi?")))
+
+    assert response["answer_status"] == "insufficient_evidence"
+    assert response["citations"] == []
+    assert response["sources"] == []
 
 
 def test_api_lifespan_restores_active_snapshot(monkeypatch):

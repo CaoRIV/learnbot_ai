@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 import logging
-from typing import Tuple
+from typing import Literal, Tuple
 
 from config import MIN_RELEVANCE_SCORE
 from core.evidence import Citation, filter_relevant_evidence
@@ -13,12 +13,32 @@ from features.thinking_chain import process_thinking_content
 from llm_provider import call_llm
 
 
+AnswerStatus = Literal[
+    "answered",
+    "insufficient_evidence",
+    "empty_knowledge_base",
+    "error",
+]
+EMPTY_KNOWLEDGE_BASE_MESSAGE = (
+    "⚠️ Kho tri thức đang trống. Vui lòng tải tài liệu lên trước."
+)
+INSUFFICIENT_EVIDENCE_MESSAGE = (
+    "⚠️ Tôi không tìm thấy bằng chứng đủ liên quan trong tài liệu được cung cấp "
+    "để trả lời câu hỏi này."
+)
+INSUFFICIENT_WEB_EVIDENCE_MESSAGE = (
+    "⚠️ Tôi không tìm thấy bằng chứng đủ liên quan trong tài liệu hoặc kết quả "
+    "tìm kiếm web để trả lời câu hỏi này."
+)
+
+
 @dataclass(frozen=True)
 class AnswerResult:
     """Kết quả hỏi đáp cùng các citation bắt nguồn từ retrieval."""
 
     answer: str
     citations: Tuple[Citation, ...] = ()
+    answer_status: AnswerStatus = "answered"
 
 
 def call_llm_simple(prompt, model_choice=None):
@@ -129,7 +149,8 @@ def query_answer_result(
         knowledge_base_exists = vector_store.is_ready
         if not knowledge_base_exists and not enable_web_search:
             return AnswerResult(
-                "⚠️ Kho tri thức đang trống. Vui lòng tải tài liệu lên trước."
+                EMPTY_KNOWLEDGE_BASE_MESSAGE,
+                answer_status="empty_knowledge_base",
             )
 
         if progress:
@@ -150,6 +171,22 @@ def query_answer_result(
             len(retrieved_evidence),
             MIN_RELEVANCE_SCORE,
         )
+        if not evidence:
+            logging.info(
+                "Không gọi LLM vì không có bằng chứng đạt ngưỡng liên quan"
+            )
+            if progress:
+                progress(1.0, desc="Không tìm thấy bằng chứng phù hợp")
+            message = (
+                INSUFFICIENT_WEB_EVIDENCE_MESSAGE
+                if enable_web_search
+                else INSUFFICIENT_EVIDENCE_MESSAGE
+            )
+            return AnswerResult(
+                message,
+                answer_status="insufficient_evidence",
+            )
+
         all_contexts = [item.content for item in evidence]
         all_doc_ids = [item.citation.chunk_id for item in evidence]
         all_metadata = [item.metadata for item in evidence]
@@ -188,7 +225,7 @@ def query_answer_result(
         )
     except Exception as exc:
         logging.exception("Pipeline hỏi đáp gặp lỗi")
-        return AnswerResult(f"Lỗi hệ thống: {exc}")
+        return AnswerResult(f"Lỗi hệ thống: {exc}", answer_status="error")
 
 
 def query_answer(
@@ -213,11 +250,16 @@ def stream_answer(
     progress=None,
 ):
     """API generator tương thích Gradio; provider hiện trả kết quả trọn gói."""
-    answer = query_answer(
+    result = query_answer_result(
         question,
         enable_web_search=enable_web_search,
         model_choice=model_choice,
         progress=progress,
     )
-    status = "Có lỗi" if answer.startswith(("Lỗi", "⚠️")) else "Hoàn tất"
-    yield answer, status
+    status_by_result = {
+        "answered": "Hoàn tất",
+        "insufficient_evidence": "Không đủ bằng chứng",
+        "empty_knowledge_base": "Kho tri thức trống",
+        "error": "Có lỗi",
+    }
+    yield result.answer, status_by_result[result.answer_status]

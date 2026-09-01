@@ -155,5 +155,99 @@ def test_query_answer_result_excludes_low_score_evidence_from_prompt(monkeypatch
     result = generator.query_answer_result("Thông tin đúng là gì?")
 
     assert result.citations == (high.citation,)
+    assert result.answer_status == "answered"
     assert "Bằng chứng đủ liên quan." in captured["prompt"]
     assert "Phân đoạn không liên quan phải bị loại." not in captured["prompt"]
+
+
+def test_query_answer_refuses_without_relevant_evidence_and_does_not_call_llm(
+    monkeypatch,
+):
+    low = RetrievedEvidence(
+        content="Phân đoạn có điểm quá thấp.",
+        citation=Citation("khong-lien-quan.pdf", "chunk-low", score=0.1),
+        metadata={"source": "khong-lien-quan.pdf", "page": 1},
+    )
+    monkeypatch.setattr(generator, "vector_store", SimpleNamespace(is_ready=True))
+    monkeypatch.setattr(generator, "MIN_RELEVANCE_SCORE", 0.35)
+    monkeypatch.setattr(generator, "retrieve_evidence", lambda **kwargs: [low])
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("Không được gọi LLM khi không đủ bằng chứng")
+
+    monkeypatch.setattr(generator, "call_llm", fail_if_called)
+    monkeypatch.setattr(generator, "detect_conflicts", fail_if_called)
+
+    result = generator.query_answer_result("Một câu hỏi ngoài phạm vi")
+
+    assert result.answer == generator.INSUFFICIENT_EVIDENCE_MESSAGE
+    assert result.answer_status == "insufficient_evidence"
+    assert result.citations == ()
+    assert generator.query_answer("Một câu hỏi ngoài phạm vi") == result.answer
+
+
+def test_empty_web_retrieval_uses_web_specific_refusal(monkeypatch):
+    monkeypatch.setattr(generator, "vector_store", SimpleNamespace(is_ready=False))
+    monkeypatch.setattr(generator, "retrieve_evidence", lambda **kwargs: [])
+    monkeypatch.setattr(
+        generator,
+        "call_llm",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("Không được gọi LLM khi tìm kiếm không có kết quả")
+        ),
+    )
+
+    result = generator.query_answer_result(
+        "Thông tin mới nhất là gì?",
+        enable_web_search=True,
+    )
+
+    assert result.answer == generator.INSUFFICIENT_WEB_EVIDENCE_MESSAGE
+    assert result.answer_status == "insufficient_evidence"
+    assert result.citations == ()
+
+
+def test_empty_knowledge_base_has_explicit_status(monkeypatch):
+    monkeypatch.setattr(generator, "vector_store", SimpleNamespace(is_ready=False))
+
+    result = generator.query_answer_result("Tài liệu nói gì?")
+
+    assert result.answer == generator.EMPTY_KNOWLEDGE_BASE_MESSAGE
+    assert result.answer_status == "empty_knowledge_base"
+
+
+def test_stream_answer_reports_insufficient_evidence_status(monkeypatch):
+    monkeypatch.setattr(
+        generator,
+        "query_answer_result",
+        lambda *args, **kwargs: generator.AnswerResult(
+            generator.INSUFFICIENT_EVIDENCE_MESSAGE,
+            answer_status="insufficient_evidence",
+        ),
+    )
+
+    assert list(generator.stream_answer("Câu hỏi ngoài phạm vi")) == [
+        (generator.INSUFFICIENT_EVIDENCE_MESSAGE, "Không đủ bằng chứng")
+    ]
+
+
+def test_answer_generation_failure_has_error_status(monkeypatch):
+    evidence = RetrievedEvidence(
+        content="Bằng chứng hợp lệ.",
+        citation=Citation("tai-lieu.pdf", "chunk-ok", score=0.9),
+        metadata={"source": "tai-lieu.pdf"},
+    )
+    monkeypatch.setattr(generator, "vector_store", SimpleNamespace(is_ready=True))
+    monkeypatch.setattr(generator, "retrieve_evidence", lambda **kwargs: [evidence])
+    monkeypatch.setattr(generator, "detect_conflicts", lambda sources: False)
+    monkeypatch.setattr(
+        generator,
+        "call_llm",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("API lỗi")),
+    )
+
+    result = generator.query_answer_result("Câu hỏi hợp lệ")
+
+    assert result.answer == "Lỗi hệ thống: API lỗi"
+    assert result.answer_status == "error"
+    assert result.citations == ()

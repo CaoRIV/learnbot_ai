@@ -26,6 +26,7 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 - **Trích dẫn có cấu trúc**: API trả tên tài liệu, trang, chunk ID và điểm retrieval trực tiếp từ metadata chỉ mục; câu trả lời từ PDF vẫn dùng định dạng `[Tên tài liệu, trang X]`.
 - **Lọc bằng chứng theo độ liên quan**: chỉ các chunk đạt `MIN_RELEVANCE_SCORE` mới được đưa vào context và citation.
 - **Từ chối khi thiếu bằng chứng**: không gọi bước sinh câu trả lời nếu không còn context đạt ngưỡng; API trả trạng thái có cấu trúc thay vì để LLM suy đoán.
+- **Đối chiếu ngay trong giao diện**: mỗi câu trả lời hiển thị tên nguồn, trang, chunk ID, điểm liên quan và liên kết web từ citation có cấu trúc.
 - **Truy xuất kết hợp**: kết hợp tìm kiếm vector bằng FAISS và tìm kiếm từ khóa bằng BM25.
 - **Chỉ mục bền vững**: tự lưu và khôi phục FAISS/BM25 khi khởi động, không embedding lại các chunk cũ khi thêm tài liệu.
 - **Đo chất lượng retrieval**: benchmark tiếng Việt có nhãn, đo Recall@5, MRR và độ trễ mà không gọi LLM API.
@@ -169,6 +170,10 @@ LLM sinh ra mà lấy trực tiếp từ metadata của kết quả retrieval:
 
 `answer_status` có một trong bốn giá trị: `answered`, `insufficient_evidence`,
 `empty_knowledge_base` hoặc `error`.
+
+Giao diện Next.js dùng trực tiếp `citations` để hiển thị nguồn dưới từng câu trả
+lời và trong panel nguồn gần nhất. Nguồn web chỉ mở liên kết HTTP/HTTPS; nguồn
+cục bộ hiển thị trang, chunk ID và điểm liên quan để người dùng đối chiếu.
 
 ```json
 {

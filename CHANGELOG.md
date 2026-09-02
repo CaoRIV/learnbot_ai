@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here.
 
+## [2.7.0] - 2026-09-02
+
+### Added
+
+- Structured citation rows below each assistant answer with document name, page, chunk ID, relevance score, source type, and safe web links.
+- A compact structured citation view for the latest answer in the context panel.
+- Explicit UI states for insufficient evidence, empty knowledge bases, and answer-generation errors.
+
+### Changed
+
+- The Next.js workspace now consumes `citations` and `answer_status` instead of deriving its citation UI from the legacy `sources` field.
+- The latest-source panel now follows the latest assistant response, so an ungrounded response cannot leave stale citations visible.
+- Long citation lists collapse behind an accessible disclosure after the first relevant entries.
+
 ## [2.6.0] - 2026-09-01
 
 ### Added

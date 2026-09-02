@@ -28,6 +28,7 @@ Local PDF Chat RAG is an educational and reference implementation for developers
 - **Structured citations**: returns document, page, chunk ID, and retrieval score from indexed metadata.
 - **Evidence threshold**: only chunks meeting `MIN_RELEVANCE_SCORE` are passed to the LLM and returned as citations.
 - **Deterministic refusal**: skips answer generation when no eligible evidence remains and returns a machine-readable `answer_status`.
+- **In-context verification**: shows structured source details below each answer and in the latest-answer context panel.
 - **Optional reranking**: supports a CrossEncoder or model-based relevance scoring.
 - **Multiple API providers**: select SiliconFlow, OpenAI, or Gemini with `LLM_PROVIDER`.
 - **Document support**: PDF, TXT, Markdown, DOCX, XLS/XLSX, and PPTX.
@@ -103,6 +104,8 @@ Main endpoints:
 the legacy `sources` field for compatibility. Citations are not extracted from
 LLM-generated prose. Its `answer_status` is one of `answered`,
 `insufficient_evidence`, `empty_knowledge_base`, or `error`.
+The Next.js interface renders document, page, chunk ID, relevance score, and
+safe HTTP/HTTPS web links directly from `citations`.
 
 ## Repository layout
 

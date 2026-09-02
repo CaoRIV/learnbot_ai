@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LearnBot — Hỏi đáp tài liệu tiếng Việt",
+  title: "LearnBot - Hỏi đáp tài liệu tiếng Việt",
   description: "Trợ lý hỏi đáp tài liệu tiếng Việt dựa trên truy xuất kết hợp và LLM qua API.",
 };
 

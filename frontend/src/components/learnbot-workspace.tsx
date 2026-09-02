@@ -16,13 +16,15 @@ import remarkGfm from "remark-gfm";
 import {
   ApiError,
   askQuestion,
-  type Citation,
+  type AnswerStatus,
   getProviderLabel,
   getSystemStatus,
   type Provider,
+  type StructuredCitation,
   type SystemStatus,
   uploadDocument,
 } from "@/lib/api";
+import { CitationList } from "./citation-list";
 import { Icon } from "./icons";
 
 type DocumentState = {
@@ -37,7 +39,8 @@ type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
-  sources?: Citation[];
+  answerStatus?: AnswerStatus;
+  citations?: StructuredCitation[];
 };
 
 const suggestions = [
@@ -111,8 +114,10 @@ export function LearnBotWorkspace() {
     return () => window.cancelAnimationFrame(animationFrame);
   }, [messages, isAsking]);
 
-  const latestSources = useMemo(
-    () => [...messages].reverse().find((message) => message.sources?.length)?.sources ?? [],
+  const latestCitations = useMemo(
+    () =>
+      [...messages].reverse().find((message) => message.role === "assistant")
+        ?.citations ?? [],
     [messages],
   );
 
@@ -197,7 +202,8 @@ export function LearnBotWorkspace() {
           id: newId(),
           role: "assistant",
           content: result.answer,
-          sources: result.sources,
+          answerStatus: result.answer_status,
+          citations: result.citations,
         },
       ]);
     } catch (error) {
@@ -294,14 +300,47 @@ export function LearnBotWorkspace() {
                   </div>
                 </div>
               ) : messages.map((message) => (
-                <article className={`message ${message.role}`} key={message.id}>
+                <article
+                  className={`message ${message.role} ${message.answerStatus ? `status-${message.answerStatus}` : ""}`}
+                  key={message.id}
+                >
                   <div className="message-author">{message.role === "user" ? "Bạn" : "LearnBot"}</div>
+                  {message.role === "assistant" && message.answerStatus && message.answerStatus !== "answered" && (
+                    <div
+                      className="answer-status"
+                      role={message.answerStatus === "error" ? "alert" : "status"}
+                    >
+                      <Icon name={message.answerStatus === "error" ? "x" : "database"} />
+                      <strong>
+                        {message.answerStatus === "insufficient_evidence"
+                          ? "Không đủ bằng chứng"
+                          : message.answerStatus === "empty_knowledge_base"
+                            ? "Kho tri thức đang trống"
+                            : "Không thể tạo câu trả lời"}
+                      </strong>
+                    </div>
+                  )}
                   <div className={`message-content ${message.role === "assistant" ? "markdown-body" : ""}`}>
                     {message.role === "assistant" ? (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.answerStatus && message.answerStatus !== "answered"
+                          ? message.content.replace(/^⚠️\s*/u, "")
+                          : message.content}
+                      </ReactMarkdown>
                     ) : message.content}
                   </div>
-                  {!!message.sources?.length && <div className="message-source-count">{message.sources.length} nguồn được nhận diện</div>}
+                  {!!message.citations?.length && (
+                    <section className="message-citations" aria-label="Nguồn đối chiếu cho câu trả lời">
+                      <div className="citation-heading">
+                        <h3 id={`citations-${message.id}`}>Nguồn đối chiếu</h3>
+                        <span>{message.citations.length} nguồn</span>
+                      </div>
+                      <CitationList
+                        citations={message.citations}
+                        labelledBy={`citations-${message.id}`}
+                      />
+                    </section>
+                  )}
                 </article>
               ))}
               {isAsking && <div className="thinking" role="status"><span /><span /><span /><b>Đang đọc tài liệu và soạn câu trả lời</b></div>}
@@ -334,8 +373,8 @@ export function LearnBotWorkspace() {
             <dl className="detail-list"><div><dt>Dịch vụ</dt><dd>{getProviderLabel(provider)}</dd></div><div><dt>Tìm kiếm web</dt><dd>{webSearch ? "Đang bật" : "Đang tắt"}</dd></div><div><dt>Kho vector</dt><dd>{status?.vector_store_ready ? "Sẵn sàng" : "Chưa có dữ liệu"}</dd></div></dl>
           </div>
           <div className="context-section sources-section">
-            <div className="section-title"><div><p className="eyebrow">Đối chiếu</p><h2>Nguồn gần nhất</h2></div><span>{latestSources.length}</span></div>
-            {latestSources.length === 0 ? <div className="quiet-state compact"><Icon name="file" /><p>Chưa có nguồn</p><span>Nguồn nhận diện từ câu trả lời sẽ xuất hiện ở đây.</span></div> : <div className="source-list">{latestSources.map((source, index) => <a key={`${source.source ?? source.url ?? source.type}-${index}`} href={source.url || undefined} target={source.url ? "_blank" : undefined} rel={source.url ? "noreferrer" : undefined} className={!source.url ? "is-static" : ""}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{source.source ?? source.type}</strong><small>{source.page ? `Trang ${source.page}` : source.url ? "Nguồn web" : source.type}</small></div>{source.url && <Icon name="chevron" />}</a>)}</div>}
+            <div className="section-title"><div><p className="eyebrow">Đối chiếu</p><h2 id="latest-citations-title">Nguồn gần nhất</h2></div><span>{latestCitations.length}</span></div>
+            {latestCitations.length === 0 ? <div className="quiet-state compact"><Icon name="file" /><p>Chưa có nguồn</p><span>Nguồn của câu trả lời gần nhất sẽ xuất hiện tại đây.</span></div> : <CitationList citations={latestCitations} compact labelledBy="latest-citations-title" />}
           </div>
           <div className="context-note"><strong>Giới hạn</strong><p>Câu trả lời có thể thiếu ngữ cảnh. Luôn mở lại tài liệu gốc khi cần độ chính xác cao.</p></div>
         </aside>

@@ -17,6 +17,7 @@ import {
   ApiError,
   askQuestion,
   type AnswerStatus,
+  getDocuments,
   getProviderLabel,
   getSystemStatus,
   type Provider,
@@ -65,6 +66,7 @@ export function LearnBotWorkspace() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [statusError, setStatusError] = useState("");
   const [documents, setDocuments] = useState<DocumentState[]>([]);
+  const [documentsLoaded, setDocumentsLoaded] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [question, setQuestion] = useState("");
   const [provider, setProvider] = useState<Provider>("siliconflow");
@@ -88,12 +90,32 @@ export function LearnBotWorkspace() {
     }
   }, []);
 
+  const refreshDocuments = useCallback(async () => {
+    try {
+      setUploadError("");
+      const storedDocuments = await getDocuments();
+      setDocuments(
+        storedDocuments.map((document) => ({
+          id: document.id,
+          name: document.source_name,
+          chunks: document.chunk_count,
+          state: document.status === "failed" ? "error" : document.status,
+        })),
+      );
+    } catch (error) {
+      setUploadError(readableError(error));
+    } finally {
+      setDocumentsLoaded(true);
+    }
+  }, []);
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("learnbot-theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     setTheme(savedTheme === "dark" || (!savedTheme && prefersDark) ? "dark" : "light");
     void refreshStatus();
-  }, [refreshStatus]);
+    void refreshDocuments();
+  }, [refreshDocuments, refreshStatus]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -258,7 +280,9 @@ export function LearnBotWorkspace() {
           {uploadError && <p className="inline-error" role="alert">{uploadError}</p>}
 
           <div className="document-list" aria-live="polite">
-            {documents.length === 0 ? (
+            {!documentsLoaded ? (
+              <div className="quiet-state"><Icon name="file" /><p>Đang tải tài liệu…</p></div>
+            ) : documents.length === 0 ? (
               <div className="quiet-state"><Icon name="file" /><p>Chưa có tài liệu</p><span>Tệp đã xử lý sẽ xuất hiện tại đây.</span></div>
             ) : documents.map((document) => (
               <div className="document-row" key={document.id}>

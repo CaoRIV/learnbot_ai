@@ -88,6 +88,60 @@ def test_document_upsert_deduplicates_by_hash_and_manages_chunks(tmp_path: Path)
     assert repository.get_chunks("doc-1") == []
 
 
+def test_list_document_summaries_counts_chunks_without_exposing_hash(tmp_path: Path):
+    repository = SQLiteRepository(tmp_path / "learnbot.db")
+    repository.initialize()
+    repository.upsert_document(
+        document_id="doc-ready",
+        source_name="da-lap-chi-muc.pdf",
+        content_hash="private-hash-ready",
+        file_size=240,
+        status="ready",
+    )
+    repository.replace_chunks(
+        "doc-ready",
+        [
+            {
+                "id": "chunk-1",
+                "chunk_index": 0,
+                "content": "Phân đoạn thứ nhất.",
+                "page": 1,
+                "metadata": {},
+            },
+            {
+                "id": "chunk-2",
+                "chunk_index": 1,
+                "content": "Phân đoạn thứ hai.",
+                "page": 2,
+                "metadata": {},
+            },
+        ],
+    )
+    repository.upsert_document(
+        document_id="doc-processing",
+        source_name="dang-xu-ly.txt",
+        content_hash="private-hash-processing",
+        file_size=80,
+        status="processing",
+    )
+
+    summaries = repository.list_document_summaries()
+
+    assert [(item["id"], item["chunk_count"]) for item in summaries] == [
+        ("doc-ready", 2),
+        ("doc-processing", 0),
+    ]
+    assert set(summaries[0]) == {
+        "id",
+        "source_name",
+        "file_size",
+        "status",
+        "chunk_count",
+        "created_at",
+        "updated_at",
+    }
+
+
 def test_chunks_require_an_existing_document(tmp_path: Path):
     repository = SQLiteRepository(tmp_path / "learnbot.db")
     repository.initialize()

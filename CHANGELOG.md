@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## [2.8.0] - 2026-09-04
+
+### Added
+
+- A `GET /api/documents` endpoint that returns persisted document metadata and chunk counts without exposing content hashes.
+- Automatic restoration of the persisted document list in the Next.js sidebar when the application opens.
+
 ## [2.7.0] - 2026-09-02
 
 ### Added

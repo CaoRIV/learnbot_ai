@@ -144,6 +144,27 @@ class SQLiteRepository:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def list_document_summaries(self) -> list[dict[str, Any]]:
+        """Liệt kê tài liệu và số chunk để hiển thị, không trả dữ liệu nội bộ."""
+        with self.connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    d.id,
+                    d.source_name,
+                    d.file_size,
+                    d.status,
+                    COUNT(c.id) AS chunk_count,
+                    d.created_at,
+                    d.updated_at
+                FROM documents AS d
+                LEFT JOIN chunks AS c ON c.document_id = d.id
+                GROUP BY d.id
+                ORDER BY d.created_at DESC, d.id DESC
+                """
+            ).fetchall()
+        return [dict(row) for row in rows]
+
     def delete_document(self, document_id: str) -> bool:
         """Xóa tài liệu; khóa ngoại sẽ xóa các chunk liên quan."""
         with self.connection() as connection:

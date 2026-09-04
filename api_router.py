@@ -29,6 +29,7 @@ from core.ingestion import (
     SUPPORTED_DOCUMENT_EXTENSIONS,
     ingest_documents,
 )
+from core.storage import SQLiteRepository
 from core.vector_store import vector_store
 from features.web_search import check_serpapi_key
 from utils.network import is_port_available
@@ -37,6 +38,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger("rag-api")
 MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 UPLOAD_COPY_CHUNK_SIZE = 1024 * 1024
+document_repository = SQLiteRepository()
 
 
 class ProgressCallback:
@@ -104,6 +106,29 @@ class FileProcessResult(BaseModel):
     status: str
     message: str
     file_info: Optional[Dict[str, Any]] = None
+
+
+class DocumentResponse(BaseModel):
+    id: str
+    source_name: str
+    file_size: int
+    status: Literal["processing", "ready", "failed"]
+    chunk_count: int
+    created_at: str
+    updated_at: str
+
+
+@app.get("/api/documents", response_model=List[DocumentResponse])
+async def list_documents():
+    """Trả về các tài liệu đã lưu để khôi phục danh sách trên giao diện."""
+    try:
+        return await asyncio.to_thread(document_repository.list_document_summaries)
+    except Exception as exc:
+        logger.error("Không thể tải danh sách tài liệu: %s", exc)
+        raise HTTPException(
+            500,
+            "Không thể tải danh sách tài liệu đã lưu",
+        ) from exc
 
 
 @app.post("/api/upload", response_model=FileProcessResult)

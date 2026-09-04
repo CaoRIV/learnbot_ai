@@ -83,6 +83,32 @@ def test_openapi_exposes_structured_citation_contract():
     ]
 
 
+def test_openapi_exposes_document_list_contract():
+    schema = api_router.app.openapi()
+    operation = schema["paths"]["/api/documents"]["get"]
+    response_schema = operation["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]
+    document_schema = schema["components"]["schemas"]["DocumentResponse"]
+
+    assert response_schema["type"] == "array"
+    assert response_schema["items"]["$ref"].endswith("/DocumentResponse")
+    assert set(document_schema["required"]) == {
+        "id",
+        "source_name",
+        "file_size",
+        "status",
+        "chunk_count",
+        "created_at",
+        "updated_at",
+    }
+    assert document_schema["properties"]["status"]["enum"] == [
+        "processing",
+        "ready",
+        "failed",
+    ]
+
+
 def test_ask_endpoint_exposes_insufficient_evidence_status(monkeypatch):
     monkeypatch.setattr(
         api_router,

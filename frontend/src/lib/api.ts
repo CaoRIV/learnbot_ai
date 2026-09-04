@@ -51,6 +51,16 @@ export type UploadResult = {
   };
 };
 
+export type StoredDocument = {
+  id: string;
+  source_name: string;
+  file_size: number;
+  status: "processing" | "ready" | "failed";
+  chunk_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AnswerResult = {
   answer: string;
   answer_status: AnswerStatus;
@@ -90,6 +100,14 @@ export async function getSystemStatus(signal?: AbortSignal) {
     cache: "no-store",
   });
   return parseResponse<SystemStatus>(response);
+}
+
+export async function getDocuments(signal?: AbortSignal) {
+  const response = await fetch(`${API_BASE_URL}/api/documents`, {
+    signal,
+    cache: "no-store",
+  });
+  return parseResponse<StoredDocument[]>(response);
 }
 
 export async function uploadDocument(file: File) {

@@ -29,6 +29,7 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 - **Đối chiếu ngay trong giao diện**: mỗi câu trả lời hiển thị tên nguồn, trang, chunk ID, điểm liên quan và liên kết web từ citation có cấu trúc.
 - **Truy xuất kết hợp**: kết hợp tìm kiếm vector bằng FAISS và tìm kiếm từ khóa bằng BM25.
 - **Chỉ mục bền vững**: tự lưu và khôi phục FAISS/BM25 khi khởi động, không embedding lại các chunk cũ khi thêm tài liệu.
+- **Danh sách tài liệu bền vững**: giao diện tự tải lại tên, trạng thái và số phân đoạn của tài liệu đã lưu khi mở ứng dụng.
 - **Đo chất lượng retrieval**: benchmark tiếng Việt có nhãn, đo Recall@5, MRR và độ trễ mà không gọi LLM API.
 - **Tối ưu cho tiếng Việt**: BM25 tách từ bằng `underthesea` thay vì tokenizer tiếng Trung.
 - **Xếp hạng lại kết quả**: hỗ trợ CrossEncoder hoặc chấm điểm liên quan qua LLM API.
@@ -161,6 +162,7 @@ Các endpoint chính:
 | Phương thức | Endpoint | Chức năng |
 | --- | --- | --- |
 | `GET` | `/api/status` | Kiểm tra trạng thái ứng dụng và cấu hình dịch vụ LLM |
+| `GET` | `/api/documents` | Liệt kê tài liệu đã lưu và số phân đoạn |
 | `POST` | `/api/upload` | Tải lên và xử lý tài liệu |
 | `POST` | `/api/ask` | Đặt câu hỏi dựa trên tài liệu đã xử lý |
 

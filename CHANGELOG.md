@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here.
 
+## [2.9.0] - 2026-09-05
+
+### Added
+
+- Safe single-document deletion through `DELETE /api/documents/{document_id}` and a confirmed delete action in the Next.js sidebar.
+- Transactional stale-index detection for concurrent SQLite writers.
+
+### Changed
+
+- Document deletion rebuilds FAISS/BM25 from the remaining chunks and only publishes the candidate snapshot after the SQLite update succeeds.
+- Retrieval and in-process index publication now share a lock so queries cannot observe mixed FAISS/BM25 generations.
+
 ## [2.8.0] - 2026-09-04
 
 ### Added

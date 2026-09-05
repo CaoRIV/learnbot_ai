@@ -27,6 +27,7 @@ from core.index_snapshot import restore_indexes
 from core.ingestion import (
     DocumentSource,
     SUPPORTED_DOCUMENT_EXTENSIONS,
+    delete_indexed_document,
     ingest_documents,
 )
 from core.storage import SQLiteRepository
@@ -118,6 +119,13 @@ class DocumentResponse(BaseModel):
     updated_at: str
 
 
+class DocumentDeleteResponse(BaseModel):
+    status: Literal["success"]
+    message: str
+    document_id: str
+    remaining_chunks: int
+
+
 @app.get("/api/documents", response_model=List[DocumentResponse])
 async def list_documents():
     """Trả về các tài liệu đã lưu để khôi phục danh sách trên giao diện."""
@@ -128,6 +136,36 @@ async def list_documents():
         raise HTTPException(
             500,
             "Không thể tải danh sách tài liệu đã lưu",
+        ) from exc
+
+
+@app.delete(
+    "/api/documents/{document_id}",
+    response_model=DocumentDeleteResponse,
+)
+async def delete_document(document_id: str):
+    """Xóa tài liệu và cập nhật đồng bộ snapshot retrieval."""
+    try:
+        remaining_chunks = await asyncio.to_thread(
+            delete_indexed_document,
+            document_id,
+            repository=document_repository,
+        )
+        if remaining_chunks is None:
+            raise HTTPException(404, "Không tìm thấy tài liệu cần xóa")
+        return {
+            "status": "success",
+            "message": "Đã xóa tài liệu khỏi kho tri thức.",
+            "document_id": document_id,
+            "remaining_chunks": remaining_chunks,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Không thể xóa tài liệu %s: %s", document_id, exc)
+        raise HTTPException(
+            500,
+            "Không thể xóa tài liệu; kho tri thức hiện tại được giữ nguyên",
         ) from exc
 
 

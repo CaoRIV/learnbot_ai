@@ -10,8 +10,12 @@
 """
 
 import logging
+import threading
 import numpy as np
 from faiss import IndexFlatL2, IndexIVFFlat, IndexIVFPQ, clone_index
+
+
+index_lock = threading.RLock()
 
 
 class AutoFaissIndex:

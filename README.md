@@ -28,6 +28,7 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 - **Truy xuất kết hợp**: kết hợp tìm kiếm vector bằng FAISS và tìm kiếm từ khóa bằng BM25.
 - **Chỉ mục bền vững**: tự lưu và khôi phục FAISS/BM25 khi khởi động, không embedding lại các chunk cũ khi thêm tài liệu.
 - **Danh sách tài liệu bền vững**: giao diện tự tải lại tên, trạng thái và số phân đoạn của tài liệu đã lưu khi mở ứng dụng.
+- **Xóa tài liệu an toàn**: yêu cầu xác nhận trước khi xóa, sau đó đồng bộ SQLite với snapshot FAISS/BM25 mới.
 - **Đo chất lượng retrieval**: benchmark tiếng Việt có nhãn, đo Recall@5, MRR và độ trễ mà không gọi LLM API.
 - **Tối ưu cho tiếng Việt**: BM25 tách từ bằng `underthesea` thay vì tokenizer tiếng Trung.
 - **Xếp hạng lại kết quả**: hỗ trợ CrossEncoder hoặc chấm điểm liên quan qua LLM API.
@@ -161,6 +162,7 @@ Các endpoint chính:
 | --- | --- | --- |
 | `GET` | `/api/status` | Kiểm tra trạng thái ứng dụng và cấu hình dịch vụ LLM |
 | `GET` | `/api/documents` | Liệt kê tài liệu đã lưu và số phân đoạn |
+| `DELETE` | `/api/documents/{document_id}` | Xóa tài liệu và cập nhật lại chỉ mục retrieval |
 | `POST` | `/api/upload` | Tải lên và xử lý tài liệu |
 | `POST` | `/api/ask` | Đặt câu hỏi dựa trên tài liệu đã xử lý |
 
@@ -324,6 +326,7 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 - Mô hình embedding hoặc reranker cục bộ có thể cần tải dữ liệu trong lần chạy đầu tiên.
 - Câu hỏi gửi tới LLM và dịch vụ tìm kiếm web có thể được chuyển cho bên thứ ba; cần xem xét phạm vi dữ liệu trước khi sử dụng tài liệu nhạy cảm.
 - Máy có 8 GB RAM nên xử lý từng nhóm tài liệu nhỏ để tránh sử dụng quá nhiều bộ nhớ.
+- Chạy FastAPI với một worker vì FAISS/BM25 được giữ trong bộ nhớ của tiến trình; cấu hình nhiều worker chưa được hỗ trợ.
 - Dataset benchmark ban đầu có quy mô nhỏ và mang tính kiểm tra hồi quy; chưa đại diện đầy đủ cho mọi miền tài liệu thực tế.
 - Ngưỡng liên quan mặc định là điểm khởi đầu thận trọng; nên hiệu chỉnh bằng benchmark trên tài liệu thực tế. Nguồn web hiện chưa có điểm rerank nên vẫn được giữ khi người dùng chủ động bật tìm kiếm web.
 

@@ -26,6 +26,7 @@ Local PDF Chat RAG is an educational and reference implementation for developers
 - **Hybrid retrieval**: combines FAISS dense retrieval with BM25 keyword retrieval.
 - **Persistent indexes**: saves and restores FAISS/BM25 at startup and embeds only newly added chunks.
 - **Persistent document list**: restores saved document names, states, and chunk counts when the interface opens.
+- **Safe document deletion**: asks for confirmation, then keeps SQLite and the rebuilt FAISS/BM25 snapshot synchronized.
 - **Structured citations**: returns document, page, chunk ID, and retrieval score from indexed metadata.
 - **Evidence threshold**: only chunks meeting `MIN_RELEVANCE_SCORE` are passed to the LLM and returned as citations.
 - **Deterministic refusal**: skips answer generation when no eligible evidence remains and returns a machine-readable `answer_status`.
@@ -99,6 +100,7 @@ Main endpoints:
 
 - `GET /api/status`: runtime and provider configuration status;
 - `GET /api/documents`: list persisted documents and chunk counts;
+- `DELETE /api/documents/{document_id}`: delete a document and rebuild retrieval indexes;
 - `POST /api/upload`: upload and process a document;
 - `POST /api/ask`: ask a question against processed documents.
 
@@ -198,6 +200,7 @@ See [`example.env`](example.env) for the complete example. Common variables incl
 - Embedding and reranking models may be downloaded on first use.
 - Cloud model and web-search requests send the relevant query to third-party services; review your data boundary first.
 - The initial benchmark is a small regression dataset and is not representative of every production document domain.
+- Run FastAPI with one worker because FAISS/BM25 live in process memory; multi-worker mode is not supported yet.
 
 ## Contributing
 

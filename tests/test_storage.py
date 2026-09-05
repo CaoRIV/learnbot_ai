@@ -243,6 +243,72 @@ def test_activate_snapshot_keeps_only_one_active_snapshot(tmp_path: Path):
     assert statuses == {"snapshot-1": "inactive", "snapshot-2": "active"}
 
 
+def test_delete_document_and_snapshot_activation_share_one_transaction(
+    tmp_path: Path,
+):
+    repository = SQLiteRepository(tmp_path / "learnbot.db")
+    repository.initialize()
+    repository.upsert_document(
+        document_id="doc-1",
+        source_name="tai-lieu.txt",
+        content_hash="hash-1",
+        file_size=120,
+        status="ready",
+    )
+    repository.activate_snapshot(
+        snapshot_id="snapshot-old",
+        embedding_model="model-a",
+        snapshot_path="data/indexes/snapshot-old",
+        chunk_count=1,
+    )
+
+    with pytest.raises(KeyError):
+        repository.delete_document_and_activate_snapshot(
+            "doc-1",
+            {
+                "id": "snapshot-invalid",
+                "embedding_model": "model-a",
+            },
+        )
+
+    assert repository.get_document("doc-1") is not None
+    assert repository.get_active_snapshot()["id"] == "snapshot-old"
+
+
+def test_delete_rejects_snapshot_built_from_stale_chunks(tmp_path: Path):
+    repository = SQLiteRepository(tmp_path / "learnbot.db")
+    repository.initialize()
+    repository.upsert_document(
+        document_id="doc-1",
+        source_name="tai-lieu.txt",
+        content_hash="hash-1",
+        file_size=120,
+        status="ready",
+    )
+    repository.replace_chunks(
+        "doc-1",
+        [
+            {
+                "id": "chunk-current",
+                "chunk_index": 0,
+                "content": "Nội dung hiện tại.",
+                "page": 1,
+                "metadata": {},
+            }
+        ],
+    )
+
+    with pytest.raises(RuntimeError, match="đã thay đổi"):
+        repository.delete_document_and_activate_snapshot(
+            "doc-1",
+            None,
+            expected_chunk_ids=["chunk-stale"],
+        )
+
+    assert repository.get_document("doc-1") is not None
+    assert repository.get_chunks("doc-1")[0]["id"] == "chunk-current"
+
+
 def test_save_ingestion_batch_persists_documents_and_chunks(tmp_path: Path):
     repository = SQLiteRepository(tmp_path / "learnbot.db")
     repository.initialize()
@@ -270,6 +336,47 @@ def test_save_ingestion_batch_persists_documents_and_chunks(tmp_path: Path):
     assert [document["id"] for document in saved] == ["doc-1"]
     assert repository.get_document("doc-1")["status"] == "ready"
     assert repository.get_chunks("doc-1")[0]["content"] == "Nội dung đã lưu."
+
+
+def test_save_ingestion_batch_rejects_snapshot_built_from_stale_chunks(
+    tmp_path: Path,
+):
+    repository = SQLiteRepository(tmp_path / "learnbot.db")
+    repository.initialize()
+    repository.upsert_document(
+        document_id="doc-current",
+        source_name="hien-tai.txt",
+        content_hash="hash-current",
+        file_size=100,
+        status="ready",
+    )
+    repository.replace_chunks(
+        "doc-current",
+        [
+            {
+                "id": "chunk-current",
+                "chunk_index": 0,
+                "content": "Nội dung hiện tại.",
+                "page": 1,
+                "metadata": {},
+            }
+        ],
+    )
+
+    with pytest.raises(RuntimeError, match="đã thay đổi"):
+        repository.save_ingestion_batch(
+            [],
+            snapshot={
+                "id": "snapshot-stale",
+                "embedding_model": "model-a",
+                "snapshot_path": "data/indexes/snapshot-stale",
+                "chunk_count": 1,
+            },
+            expected_chunk_ids=["chunk-stale"],
+        )
+
+    assert repository.get_active_snapshot() is None
+    assert repository.get_chunks("doc-current")[0]["id"] == "chunk-current"
 
 
 def test_save_ingestion_batch_rolls_back_all_documents_on_failure(tmp_path: Path):

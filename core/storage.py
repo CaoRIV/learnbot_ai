@@ -174,6 +174,57 @@ class SQLiteRepository:
             )
         return cursor.rowcount > 0
 
+    def delete_document_and_activate_snapshot(
+        self,
+        document_id: str,
+        snapshot: dict[str, Any] | None,
+        *,
+        expected_chunk_ids: Iterable[str] | None = None,
+    ) -> bool:
+        """Xóa tài liệu và chuyển snapshot trong cùng một transaction."""
+        with self.connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            self._validate_chunk_ids(connection, expected_chunk_ids)
+            cursor = connection.execute(
+                "DELETE FROM documents WHERE id = ?",
+                (document_id,),
+            )
+            if cursor.rowcount == 0:
+                return False
+
+            if snapshot is None:
+                connection.execute(
+                    "UPDATE index_snapshots SET status = 'inactive' "
+                    "WHERE status = 'active'"
+                )
+            else:
+                self._activate_snapshot_on_connection(connection, snapshot)
+        return True
+
+    @staticmethod
+    def _validate_chunk_ids(
+        connection: sqlite3.Connection,
+        expected_chunk_ids: Iterable[str] | None,
+    ) -> None:
+        if expected_chunk_ids is None:
+            return
+        expected = list(expected_chunk_ids)
+        actual = [
+            row["id"]
+            for row in connection.execute(
+                """
+                SELECT c.id
+                FROM chunks AS c
+                JOIN documents AS d ON d.id = c.document_id
+                WHERE d.status = 'ready'
+                """
+            )
+        ]
+        if len(actual) != len(expected) or set(actual) != set(expected):
+            raise RuntimeError(
+                "Kho dữ liệu đã thay đổi trong lúc xây chỉ mục; vui lòng thử lại."
+            )
+
     def replace_chunks(
         self,
         document_id: str,
@@ -252,6 +303,8 @@ class SQLiteRepository:
         self,
         documents: Iterable[dict[str, Any]],
         snapshot: dict[str, Any] | None = None,
+        *,
+        expected_chunk_ids: Iterable[str] | None = None,
     ) -> list[dict[str, Any]]:
         """Lưu một batch tài liệu và chunk trong cùng một transaction.
 
@@ -263,6 +316,8 @@ class SQLiteRepository:
         saved_documents: list[dict[str, Any]] = []
 
         with self.connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            self._validate_chunk_ids(connection, expected_chunk_ids)
             for document in records:
                 existing = connection.execute(
                     "SELECT id FROM documents WHERE content_hash = ?",

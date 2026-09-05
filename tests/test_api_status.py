@@ -1,5 +1,7 @@
 import asyncio
 
+import pytest
+
 import api_router
 from api_router import QuestionRequest, ask_question, check_status
 from core.evidence import Citation
@@ -107,6 +109,47 @@ def test_openapi_exposes_document_list_contract():
         "ready",
         "failed",
     ]
+
+
+def test_openapi_exposes_document_delete_contract():
+    schema = api_router.app.openapi()
+    operation = schema["paths"]["/api/documents/{document_id}"]["delete"]
+    response_schema = operation["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]
+
+    assert response_schema["$ref"].endswith("/DocumentDeleteResponse")
+
+
+def test_delete_endpoint_returns_remaining_chunk_count(monkeypatch):
+    monkeypatch.setattr(
+        api_router,
+        "delete_indexed_document",
+        lambda document_id, repository: 3 if document_id == "doc-1" else None,
+    )
+
+    response = asyncio.run(api_router.delete_document("doc-1"))
+
+    assert response == {
+        "status": "success",
+        "message": "Đã xóa tài liệu khỏi kho tri thức.",
+        "document_id": "doc-1",
+        "remaining_chunks": 3,
+    }
+
+
+def test_delete_endpoint_returns_404_for_unknown_document(monkeypatch):
+    monkeypatch.setattr(
+        api_router,
+        "delete_indexed_document",
+        lambda document_id, repository: None,
+    )
+
+    with pytest.raises(api_router.HTTPException) as exc_info:
+        asyncio.run(api_router.delete_document("missing"))
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Không tìm thấy tài liệu cần xóa"
 
 
 def test_ask_endpoint_exposes_insufficient_evidence_status(monkeypatch):

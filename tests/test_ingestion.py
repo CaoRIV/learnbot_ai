@@ -6,15 +6,17 @@ import pytest
 from fastapi import HTTPException
 
 import api_router
+import core.ingestion as ingestion_module
+from core.bm25_index import BM25IndexManager, bm25_manager
 from core.ingestion import (
     DocumentSource,
     IngestionResult,
     calculate_file_hash,
     ingest_documents,
 )
+from core.index_snapshot import IndexSnapshotStore
 from core.storage import SQLiteRepository
-from core.vector_store import vector_store
-from core.bm25_index import bm25_manager
+from core.vector_store import VectorStore, vector_store
 
 
 import numpy as np
@@ -22,6 +24,45 @@ import numpy as np
 @pytest.fixture
 def repository(tmp_path):
     return SQLiteRepository(tmp_path / "learnbot-test.db")
+
+
+def _store_ready_document(repository, document_id, source_name, chunk_id, content):
+    repository.upsert_document(
+        document_id=document_id,
+        source_name=source_name,
+        content_hash=f"hash-{document_id}",
+        file_size=len(content.encode("utf-8")),
+        status="ready",
+    )
+    repository.replace_chunks(
+        document_id,
+        [
+            {
+                "id": chunk_id,
+                "chunk_index": 0,
+                "content": content,
+                "page": 1,
+                "metadata": {
+                    "source": source_name,
+                    "doc_id": document_id,
+                    "page": 1,
+                },
+            }
+        ],
+    )
+
+
+def _build_runtime_indexes(chunks, chunk_ids, metadatas):
+    runtime_vector = VectorStore()
+    runtime_vector.build_index(
+        chunks,
+        chunk_ids,
+        metadatas,
+        np.ones((len(chunks), 384), dtype=np.float32),
+    )
+    runtime_bm25 = BM25IndexManager()
+    runtime_bm25.build_index(chunks, chunk_ids)
+    return runtime_vector, runtime_bm25
 
 
 def test_calculate_file_hash_uses_sha256(tmp_path):
@@ -165,6 +206,151 @@ def test_ingest_documents_adds_new_document_to_existing_collection(
     assert len(repository.list_documents()) == 2
     assert first_chunk_ids < set(vector_store.id_order)
     assert vector_store.total_chunks == second_result.chunk_count
+
+
+def test_delete_indexed_document_rebuilds_indexes_from_remaining_chunks(
+    tmp_path, monkeypatch, repository
+):
+    repository.initialize()
+    _store_ready_document(
+        repository,
+        "doc-delete",
+        "xoa.txt",
+        "chunk-delete",
+        "Nội dung cần xóa.",
+    )
+    _store_ready_document(
+        repository,
+        "doc-keep",
+        "giu.txt",
+        "chunk-keep",
+        "Nội dung cần giữ.",
+    )
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Nội dung cần xóa.", "Nội dung cần giữ."],
+        ["chunk-delete", "chunk-keep"],
+        [
+            {"source": "xoa.txt", "doc_id": "doc-delete", "page": 1},
+            {"source": "giu.txt", "doc_id": "doc-keep", "page": 1},
+        ],
+    )
+    snapshot_store = IndexSnapshotStore(tmp_path / "indexes")
+    monkeypatch.setattr(
+        ingestion_module,
+        "encode_texts",
+        lambda chunks, show_progress=False: np.ones(
+            (len(chunks), 384), dtype=np.float32
+        ),
+    )
+
+    remaining_chunks = ingestion_module.delete_indexed_document(
+        "doc-delete",
+        repository=repository,
+        snapshot_store=snapshot_store,
+        target_vector_store=runtime_vector,
+        target_bm25_manager=runtime_bm25,
+    )
+
+    assert remaining_chunks == 1
+    assert repository.get_document("doc-delete") is None
+    assert repository.get_document("doc-keep") is not None
+    assert runtime_vector.id_order == ["chunk-keep"]
+    assert runtime_bm25.doc_mapping == {0: "chunk-keep"}
+    assert repository.get_active_snapshot()["chunk_count"] == 1
+    assert runtime_vector.snapshot_id == repository.get_active_snapshot()["id"]
+
+
+def test_delete_last_document_clears_runtime_indexes(tmp_path, repository):
+    repository.initialize()
+    _store_ready_document(
+        repository,
+        "doc-only",
+        "duy-nhat.txt",
+        "chunk-only",
+        "Nội dung duy nhất.",
+    )
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Nội dung duy nhất."],
+        ["chunk-only"],
+        [{"source": "duy-nhat.txt", "doc_id": "doc-only", "page": 1}],
+    )
+    repository.activate_snapshot(
+        snapshot_id="snapshot-old",
+        embedding_model="model-a",
+        snapshot_path=str(tmp_path / "indexes" / "snapshot-old"),
+        chunk_count=1,
+    )
+
+    remaining_chunks = ingestion_module.delete_indexed_document(
+        "doc-only",
+        repository=repository,
+        snapshot_store=IndexSnapshotStore(tmp_path / "indexes"),
+        target_vector_store=runtime_vector,
+        target_bm25_manager=runtime_bm25,
+    )
+
+    assert remaining_chunks == 0
+    assert repository.get_document("doc-only") is None
+    assert repository.get_active_snapshot() is None
+    assert runtime_vector.is_ready is False
+    assert runtime_bm25.bm25_index is None
+
+
+def test_delete_failure_preserves_document_and_runtime_indexes(
+    tmp_path, monkeypatch, repository
+):
+    repository.initialize()
+    _store_ready_document(
+        repository,
+        "doc-delete",
+        "xoa.txt",
+        "chunk-delete",
+        "Nội dung cần xóa.",
+    )
+    _store_ready_document(
+        repository,
+        "doc-keep",
+        "giu.txt",
+        "chunk-keep",
+        "Nội dung cần giữ.",
+    )
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Nội dung cần xóa.", "Nội dung cần giữ."],
+        ["chunk-delete", "chunk-keep"],
+        [
+            {"source": "xoa.txt", "doc_id": "doc-delete", "page": 1},
+            {"source": "giu.txt", "doc_id": "doc-keep", "page": 1},
+        ],
+    )
+    original_ids = list(runtime_vector.id_order)
+    original_bm25_mapping = dict(runtime_bm25.doc_mapping)
+    snapshot_store = IndexSnapshotStore(tmp_path / "indexes")
+    monkeypatch.setattr(
+        ingestion_module,
+        "encode_texts",
+        lambda chunks, show_progress=False: np.ones(
+            (len(chunks), 384), dtype=np.float32
+        ),
+    )
+    monkeypatch.setattr(
+        repository,
+        "delete_document_and_activate_snapshot",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("database locked")),
+    )
+
+    with pytest.raises(OSError, match="database locked"):
+        ingestion_module.delete_indexed_document(
+            "doc-delete",
+            repository=repository,
+            snapshot_store=snapshot_store,
+            target_vector_store=runtime_vector,
+            target_bm25_manager=runtime_bm25,
+        )
+
+    assert repository.get_document("doc-delete") is not None
+    assert runtime_vector.id_order == original_ids
+    assert runtime_bm25.doc_mapping == original_bm25_mapping
+    assert list((tmp_path / "indexes").iterdir()) == []
 
 
 def test_storage_failure_preserves_existing_index(tmp_path, monkeypatch, repository):

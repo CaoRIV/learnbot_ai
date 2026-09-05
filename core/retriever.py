@@ -10,7 +10,7 @@
 import logging
 from config import HYBRID_ALPHA, RETRIEVAL_TOP_K, RERANK_TOP_K, MAX_RETRIEVAL_ITERATIONS
 from core.evidence import Citation, RetrievedEvidence
-from core.vector_store import vector_store
+from core.vector_store import index_lock, vector_store
 from core.bm25_index import bm25_manager
 from core.embeddings import encode_query
 from core.reranker import rerank_results
@@ -134,15 +134,29 @@ def _recursive_retrieval_with_scores(
 
         # 语义检索
         query_embedding = encode_query(query)
-        sem_docs, sem_ids, sem_metas = vector_store.search(query_embedding, k=RETRIEVAL_TOP_K)
-
-        prepared = {"ids": [sem_ids], "documents": [sem_docs], "metadatas": [sem_metas]}
-
-        # BM25 检索
-        bm25_res = bm25_manager.search(query, top_k=RETRIEVAL_TOP_K) if bm25_manager.bm25_index else []
+        with index_lock:
+            sem_docs, sem_ids, sem_metas = vector_store.search(
+                query_embedding,
+                k=RETRIEVAL_TOP_K,
+            )
+            prepared = {
+                "ids": [sem_ids],
+                "documents": [sem_docs],
+                "metadatas": [sem_metas],
+            }
+            bm25_res = (
+                bm25_manager.search(query, top_k=RETRIEVAL_TOP_K)
+                if bm25_manager.bm25_index
+                else []
+            )
+            metadata_by_id = dict(vector_store.metadatas_map)
 
         # 混合排序 → 重排序
-        hybrid = hybrid_merge(prepared, bm25_res)
+        hybrid = hybrid_merge(
+            prepared,
+            bm25_res,
+            metadata_by_id=metadata_by_id,
+        )
         ids_iter, docs_iter, meta_iter = [], [], []
         for doc_id, data in hybrid[:RETRIEVAL_TOP_K]:
             ids_iter.append(doc_id)

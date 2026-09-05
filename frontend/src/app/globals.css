@@ -90,7 +90,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .quiet-state p { margin: 2px 0 0; color: var(--text); font-size: 12px; font-weight: 600; }
 .quiet-state span { max-width: 24ch; font-size: 11px; line-height: 1.5; }
 .quiet-state.compact { min-height: 170px; border-bottom: 0; }
-.document-row { display: grid; grid-template-columns: 30px minmax(0,1fr); gap: 10px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.document-row { display: grid; grid-template-columns: 30px minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); }
 .file-state { width: 30px; height: 30px; display: grid; place-items: center; color: var(--muted); background: var(--surface-muted); border-radius: 8px; }
 .file-state svg { width: 15px; height: 15px; }
 .file-state.ready { color: var(--success); }
@@ -99,6 +99,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .document-row > div { min-width: 0; display: grid; gap: 3px; }
 .document-row strong { overflow: hidden; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .document-row span { color: var(--muted); font-size: 10px; }
+.document-delete { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; color: var(--faint); background: transparent; border: 1px solid transparent; border-radius: 7px; }
+.document-delete:hover:not(:disabled) { color: var(--danger); background: var(--surface-hover); border-color: var(--border); }
+.document-delete svg { width: 14px; height: 14px; }
 
 .sidebar-status { min-height: 58px; display: grid; grid-template-columns: auto 1fr auto; gap: 9px; align-items: center; padding-top: 14px; border-top: 1px solid var(--border); }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }

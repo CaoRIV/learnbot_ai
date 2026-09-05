@@ -1,10 +1,66 @@
+import threading
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
 import core.retriever as retriever
+import core.vector_store as vector_store_module
 from core.bm25_index import BM25IndexManager
 from core.generator import _build_context, _build_prompt
 from core.retriever import hybrid_merge
+
+
+def test_retrieval_holds_index_lock_across_faiss_and_bm25(monkeypatch):
+    search_started = threading.Event()
+    allow_search_to_finish = threading.Event()
+    writer_attempted = threading.Event()
+    writer_acquired_lock = threading.Event()
+    retrieval_errors = []
+
+    def blocked_search(query_embedding, k=10):
+        search_started.set()
+        allow_search_to_finish.wait(timeout=2)
+        return [], [], []
+
+    monkeypatch.setattr(retriever, "encode_query", lambda query: np.zeros((1, 384)))
+    monkeypatch.setattr(retriever.vector_store, "search", blocked_search)
+    monkeypatch.setattr(
+        retriever,
+        "bm25_manager",
+        SimpleNamespace(bm25_index=None),
+    )
+    shared_lock = getattr(vector_store_module, "index_lock", threading.RLock())
+
+    def run_retrieval():
+        try:
+            retriever._recursive_retrieval_with_scores(
+                "câu hỏi",
+                max_iterations=1,
+            )
+        except Exception as exc:
+            retrieval_errors.append(exc)
+
+    def run_writer():
+        writer_attempted.set()
+        with shared_lock:
+            writer_acquired_lock.set()
+
+    retrieval_thread = threading.Thread(target=run_retrieval)
+    retrieval_thread.start()
+    assert search_started.wait(timeout=2)
+
+    writer_thread = threading.Thread(target=run_writer)
+    writer_thread.start()
+    assert writer_attempted.wait(timeout=2)
+    assert writer_acquired_lock.wait(timeout=0.1) is False
+
+    allow_search_to_finish.set()
+    retrieval_thread.join(timeout=2)
+    writer_thread.join(timeout=2)
+
+    assert retrieval_errors == []
+    assert writer_acquired_lock.is_set()
 
 
 def test_bm25_returns_relevant_document_first():

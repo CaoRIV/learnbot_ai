@@ -17,6 +17,7 @@ import {
   ApiError,
   askQuestion,
   type AnswerStatus,
+  deleteDocument,
   getDocuments,
   getProviderLabel,
   getSystemStatus,
@@ -34,6 +35,7 @@ type DocumentState = {
   chunks?: number;
   state: "processing" | "ready" | "error";
   message?: string;
+  persisted: boolean;
 };
 
 type ChatMessage = {
@@ -72,6 +74,7 @@ export function LearnBotWorkspace() {
   const [provider, setProvider] = useState<Provider>("siliconflow");
   const [webSearch, setWebSearch] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null);
   const [isAsking, setIsAsking] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [composerError, setComposerError] = useState("");
@@ -92,7 +95,6 @@ export function LearnBotWorkspace() {
 
   const refreshDocuments = useCallback(async () => {
     try {
-      setUploadError("");
       const storedDocuments = await getDocuments();
       setDocuments(
         storedDocuments.map((document) => ({
@@ -100,6 +102,7 @@ export function LearnBotWorkspace() {
           name: document.source_name,
           chunks: document.chunk_count,
           state: document.status === "failed" ? "error" : document.status,
+          persisted: true,
         })),
       );
     } catch (error) {
@@ -153,6 +156,7 @@ export function LearnBotWorkspace() {
         id: newId(),
         name: file.name,
         state: "processing",
+        persisted: false,
       }));
       setDocuments((current) => [...queued, ...current]);
 
@@ -161,6 +165,7 @@ export function LearnBotWorkspace() {
         const documentId = queued[index].id;
         try {
           const result = await uploadDocument(file);
+          if (result.status === "error") setUploadError(result.message);
           setDocuments((current) =>
             current.map((document) =>
               document.id === documentId
@@ -186,11 +191,41 @@ export function LearnBotWorkspace() {
         }
       }
 
+      await refreshDocuments();
       setIsUploading(false);
       setSidebarOpen(false);
       await refreshStatus();
     },
-    [isUploading, refreshStatus],
+    [isUploading, refreshDocuments, refreshStatus],
+  );
+
+  const handleDeleteDocument = useCallback(
+    async (document: DocumentState) => {
+      if (
+        !document.persisted ||
+        deletingDocumentId ||
+        !window.confirm(
+          `Xóa “${document.name}” khỏi kho tri thức? Hành động này không thể hoàn tác.`,
+        )
+      ) {
+        return;
+      }
+
+      setUploadError("");
+      setDeletingDocumentId(document.id);
+      try {
+        await deleteDocument(document.id);
+        setDocuments((current) =>
+          current.filter((item) => item.id !== document.id),
+        );
+        await refreshStatus();
+      } catch (error) {
+        setUploadError(readableError(error));
+      } finally {
+        setDeletingDocumentId(null);
+      }
+    },
+    [deletingDocumentId, refreshStatus],
   );
 
   const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
@@ -287,7 +322,18 @@ export function LearnBotWorkspace() {
             ) : documents.map((document) => (
               <div className="document-row" key={document.id}>
                 <span className={`file-state ${document.state}`}><Icon name={document.state === "ready" ? "check" : "file"} /></span>
-                <div><strong title={document.name}>{document.name}</strong><span>{document.state === "processing" ? "Đang xử lý…" : document.state === "error" ? "Xử lý thất bại" : `${document.chunks ?? 0} phân đoạn`}</span></div>
+                <div><strong title={document.name}>{document.name}</strong><span>{deletingDocumentId === document.id ? "Đang xóa…" : document.state === "processing" ? "Đang xử lý…" : document.state === "error" ? "Xử lý thất bại" : `${document.chunks ?? 0} phân đoạn`}</span></div>
+                {document.persisted && (
+                  <button
+                    className="document-delete"
+                    type="button"
+                    aria-label={`Xóa tài liệu ${document.name}`}
+                    disabled={isUploading || deletingDocumentId !== null}
+                    onClick={() => void handleDeleteDocument(document)}
+                  >
+                    <Icon name="trash" />
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -295,7 +341,7 @@ export function LearnBotWorkspace() {
           <div className="sidebar-status">
             <span className={`status-dot ${status?.status === "healthy" ? "online" : ""}`} />
             <div><strong>{status?.status === "healthy" ? "Backend sẵn sàng" : "Chưa kết nối backend"}</strong><span>{status ? `Phiên bản ${status.version}` : statusError || "Đang kiểm tra…"}</span></div>
-            <button className="icon-button" onClick={() => void refreshStatus()} aria-label="Kiểm tra lại kết nối"><Icon name="refresh" /></button>
+            <button className="icon-button" onClick={() => { void refreshStatus(); void refreshDocuments(); }} aria-label="Kiểm tra lại kết nối"><Icon name="refresh" /></button>
           </div>
         </aside>
 

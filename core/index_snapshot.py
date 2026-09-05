@@ -17,7 +17,7 @@ from config import INDEX_DIRECTORY
 from core.bm25_index import BM25IndexManager, bm25_manager
 from core.embeddings import EMBED_MODEL_NAME
 from core.storage import SCHEMA_VERSION, SQLiteRepository
-from core.vector_store import AutoFaissIndex, VectorStore, vector_store
+from core.vector_store import AutoFaissIndex, VectorStore, index_lock, vector_store
 
 
 MANIFEST_FILENAME = "manifest.json"
@@ -314,8 +314,9 @@ def restore_indexes(
         logging.error("Không thể khôi phục snapshot chỉ mục: %s", message)
         return RestoreResult(False, f"Không thể khôi phục snapshot chỉ mục: {message}")
 
-    target_vector_store.replace_with(candidate_vector)
-    target_bm25_manager.replace_with(candidate_bm25)
+    with index_lock:
+        target_vector_store.replace_with(candidate_vector)
+        target_bm25_manager.replace_with(candidate_bm25)
     logging.info(
         "Đã khôi phục snapshot %s với %s phân đoạn.",
         active_snapshot["id"],

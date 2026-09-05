@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
-import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable
@@ -18,7 +17,7 @@ from core.embeddings import encode_texts
 from core.index_snapshot import IndexSnapshotStore, restore_indexes
 from core.storage import SQLiteRepository
 from core.text_splitter import split_text
-from core.vector_store import VectorStore, vector_store
+from core.vector_store import VectorStore, index_lock, vector_store
 
 
 SUPPORTED_DOCUMENT_EXTENSIONS = frozenset(
@@ -26,7 +25,7 @@ SUPPORTED_DOCUMENT_EXTENSIONS = frozenset(
 )
 
 ProgressCallback = Callable[..., object]
-_ingestion_lock = threading.Lock()
+_ingestion_lock = index_lock
 
 
 @dataclass(frozen=True)
@@ -135,6 +134,91 @@ def _append_stored_chunks(
         chunk_ids.append(chunk["id"])
         metadatas.append(metadata)
     return len(stored_chunks)
+
+
+def delete_indexed_document(
+    document_id: str,
+    *,
+    repository: SQLiteRepository | None = None,
+    snapshot_store: IndexSnapshotStore | None = None,
+    target_vector_store: VectorStore = vector_store,
+    target_bm25_manager: BM25IndexManager = bm25_manager,
+) -> int | None:
+    """Xóa tài liệu và chỉ thay index sau khi snapshot mới đã lưu an toàn."""
+    with _ingestion_lock:
+        storage = repository or SQLiteRepository()
+        snapshots = snapshot_store or IndexSnapshotStore(
+            storage.database_path.parent / "indexes"
+            if repository is not None
+            else INDEX_DIRECTORY
+        )
+        storage.initialize()
+        if storage.get_document(document_id) is None:
+            return None
+
+        stored_ready_chunks = storage.list_ready_chunks()
+        remaining = [
+            chunk
+            for chunk in stored_ready_chunks
+            if chunk["document_id"] != document_id
+        ]
+        base_chunk_ids = [chunk["id"] for chunk in stored_ready_chunks]
+        if not remaining:
+            if not storage.delete_document_and_activate_snapshot(
+                document_id,
+                None,
+                expected_chunk_ids=base_chunk_ids,
+            ):
+                return None
+            target_vector_store.clear()
+            target_bm25_manager.clear()
+            return 0
+
+        chunks = [chunk["content"] for chunk in remaining]
+        chunk_ids = [chunk["id"] for chunk in remaining]
+        metadatas = []
+        for chunk in remaining:
+            metadata = dict(chunk["metadata"])
+            metadata.setdefault("source", chunk["source_name"])
+            metadata.setdefault("doc_id", chunk["document_id"])
+            metadata.setdefault("page", chunk["page"])
+            metadatas.append(metadata)
+
+        embeddings = encode_texts(chunks, show_progress=False)
+        candidate_vector_store = VectorStore()
+        candidate_vector_store.build_index(
+            chunks,
+            chunk_ids,
+            metadatas,
+            embeddings,
+        )
+        candidate_bm25_manager = BM25IndexManager()
+        candidate_bm25_manager.build_index(chunks, chunk_ids)
+
+        candidate_snapshot = None
+        try:
+            candidate_snapshot = snapshots.write_snapshot(
+                candidate_vector_store,
+                candidate_bm25_manager,
+            )
+            deleted = storage.delete_document_and_activate_snapshot(
+                document_id,
+                candidate_snapshot.as_storage_record(),
+                expected_chunk_ids=base_chunk_ids,
+            )
+            if not deleted:
+                snapshots.remove_snapshot(candidate_snapshot)
+                return None
+        except Exception:
+            if candidate_snapshot is not None:
+                snapshots.remove_snapshot(candidate_snapshot)
+            raise
+
+        candidate_vector_store.snapshot_id = candidate_snapshot.snapshot_id
+        candidate_bm25_manager.snapshot_id = candidate_snapshot.snapshot_id
+        target_vector_store.replace_with(candidate_vector_store)
+        target_bm25_manager.replace_with(candidate_bm25_manager)
+        return len(chunks)
 
 
 def ingest_documents(
@@ -323,6 +407,8 @@ def ingest_documents(
                     all_metadatas,
                 )
 
+        base_chunk_ids = list(all_ids)
+
         for prepared in prepared_documents:
             all_chunks.extend(prepared.chunks)
             all_ids.extend(prepared.chunk_ids)
@@ -362,6 +448,7 @@ def ingest_documents(
         ]
 
         if runtime_matches_snapshot:
+            base_chunk_ids = list(vector_store.id_order)
             all_ids = list(vector_store.id_order) + new_ids
             all_chunks = [
                 vector_store.contents_map[chunk_id]
@@ -421,6 +508,7 @@ def ingest_documents(
                     for prepared in prepared_documents
                 ),
                 snapshot=candidate_snapshot.as_storage_record(),
+                expected_chunk_ids=base_chunk_ids,
             )
         except Exception as exc:
             if candidate_snapshot is not None:

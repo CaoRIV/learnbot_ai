@@ -61,6 +61,13 @@ export type StoredDocument = {
   updated_at: string;
 };
 
+export type DocumentDeleteResult = {
+  status: "success";
+  message: string;
+  document_id: string;
+  remaining_chunks: number;
+};
+
 export type AnswerResult = {
   answer: string;
   answer_status: AnswerStatus;
@@ -108,6 +115,14 @@ export async function getDocuments(signal?: AbortSignal) {
     cache: "no-store",
   });
   return parseResponse<StoredDocument[]>(response);
+}
+
+export async function deleteDocument(documentId: string) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/documents/${encodeURIComponent(documentId)}`,
+    { method: "DELETE" },
+  );
+  return parseResponse<DocumentDeleteResult>(response);
 }
 
 export async function uploadDocument(file: File) {

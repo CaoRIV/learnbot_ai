@@ -29,6 +29,7 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 - **Chỉ mục bền vững**: tự lưu và khôi phục FAISS/BM25 khi khởi động, không embedding lại các chunk cũ khi thêm tài liệu.
 - **Danh sách tài liệu bền vững**: giao diện tự tải lại tên, trạng thái và số phân đoạn của tài liệu đã lưu khi mở ứng dụng.
 - **Xóa tài liệu an toàn**: yêu cầu xác nhận trước khi xóa, sau đó đồng bộ SQLite với snapshot FAISS/BM25 mới.
+- **Bảo trì chỉ mục**: xem số tài liệu/phân đoạn và trạng thái đồng bộ; có thể chủ động xây lại FAISS/BM25 từ dữ liệu SQLite mà không làm mất snapshot đang hoạt động nếu quá trình thất bại.
 - **Đo chất lượng retrieval**: benchmark tiếng Việt có nhãn, đo Recall@5, MRR và độ trễ mà không gọi LLM API.
 - **Tối ưu cho tiếng Việt**: BM25 tách từ bằng `underthesea` thay vì tokenizer tiếng Trung.
 - **Xếp hạng lại kết quả**: hỗ trợ CrossEncoder hoặc chấm điểm liên quan qua LLM API.
@@ -160,9 +161,10 @@ Các endpoint chính:
 
 | Phương thức | Endpoint | Chức năng |
 | --- | --- | --- |
-| `GET` | `/api/status` | Kiểm tra trạng thái ứng dụng và cấu hình dịch vụ LLM |
+| `GET` | `/api/status` | Kiểm tra dịch vụ LLM, số dữ liệu đã lưu và tính nhất quán của chỉ mục |
 | `GET` | `/api/documents` | Liệt kê tài liệu đã lưu và số phân đoạn |
 | `DELETE` | `/api/documents/{document_id}` | Xóa tài liệu và cập nhật lại chỉ mục retrieval |
+| `POST` | `/api/index/rebuild` | Xây lại FAISS/BM25 từ các phân đoạn trong SQLite |
 | `POST` | `/api/upload` | Tải lên và xử lý tài liệu |
 | `POST` | `/api/ask` | Đặt câu hỏi dựa trên tài liệu đã xử lý |
 

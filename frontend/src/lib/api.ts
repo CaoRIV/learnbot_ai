@@ -36,6 +36,10 @@ export type SystemStatus = {
   vector_store_ready: boolean;
   total_chunks: number;
   index_snapshot_id?: string | null;
+  document_count: number;
+  stored_chunk_count: number;
+  active_snapshot_id: string | null;
+  index_consistent: boolean;
   min_relevance_score: number;
   version: string;
 };
@@ -66,6 +70,13 @@ export type DocumentDeleteResult = {
   message: string;
   document_id: string;
   remaining_chunks: number;
+};
+
+export type IndexRebuildResult = {
+  status: "success";
+  message: string;
+  snapshot_id: string | null;
+  total_chunks: number;
 };
 
 export type AnswerResult = {
@@ -123,6 +134,13 @@ export async function deleteDocument(documentId: string) {
     { method: "DELETE" },
   );
   return parseResponse<DocumentDeleteResult>(response);
+}
+
+export async function rebuildIndex() {
+  const response = await fetch(`${API_BASE_URL}/api/index/rebuild`, {
+    method: "POST",
+  });
+  return parseResponse<IndexRebuildResult>(response);
 }
 
 export async function uploadDocument(file: File) {

@@ -227,6 +227,11 @@ a.citation-row:hover { padding-left: 7px; color: var(--accent-hover); background
 .detail-list > div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--border); }
 .detail-list dt { color: var(--muted); font-size: 11px; }
 .detail-list dd { margin: 0; font-size: 11px; font-weight: 600; text-align: right; }
+.maintenance-button { min-height: 34px; display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; padding: 0 10px; color: var(--text); background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: 11px; }
+.maintenance-button:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--border-strong); }
+.maintenance-button svg { width: 14px; height: 14px; }
+.maintenance-message { margin: 9px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.sidebar-maintenance { display: none; }
 .section-title { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
 .context-note { margin: 22px; padding: 14px 0; border-top: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong); }
 .context-note strong { font-size: 11px; }
@@ -239,6 +244,12 @@ a.citation-row:hover { padding-left: 7px; color: var(--accent-hover); background
 @media (max-width: 1180px) {
   .app-shell { grid-template-columns: 250px minmax(0, 1fr); }
   .context-panel { display: none; }
+  .sidebar-maintenance { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid var(--border); }
+  .sidebar-maintenance > div { display: grid; gap: 2px; }
+  .sidebar-maintenance > div span { color: var(--muted); font-size: 10px; }
+  .sidebar-maintenance > div strong { font-size: 11px; }
+  .sidebar-maintenance .maintenance-button { margin-top: 0; }
+  .sidebar-maintenance .maintenance-message { grid-column: 1 / -1; margin-top: 0; }
 }
 
 @media (max-width: 767px) {

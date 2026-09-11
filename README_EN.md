@@ -27,6 +27,7 @@ Local PDF Chat RAG is an educational and reference implementation for developers
 - **Persistent indexes**: saves and restores FAISS/BM25 at startup and embeds only newly added chunks.
 - **Persistent document list**: restores saved document names, states, and chunk counts when the interface opens.
 - **Safe document deletion**: asks for confirmation, then keeps SQLite and the rebuilt FAISS/BM25 snapshot synchronized.
+- **Index maintenance**: reports persisted document/chunk counts and index consistency, and can safely rebuild FAISS/BM25 from SQLite without replacing a working snapshot on failure.
 - **Structured citations**: returns document, page, chunk ID, and retrieval score from indexed metadata.
 - **Evidence threshold**: only chunks meeting `MIN_RELEVANCE_SCORE` are passed to the LLM and returned as citations.
 - **Deterministic refusal**: skips answer generation when no eligible evidence remains and returns a machine-readable `answer_status`.
@@ -98,9 +99,10 @@ python api_router.py
 
 Main endpoints:
 
-- `GET /api/status`: runtime and provider configuration status;
+- `GET /api/status`: provider, persisted-data, and index-consistency status;
 - `GET /api/documents`: list persisted documents and chunk counts;
 - `DELETE /api/documents/{document_id}`: delete a document and rebuild retrieval indexes;
+- `POST /api/index/rebuild`: rebuild FAISS/BM25 from persisted SQLite chunks;
 - `POST /api/upload`: upload and process a document;
 - `POST /api/ask`: ask a question against processed documents.
 

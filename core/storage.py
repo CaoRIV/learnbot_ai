@@ -2,17 +2,41 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterable, Iterator
+from typing import Any, Callable, Iterable, Iterator
 
 from config import DATABASE_PATH, PROJECT_ROOT
 
 
 SCHEMA_VERSION = 1
 DEFAULT_MIGRATIONS_DIR = PROJECT_ROOT / "migrations"
+
+
+def calculate_ready_chunks_fingerprint(chunks: Iterable[dict[str, Any]]) -> str:
+    """Tạo dấu vân tay ổn định cho toàn bộ dữ liệu dùng để dựng index."""
+    payload = [
+        {
+            "id": chunk["id"],
+            "document_id": chunk["document_id"],
+            "chunk_index": chunk["chunk_index"],
+            "content": chunk["content"],
+            "page": chunk["page"],
+            "metadata": chunk["metadata"],
+            "source_name": chunk["source_name"],
+        }
+        for chunk in chunks
+    ]
+    serialized = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 class SQLiteRepository:
@@ -205,22 +229,38 @@ class SQLiteRepository:
     def _validate_chunk_ids(
         connection: sqlite3.Connection,
         expected_chunk_ids: Iterable[str] | None,
+        expected_fingerprint: str | None = None,
     ) -> None:
-        if expected_chunk_ids is None:
+        if expected_chunk_ids is None and expected_fingerprint is None:
             return
-        expected = list(expected_chunk_ids)
-        actual = [
-            row["id"]
-            for row in connection.execute(
-                """
-                SELECT c.id
-                FROM chunks AS c
-                JOIN documents AS d ON d.id = c.document_id
-                WHERE d.status = 'ready'
-                """
-            )
-        ]
-        if len(actual) != len(expected) or set(actual) != set(expected):
+        rows = connection.execute(
+            """
+            SELECT c.*, d.source_name
+            FROM chunks AS c
+            JOIN documents AS d ON d.id = c.document_id
+            WHERE d.status = 'ready'
+            ORDER BY d.created_at, d.id, c.chunk_index
+            """
+        ).fetchall()
+        chunks = []
+        for row in rows:
+            chunk = dict(row)
+            chunk["metadata"] = json.loads(chunk.pop("metadata_json"))
+            chunks.append(chunk)
+
+        actual_ids = [chunk["id"] for chunk in chunks]
+        expected_ids = (
+            list(expected_chunk_ids) if expected_chunk_ids is not None else actual_ids
+        )
+        fingerprint_changed = (
+            expected_fingerprint is not None
+            and calculate_ready_chunks_fingerprint(chunks) != expected_fingerprint
+        )
+        if (
+            len(actual_ids) != len(expected_ids)
+            or set(actual_ids) != set(expected_ids)
+            or fingerprint_changed
+        ):
             raise RuntimeError(
                 "Kho dữ liệu đã thay đổi trong lúc xây chỉ mục; vui lòng thử lại."
             )
@@ -437,6 +477,35 @@ class SQLiteRepository:
                 },
             )
         return dict(row)
+
+    def activate_snapshot_if_chunks_match(
+        self,
+        snapshot: dict[str, Any] | None,
+        *,
+        expected_chunk_ids: Iterable[str],
+        expected_chunk_fingerprint: str | None = None,
+        on_activation: Callable[[], None] | None = None,
+    ) -> dict[str, Any] | None:
+        """Chuyển snapshot và publish runtime trong cùng biên transaction."""
+        with self.connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            self._validate_chunk_ids(
+                connection,
+                expected_chunk_ids,
+                expected_chunk_fingerprint,
+            )
+            if snapshot is None:
+                connection.execute(
+                    "UPDATE index_snapshots SET status = 'inactive' "
+                    "WHERE status = 'active'"
+                )
+                result = None
+            else:
+                row = self._activate_snapshot_on_connection(connection, snapshot)
+                result = dict(row)
+            if on_activation is not None:
+                on_activation()
+        return result
 
     def get_active_snapshot(self) -> dict[str, Any] | None:
         with self.connection() as connection:

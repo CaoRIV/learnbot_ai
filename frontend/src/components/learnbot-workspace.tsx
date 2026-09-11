@@ -21,6 +21,7 @@ import {
   getDocuments,
   getProviderLabel,
   getSystemStatus,
+  rebuildIndex,
   type Provider,
   type StructuredCitation,
   type SystemStatus,
@@ -75,6 +76,8 @@ export function LearnBotWorkspace() {
   const [webSearch, setWebSearch] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null);
+  const [isRebuilding, setIsRebuilding] = useState(false);
+  const [rebuildMessage, setRebuildMessage] = useState("");
   const [isAsking, setIsAsking] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [composerError, setComposerError] = useState("");
@@ -148,7 +151,7 @@ export function LearnBotWorkspace() {
 
   const processFiles = useCallback(
     async (files: File[]) => {
-      if (!files.length || isUploading) return;
+      if (!files.length || isUploading || isRebuilding) return;
       setUploadError("");
       setIsUploading(true);
 
@@ -196,7 +199,7 @@ export function LearnBotWorkspace() {
       setSidebarOpen(false);
       await refreshStatus();
     },
-    [isUploading, refreshDocuments, refreshStatus],
+    [isRebuilding, isUploading, refreshDocuments, refreshStatus],
   );
 
   const handleDeleteDocument = useCallback(
@@ -204,6 +207,7 @@ export function LearnBotWorkspace() {
       if (
         !document.persisted ||
         deletingDocumentId ||
+        isRebuilding ||
         !window.confirm(
           `Xóa “${document.name}” khỏi kho tri thức? Hành động này không thể hoàn tác.`,
         )
@@ -225,8 +229,33 @@ export function LearnBotWorkspace() {
         setDeletingDocumentId(null);
       }
     },
-    [deletingDocumentId, refreshStatus],
+    [deletingDocumentId, isRebuilding, refreshStatus],
   );
+
+  const handleRebuildIndex = useCallback(async () => {
+    if (
+      isRebuilding ||
+      !window.confirm(
+        "Xây lại toàn bộ chỉ mục từ SQLite? Quá trình này có thể mất một lúc.",
+      )
+    ) {
+      return;
+    }
+
+    setRebuildMessage("");
+    setIsRebuilding(true);
+    try {
+      const result = await rebuildIndex();
+      setRebuildMessage(
+        `Đã xây lại chỉ mục với ${result.total_chunks} phân đoạn.`,
+      );
+      await Promise.all([refreshStatus(), refreshDocuments()]);
+    } catch (error) {
+      setRebuildMessage(readableError(error));
+    } finally {
+      setIsRebuilding(false);
+    }
+  }, [isRebuilding, refreshDocuments, refreshStatus]);
 
   const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
     void processFiles(Array.from(event.target.files ?? []));
@@ -241,7 +270,7 @@ export function LearnBotWorkspace() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const prompt = question.trim();
-    if (!prompt || isAsking) return;
+    if (!prompt || isAsking || isRebuilding) return;
 
     setComposerError("");
     setQuestion("");
@@ -301,14 +330,14 @@ export function LearnBotWorkspace() {
           </div>
 
           <div
-            className={`upload-zone ${isUploading ? "is-busy" : ""}`}
+            className={`upload-zone ${isUploading || isRebuilding ? "is-busy" : ""}`}
             onDragOver={(event) => event.preventDefault()}
             onDrop={handleDrop}
           >
             <Icon name="upload" />
-            <strong>{isUploading ? "Đang lập chỉ mục" : "Thêm tài liệu"}</strong>
+            <strong>{isUploading ? "Đang lập chỉ mục" : isRebuilding ? "Đang xây lại chỉ mục" : "Thêm tài liệu"}</strong>
             <span>PDF, DOCX, XLSX, PPTX, TXT hoặc Markdown</span>
-            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>Chọn tệp</button>
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading || isRebuilding}>Chọn tệp</button>
             <input ref={fileInputRef} type="file" multiple hidden accept=".pdf,.txt,.docx,.xlsx,.xls,.pptx,.md" onChange={handleFiles} />
           </div>
 
@@ -328,7 +357,7 @@ export function LearnBotWorkspace() {
                     className="document-delete"
                     type="button"
                     aria-label={`Xóa tài liệu ${document.name}`}
-                    disabled={isUploading || deletingDocumentId !== null}
+                    disabled={isUploading || isRebuilding || deletingDocumentId !== null}
                     onClick={() => void handleDeleteDocument(document)}
                   >
                     <Icon name="trash" />
@@ -336,6 +365,12 @@ export function LearnBotWorkspace() {
                 )}
               </div>
             ))}
+          </div>
+
+          <div className="sidebar-maintenance" aria-label="Bảo trì chỉ mục">
+            <div><span>Chỉ mục</span><strong>{status ? (status.index_consistent ? "Đồng bộ" : "Cần xây lại") : "Đang kiểm tra…"}</strong></div>
+            <button className="maintenance-button" type="button" onClick={() => void handleRebuildIndex()} disabled={isRebuilding || isUploading || deletingDocumentId !== null || isAsking}><Icon name="refresh" /><span>{isRebuilding ? "Đang xây lại…" : "Xây lại"}</span></button>
+            {rebuildMessage && <p className="maintenance-message" role="status">{rebuildMessage}</p>}
           </div>
 
           <div className="sidebar-status">
@@ -420,7 +455,7 @@ export function LearnBotWorkspace() {
           <div className="composer-wrap">
             <form className="composer" ref={formRef} onSubmit={handleSubmit}>
               <label htmlFor="question">Câu hỏi</label>
-              <textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={handleComposerKeyDown} placeholder="Hỏi về nội dung, số liệu hoặc luận điểm trong tài liệu…" rows={2} disabled={isAsking} />
+              <textarea id="question" value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={handleComposerKeyDown} placeholder="Hỏi về nội dung, số liệu hoặc luận điểm trong tài liệu…" rows={2} disabled={isAsking || isRebuilding} />
               {composerError && <div className="composer-error" role="alert"><span>{composerError}</span><button type="button" onClick={() => setComposerError("")}>Đóng</button></div>}
               <div className="composer-toolbar">
                 <div className="answer-options">
@@ -429,7 +464,7 @@ export function LearnBotWorkspace() {
                 </div>
                 <div className="composer-actions">
                   {messages.length > 0 && <button className="clear-button" type="button" onClick={() => setMessages([])} aria-label="Xóa hội thoại"><Icon name="trash" /></button>}
-                  <button className="send-button" type="submit" disabled={!question.trim() || isAsking}><span>{isAsking ? "Đang trả lời" : "Gửi"}</span><Icon name="send" /></button>
+                  <button className="send-button" type="submit" disabled={!question.trim() || isAsking || isRebuilding}><span>{isAsking ? "Đang trả lời" : "Gửi"}</span><Icon name="send" /></button>
                 </div>
               </div>
             </form>
@@ -440,7 +475,9 @@ export function LearnBotWorkspace() {
         <aside className="context-panel" aria-label="Nguồn và trạng thái">
           <div className="context-section">
             <p className="eyebrow">Cấu hình</p><h2>Phiên làm việc</h2>
-            <dl className="detail-list"><div><dt>Dịch vụ</dt><dd>{getProviderLabel(provider)}</dd></div><div><dt>Tìm kiếm web</dt><dd>{webSearch ? "Đang bật" : "Đang tắt"}</dd></div><div><dt>Kho vector</dt><dd>{status?.vector_store_ready ? "Sẵn sàng" : "Chưa có dữ liệu"}</dd></div></dl>
+            <dl className="detail-list"><div><dt>Dịch vụ</dt><dd>{getProviderLabel(provider)}</dd></div><div><dt>Tìm kiếm web</dt><dd>{webSearch ? "Đang bật" : "Đang tắt"}</dd></div><div><dt>Tài liệu</dt><dd>{status?.document_count ?? 0}</dd></div><div><dt>Phân đoạn SQLite</dt><dd>{status?.stored_chunk_count ?? 0}</dd></div><div><dt>Chỉ mục</dt><dd>{status ? (status.index_consistent ? "Đồng bộ" : "Cần xây lại") : "Đang kiểm tra…"}</dd></div></dl>
+            <button className="maintenance-button" type="button" onClick={() => void handleRebuildIndex()} disabled={isRebuilding || isUploading || deletingDocumentId !== null || isAsking}><Icon name="refresh" /><span>{isRebuilding ? "Đang xây lại…" : "Xây lại chỉ mục"}</span></button>
+            {rebuildMessage && <p className="maintenance-message" role="status">{rebuildMessage}</p>}
           </div>
           <div className="context-section sources-section">
             <div className="section-title"><div><p className="eyebrow">Đối chiếu</p><h2 id="latest-citations-title">Nguồn gần nhất</h2></div><span>{latestCitations.length}</span></div>

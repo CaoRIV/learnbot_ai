@@ -1,4 +1,5 @@
 import asyncio
+from types import SimpleNamespace
 
 import pytest
 
@@ -15,6 +16,16 @@ def test_status_reports_current_version_without_credentials(monkeypatch):
     monkeypatch.setattr(api_router, "OPENAI_API_KEY", None)
     monkeypatch.setattr(api_router, "GEMINI_API_KEY", None)
     monkeypatch.setattr(api_router, "LLM_PROVIDER", "siliconflow")
+    monkeypatch.setattr(
+        api_router,
+        "get_index_status",
+        lambda repository: {
+            "document_count": 2,
+            "stored_chunk_count": 7,
+            "active_snapshot_id": "snapshot-current",
+            "index_consistent": True,
+        },
+    )
 
     status = asyncio.run(check_status())
 
@@ -25,6 +36,10 @@ def test_status_reports_current_version_without_credentials(monkeypatch):
     assert status["gemini_configured"] is False
     assert status["llm_provider"] == "siliconflow"
     assert status["min_relevance_score"] == api_router.MIN_RELEVANCE_SCORE
+    assert status["document_count"] == 2
+    assert status["stored_chunk_count"] == 7
+    assert status["active_snapshot_id"] == "snapshot-current"
+    assert status["index_consistent"] is True
 
 
 def test_ask_endpoint_uses_structured_citations_instead_of_answer_regex(monkeypatch):
@@ -119,6 +134,36 @@ def test_openapi_exposes_document_delete_contract():
     ]["schema"]
 
     assert response_schema["$ref"].endswith("/DocumentDeleteResponse")
+
+
+def test_openapi_exposes_index_rebuild_contract():
+    schema = api_router.app.openapi()
+    operation = schema["paths"]["/api/index/rebuild"]["post"]
+    response_schema = operation["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]
+
+    assert response_schema["$ref"].endswith("/IndexRebuildResponse")
+
+
+def test_rebuild_endpoint_returns_new_snapshot_and_chunk_count(monkeypatch):
+    monkeypatch.setattr(
+        api_router,
+        "rebuild_indexes_from_storage",
+        lambda repository: SimpleNamespace(
+            snapshot_id="snapshot-new",
+            chunk_count=5,
+        ),
+    )
+
+    response = asyncio.run(api_router.rebuild_index())
+
+    assert response == {
+        "status": "success",
+        "message": "Đã xây lại chỉ mục từ dữ liệu SQLite.",
+        "snapshot_id": "snapshot-new",
+        "total_chunks": 5,
+    }
 
 
 def test_delete_endpoint_returns_remaining_chunk_count(monkeypatch):

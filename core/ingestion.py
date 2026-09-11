@@ -15,7 +15,7 @@ from core.bm25_index import BM25IndexManager, bm25_manager
 from core.document_loader import extract_text_by_page
 from core.embeddings import encode_texts
 from core.index_snapshot import IndexSnapshotStore, restore_indexes
-from core.storage import SQLiteRepository
+from core.storage import SQLiteRepository, calculate_ready_chunks_fingerprint
 from core.text_splitter import split_text
 from core.vector_store import VectorStore, index_lock, vector_store
 
@@ -58,6 +58,14 @@ class IngestionResult:
             self.processed_files + self.skipped_files > 0
             and self.failed_files == 0
         )
+
+
+@dataclass(frozen=True)
+class IndexRebuildResult:
+    """Kết quả của thao tác xây lại chỉ mục từ SQLite."""
+
+    snapshot_id: str | None
+    chunk_count: int
 
 
 @dataclass(frozen=True)
@@ -136,6 +144,214 @@ def _append_stored_chunks(
     return len(stored_chunks)
 
 
+def _build_candidate_indexes(
+    stored_chunks: list[dict],
+) -> tuple[VectorStore, BM25IndexManager]:
+    chunks = [chunk["content"] for chunk in stored_chunks]
+    chunk_ids = [chunk["id"] for chunk in stored_chunks]
+    metadatas = [_stored_chunk_metadata(chunk) for chunk in stored_chunks]
+
+    embeddings = encode_texts(chunks, show_progress=False)
+    candidate_vector_store = VectorStore()
+    candidate_vector_store.build_index(
+        chunks,
+        chunk_ids,
+        metadatas,
+        embeddings,
+    )
+    candidate_bm25_manager = BM25IndexManager()
+    candidate_bm25_manager.build_index(chunks, chunk_ids)
+    return candidate_vector_store, candidate_bm25_manager
+
+
+def _stored_chunk_metadata(chunk: dict) -> dict:
+    metadata = dict(chunk["metadata"])
+    metadata.setdefault("source", chunk["source_name"])
+    metadata.setdefault("doc_id", chunk["document_id"])
+    metadata.setdefault("page", chunk["page"])
+    return metadata
+
+
+def _publish_candidate_indexes(
+    candidate_vector_store: VectorStore,
+    candidate_bm25_manager: BM25IndexManager,
+    target_vector_store: VectorStore,
+    target_bm25_manager: BM25IndexManager,
+) -> None:
+    """Publish hai index như một bundle và khôi phục runtime nếu có lỗi."""
+    previous_vector_state = (
+        target_vector_store.index,
+        target_vector_store.contents_map,
+        target_vector_store.metadatas_map,
+        target_vector_store.id_order,
+        target_vector_store.snapshot_id,
+    )
+    previous_bm25_state = (
+        target_bm25_manager.bm25_index,
+        target_bm25_manager.doc_mapping,
+        target_bm25_manager.tokenized_corpus,
+        target_bm25_manager.raw_corpus,
+        target_bm25_manager.snapshot_id,
+    )
+    try:
+        target_vector_store.replace_with(candidate_vector_store)
+        target_bm25_manager.replace_with(candidate_bm25_manager)
+    except Exception:
+        (
+            target_vector_store.index,
+            target_vector_store.contents_map,
+            target_vector_store.metadatas_map,
+            target_vector_store.id_order,
+            target_vector_store.snapshot_id,
+        ) = previous_vector_state
+        (
+            target_bm25_manager.bm25_index,
+            target_bm25_manager.doc_mapping,
+            target_bm25_manager.tokenized_corpus,
+            target_bm25_manager.raw_corpus,
+            target_bm25_manager.snapshot_id,
+        ) = previous_bm25_state
+        raise
+
+
+def rebuild_indexes_from_storage(
+    *,
+    repository: SQLiteRepository | None = None,
+    snapshot_store: IndexSnapshotStore | None = None,
+    target_vector_store: VectorStore = vector_store,
+    target_bm25_manager: BM25IndexManager = bm25_manager,
+) -> IndexRebuildResult:
+    """Xây lại FAISS/BM25 từ SQLite và chỉ publish snapshot hoàn chỉnh."""
+    with _ingestion_lock:
+        storage = repository or SQLiteRepository()
+        snapshots = snapshot_store or IndexSnapshotStore(
+            storage.database_path.parent / "indexes"
+            if repository is not None
+            else INDEX_DIRECTORY
+        )
+        storage.initialize()
+        stored_chunks = storage.list_ready_chunks()
+        chunk_ids = [chunk["id"] for chunk in stored_chunks]
+        chunk_fingerprint = calculate_ready_chunks_fingerprint(stored_chunks)
+
+        if not stored_chunks:
+            storage.activate_snapshot_if_chunks_match(
+                None,
+                expected_chunk_ids=chunk_ids,
+                expected_chunk_fingerprint=chunk_fingerprint,
+            )
+            target_vector_store.clear()
+            target_bm25_manager.clear()
+            return IndexRebuildResult(snapshot_id=None, chunk_count=0)
+
+        candidate_vector_store, candidate_bm25_manager = (
+            _build_candidate_indexes(stored_chunks)
+        )
+        previous_snapshot = storage.get_active_snapshot()
+        candidate_snapshot = None
+        try:
+            candidate_snapshot = snapshots.write_snapshot(
+                candidate_vector_store,
+                candidate_bm25_manager,
+            )
+            storage.activate_snapshot_if_chunks_match(
+                candidate_snapshot.as_storage_record(),
+                expected_chunk_ids=chunk_ids,
+                expected_chunk_fingerprint=chunk_fingerprint,
+            )
+            candidate_vector_store.snapshot_id = candidate_snapshot.snapshot_id
+            candidate_bm25_manager.snapshot_id = candidate_snapshot.snapshot_id
+            try:
+                _publish_candidate_indexes(
+                    candidate_vector_store,
+                    candidate_bm25_manager,
+                    target_vector_store,
+                    target_bm25_manager,
+                )
+            except Exception:
+                storage.activate_snapshot_if_chunks_match(
+                    previous_snapshot,
+                    expected_chunk_ids=chunk_ids,
+                    expected_chunk_fingerprint=chunk_fingerprint,
+                )
+                raise
+        except Exception:
+            if candidate_snapshot is not None:
+                snapshots.remove_snapshot(candidate_snapshot)
+            raise
+
+        return IndexRebuildResult(
+            snapshot_id=candidate_snapshot.snapshot_id,
+            chunk_count=len(stored_chunks),
+        )
+
+
+def get_index_status(
+    *,
+    repository: SQLiteRepository | None = None,
+    target_vector_store: VectorStore = vector_store,
+    target_bm25_manager: BM25IndexManager = bm25_manager,
+) -> dict:
+    """Đối chiếu trạng thái SQLite, snapshot và hai index trong bộ nhớ."""
+    with _ingestion_lock:
+        storage = repository or SQLiteRepository()
+        storage.initialize()
+        documents = storage.list_document_summaries()
+        stored_chunks = storage.list_ready_chunks()
+        active_snapshot = storage.get_active_snapshot()
+        stored_ids = [chunk["id"] for chunk in stored_chunks]
+        bm25_entries = sorted(target_bm25_manager.doc_mapping.items())
+        bm25_mapping_contiguous = [index for index, _ in bm25_entries] == list(
+            range(len(bm25_entries))
+        )
+        bm25_ids = [chunk_id for _, chunk_id in bm25_entries]
+
+        if stored_ids:
+            active_snapshot_id = (
+                active_snapshot["id"] if active_snapshot is not None else None
+            )
+            consistent = bool(
+                active_snapshot is not None
+                and active_snapshot["chunk_count"] == len(stored_ids)
+                and active_snapshot_id == target_vector_store.snapshot_id
+                and active_snapshot_id == target_bm25_manager.snapshot_id
+                and target_vector_store.total_chunks == len(stored_ids)
+                and target_vector_store.id_order == stored_ids
+                and bm25_mapping_contiguous
+                and bm25_ids == stored_ids
+                and target_bm25_manager.raw_corpus
+                == [chunk["content"] for chunk in stored_chunks]
+                and all(
+                    target_vector_store.contents_map.get(chunk["id"])
+                    == chunk["content"]
+                    for chunk in stored_chunks
+                )
+                and all(
+                    target_vector_store.metadatas_map.get(chunk["id"])
+                    == _stored_chunk_metadata(chunk)
+                    for chunk in stored_chunks
+                )
+            )
+        else:
+            active_snapshot_id = (
+                active_snapshot["id"] if active_snapshot is not None else None
+            )
+            consistent = bool(
+                active_snapshot is None
+                and target_vector_store.total_chunks == 0
+                and target_vector_store.snapshot_id is None
+                and not bm25_ids
+                and target_bm25_manager.snapshot_id is None
+            )
+
+        return {
+            "document_count": len(documents),
+            "stored_chunk_count": len(stored_ids),
+            "active_snapshot_id": active_snapshot_id,
+            "index_consistent": consistent,
+        }
+
+
 def delete_indexed_document(
     document_id: str,
     *,
@@ -174,26 +390,9 @@ def delete_indexed_document(
             target_bm25_manager.clear()
             return 0
 
-        chunks = [chunk["content"] for chunk in remaining]
-        chunk_ids = [chunk["id"] for chunk in remaining]
-        metadatas = []
-        for chunk in remaining:
-            metadata = dict(chunk["metadata"])
-            metadata.setdefault("source", chunk["source_name"])
-            metadata.setdefault("doc_id", chunk["document_id"])
-            metadata.setdefault("page", chunk["page"])
-            metadatas.append(metadata)
-
-        embeddings = encode_texts(chunks, show_progress=False)
-        candidate_vector_store = VectorStore()
-        candidate_vector_store.build_index(
-            chunks,
-            chunk_ids,
-            metadatas,
-            embeddings,
+        candidate_vector_store, candidate_bm25_manager = (
+            _build_candidate_indexes(remaining)
         )
-        candidate_bm25_manager = BM25IndexManager()
-        candidate_bm25_manager.build_index(chunks, chunk_ids)
 
         candidate_snapshot = None
         try:
@@ -218,7 +417,7 @@ def delete_indexed_document(
         candidate_bm25_manager.snapshot_id = candidate_snapshot.snapshot_id
         target_vector_store.replace_with(candidate_vector_store)
         target_bm25_manager.replace_with(candidate_bm25_manager)
-        return len(chunks)
+        return len(remaining)
 
 
 def ingest_documents(

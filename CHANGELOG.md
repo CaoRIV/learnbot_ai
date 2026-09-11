@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here.
 
+## [2.10.0] - 2026-09-11
+
+### Added
+
+- Rebuild FAISS/BM25 from the authoritative SQLite chunks through `POST /api/index/rebuild` and a confirmed maintenance action in the Next.js interface.
+- Index health fields in `GET /api/status`: persisted document/chunk counts, active snapshot ID, and a consistency indicator.
+
+### Changed
+
+- Index rebuilds create and validate a candidate snapshot before publishing it, preserving the current runtime and active snapshot if rebuilding fails.
+- Rebuilding an empty knowledge base clears stale runtime indexes and deactivates the previous snapshot.
+
 ## [2.9.0] - 2026-09-05
 
 ### Added

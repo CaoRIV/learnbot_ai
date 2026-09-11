@@ -353,6 +353,318 @@ def test_delete_failure_preserves_document_and_runtime_indexes(
     assert list((tmp_path / "indexes").iterdir()) == []
 
 
+def test_rebuild_indexes_from_storage_publishes_new_snapshot(
+    tmp_path, monkeypatch, repository
+):
+    repository.initialize()
+    _store_ready_document(
+        repository,
+        "doc-a",
+        "mot.txt",
+        "chunk-a",
+        "Nội dung thứ nhất.",
+    )
+    _store_ready_document(
+        repository,
+        "doc-b",
+        "hai.txt",
+        "chunk-b",
+        "Nội dung thứ hai.",
+    )
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Dữ liệu cũ."],
+        ["chunk-old"],
+        [{"source": "cu.txt", "doc_id": "doc-old", "page": 1}],
+    )
+    monkeypatch.setattr(
+        ingestion_module,
+        "encode_texts",
+        lambda chunks, show_progress=False: np.ones(
+            (len(chunks), 384), dtype=np.float32
+        ),
+    )
+
+    result = ingestion_module.rebuild_indexes_from_storage(
+        repository=repository,
+        snapshot_store=IndexSnapshotStore(tmp_path / "indexes"),
+        target_vector_store=runtime_vector,
+        target_bm25_manager=runtime_bm25,
+    )
+
+    assert result.chunk_count == 2
+    assert result.snapshot_id == repository.get_active_snapshot()["id"]
+    assert runtime_vector.id_order == ["chunk-a", "chunk-b"]
+    assert runtime_bm25.doc_mapping == {0: "chunk-a", 1: "chunk-b"}
+    assert runtime_vector.snapshot_id == result.snapshot_id
+    assert runtime_bm25.snapshot_id == result.snapshot_id
+
+
+def test_rebuild_failure_preserves_active_snapshot_and_runtime(
+    tmp_path, monkeypatch, repository
+):
+    repository.initialize()
+    _store_ready_document(
+        repository,
+        "doc-current",
+        "hien-tai.txt",
+        "chunk-current",
+        "Nội dung hiện tại.",
+    )
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Dữ liệu đang hoạt động."],
+        ["chunk-active"],
+        [{"source": "active.txt", "doc_id": "doc-active", "page": 1}],
+    )
+    runtime_vector.snapshot_id = "snapshot-active"
+    runtime_bm25.snapshot_id = "snapshot-active"
+    repository.activate_snapshot(
+        snapshot_id="snapshot-active",
+        embedding_model="model-a",
+        snapshot_path=str(tmp_path / "indexes" / "snapshot-active"),
+        chunk_count=1,
+    )
+    snapshot_store = IndexSnapshotStore(tmp_path / "indexes")
+    monkeypatch.setattr(
+        ingestion_module,
+        "encode_texts",
+        lambda chunks, show_progress=False: np.ones(
+            (len(chunks), 384), dtype=np.float32
+        ),
+    )
+    monkeypatch.setattr(
+        repository,
+        "activate_snapshot_if_chunks_match",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("database locked")),
+        raising=False,
+    )
+
+    with pytest.raises(OSError, match="database locked"):
+        ingestion_module.rebuild_indexes_from_storage(
+            repository=repository,
+            snapshot_store=snapshot_store,
+            target_vector_store=runtime_vector,
+            target_bm25_manager=runtime_bm25,
+        )
+
+    assert repository.get_active_snapshot()["id"] == "snapshot-active"
+    assert runtime_vector.id_order == ["chunk-active"]
+    assert runtime_bm25.doc_mapping == {0: "chunk-active"}
+    assert [path.name for path in (tmp_path / "indexes").iterdir()] == []
+
+
+def test_rebuild_publish_failure_restores_active_snapshot_and_runtime(
+    tmp_path, monkeypatch, repository
+):
+    repository.initialize()
+    _store_ready_document(
+        repository,
+        "doc-current",
+        "hien-tai.txt",
+        "chunk-current",
+        "Nội dung hiện tại.",
+    )
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Dữ liệu đang hoạt động."],
+        ["chunk-active"],
+        [{"source": "active.txt", "doc_id": "doc-active", "page": 1}],
+    )
+    runtime_vector.snapshot_id = "snapshot-active"
+    runtime_bm25.snapshot_id = "snapshot-active"
+    repository.activate_snapshot(
+        snapshot_id="snapshot-active",
+        embedding_model="model-a",
+        snapshot_path=str(tmp_path / "indexes" / "snapshot-active"),
+        chunk_count=1,
+    )
+    snapshot_store = IndexSnapshotStore(tmp_path / "indexes")
+    monkeypatch.setattr(
+        ingestion_module,
+        "encode_texts",
+        lambda chunks, show_progress=False: np.ones(
+            (len(chunks), 384), dtype=np.float32
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_bm25,
+        "replace_with",
+        lambda candidate: (_ for _ in ()).throw(OSError("publish failed")),
+    )
+
+    with pytest.raises(OSError, match="publish failed"):
+        ingestion_module.rebuild_indexes_from_storage(
+            repository=repository,
+            snapshot_store=snapshot_store,
+            target_vector_store=runtime_vector,
+            target_bm25_manager=runtime_bm25,
+        )
+
+    assert repository.get_active_snapshot()["id"] == "snapshot-active"
+    assert runtime_vector.id_order == ["chunk-active"]
+    assert runtime_vector.snapshot_id == "snapshot-active"
+    assert runtime_bm25.doc_mapping == {0: "chunk-active"}
+    assert runtime_bm25.snapshot_id == "snapshot-active"
+    assert [path.name for path in (tmp_path / "indexes").iterdir()] == []
+
+
+def test_rebuild_rejects_content_change_that_keeps_same_chunk_id(
+    tmp_path, monkeypatch, repository
+):
+    repository.initialize()
+    _store_ready_document(
+        repository,
+        "doc-current",
+        "hien-tai.txt",
+        "chunk-current",
+        "Nội dung ban đầu.",
+    )
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Dữ liệu đang hoạt động."],
+        ["chunk-active"],
+        [{"source": "active.txt", "doc_id": "doc-active", "page": 1}],
+    )
+    runtime_vector.snapshot_id = "snapshot-active"
+    runtime_bm25.snapshot_id = "snapshot-active"
+    repository.activate_snapshot(
+        snapshot_id="snapshot-active",
+        embedding_model="model-a",
+        snapshot_path=str(tmp_path / "indexes" / "snapshot-active"),
+        chunk_count=1,
+    )
+    snapshot_store = IndexSnapshotStore(tmp_path / "indexes")
+    original_write_snapshot = snapshot_store.write_snapshot
+
+    def write_then_change_content(*args, **kwargs):
+        snapshot = original_write_snapshot(*args, **kwargs)
+        repository.replace_chunks(
+            "doc-current",
+            [
+                {
+                    "id": "chunk-current",
+                    "chunk_index": 0,
+                    "content": "Nội dung đã thay đổi.",
+                    "page": 1,
+                    "metadata": {
+                        "source": "hien-tai.txt",
+                        "doc_id": "doc-current",
+                        "page": 1,
+                    },
+                }
+            ],
+        )
+        return snapshot
+
+    monkeypatch.setattr(snapshot_store, "write_snapshot", write_then_change_content)
+    monkeypatch.setattr(
+        ingestion_module,
+        "encode_texts",
+        lambda chunks, show_progress=False: np.ones(
+            (len(chunks), 384), dtype=np.float32
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="đã thay đổi"):
+        ingestion_module.rebuild_indexes_from_storage(
+            repository=repository,
+            snapshot_store=snapshot_store,
+            target_vector_store=runtime_vector,
+            target_bm25_manager=runtime_bm25,
+        )
+
+    assert repository.get_active_snapshot()["id"] == "snapshot-active"
+    assert runtime_vector.id_order == ["chunk-active"]
+    assert runtime_bm25.doc_mapping == {0: "chunk-active"}
+    assert [path.name for path in (tmp_path / "indexes").iterdir()] == []
+
+
+def test_rebuild_empty_storage_clears_active_indexes(tmp_path, repository):
+    repository.initialize()
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Dữ liệu cũ."],
+        ["chunk-old"],
+        [{"source": "cu.txt", "doc_id": "doc-old", "page": 1}],
+    )
+    repository.activate_snapshot(
+        snapshot_id="snapshot-old",
+        embedding_model="model-a",
+        snapshot_path=str(tmp_path / "indexes" / "snapshot-old"),
+        chunk_count=1,
+    )
+
+    result = ingestion_module.rebuild_indexes_from_storage(
+        repository=repository,
+        snapshot_store=IndexSnapshotStore(tmp_path / "indexes"),
+        target_vector_store=runtime_vector,
+        target_bm25_manager=runtime_bm25,
+    )
+
+    assert result.chunk_count == 0
+    assert result.snapshot_id is None
+    assert repository.get_active_snapshot() is None
+    assert runtime_vector.is_ready is False
+    assert runtime_bm25.bm25_index is None
+
+
+def test_index_status_detects_snapshot_and_chunk_mismatch(tmp_path, repository):
+    repository.initialize()
+    _store_ready_document(
+        repository,
+        "doc-1",
+        "tai-lieu.txt",
+        "chunk-1",
+        "Nội dung kiểm tra.",
+    )
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Nội dung kiểm tra."],
+        ["chunk-1"],
+        [{"source": "tai-lieu.txt", "doc_id": "doc-1", "page": 1}],
+    )
+    runtime_vector.snapshot_id = "snapshot-current"
+    runtime_bm25.snapshot_id = "snapshot-current"
+    repository.activate_snapshot(
+        snapshot_id="snapshot-current",
+        embedding_model="model-a",
+        snapshot_path=str(tmp_path / "indexes" / "snapshot-current"),
+        chunk_count=1,
+    )
+
+    status = ingestion_module.get_index_status(
+        repository=repository,
+        target_vector_store=runtime_vector,
+        target_bm25_manager=runtime_bm25,
+    )
+
+    assert status == {
+        "document_count": 1,
+        "stored_chunk_count": 1,
+        "active_snapshot_id": "snapshot-current",
+        "index_consistent": True,
+    }
+
+    runtime_bm25.snapshot_id = "snapshot-stale"
+    assert ingestion_module.get_index_status(
+        repository=repository,
+        target_vector_store=runtime_vector,
+        target_bm25_manager=runtime_bm25,
+    )["index_consistent"] is False
+
+    runtime_vector.metadatas_map["chunk-1"]["page"] = 1
+    runtime_bm25.doc_mapping = {1: "chunk-1"}
+    assert ingestion_module.get_index_status(
+        repository=repository,
+        target_vector_store=runtime_vector,
+        target_bm25_manager=runtime_bm25,
+    )["index_consistent"] is False
+
+    runtime_bm25.snapshot_id = "snapshot-current"
+    runtime_bm25.doc_mapping = {0: "chunk-1"}
+    runtime_vector.metadatas_map["chunk-1"]["page"] = 2
+    assert ingestion_module.get_index_status(
+        repository=repository,
+        target_vector_store=runtime_vector,
+        target_bm25_manager=runtime_bm25,
+    )["index_consistent"] is False
+
+
 def test_storage_failure_preserves_existing_index(tmp_path, monkeypatch, repository):
     vector_store.build_index(
         ["Old chunk"],

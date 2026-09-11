@@ -28,7 +28,9 @@ from core.ingestion import (
     DocumentSource,
     SUPPORTED_DOCUMENT_EXTENSIONS,
     delete_indexed_document,
+    get_index_status,
     ingest_documents,
+    rebuild_indexes_from_storage,
 )
 from core.storage import SQLiteRepository
 from core.vector_store import vector_store
@@ -126,6 +128,13 @@ class DocumentDeleteResponse(BaseModel):
     remaining_chunks: int
 
 
+class IndexRebuildResponse(BaseModel):
+    status: Literal["success"]
+    message: str
+    snapshot_id: Optional[str] = None
+    total_chunks: int
+
+
 @app.get("/api/documents", response_model=List[DocumentResponse])
 async def list_documents():
     """Trả về các tài liệu đã lưu để khôi phục danh sách trên giao diện."""
@@ -166,6 +175,28 @@ async def delete_document(document_id: str):
         raise HTTPException(
             500,
             "Không thể xóa tài liệu; kho tri thức hiện tại được giữ nguyên",
+        ) from exc
+
+
+@app.post("/api/index/rebuild", response_model=IndexRebuildResponse)
+async def rebuild_index():
+    """Xây lại FAISS/BM25 hoàn toàn từ dữ liệu đang lưu trong SQLite."""
+    try:
+        result = await asyncio.to_thread(
+            rebuild_indexes_from_storage,
+            repository=document_repository,
+        )
+        return {
+            "status": "success",
+            "message": "Đã xây lại chỉ mục từ dữ liệu SQLite.",
+            "snapshot_id": result.snapshot_id,
+            "total_chunks": result.chunk_count,
+        }
+    except Exception as exc:
+        logger.error("Không thể xây lại chỉ mục: %s", exc)
+        raise HTTPException(
+            500,
+            "Không thể xây lại chỉ mục; snapshot hiện tại được giữ nguyên",
         ) from exc
 
 
@@ -270,6 +301,10 @@ async def ask_question(req: QuestionRequest):
 
 @app.get("/api/status")
 async def check_status():
+    index_status = await asyncio.to_thread(
+        get_index_status,
+        repository=document_repository,
+    )
     return {
         "status": "healthy",
         "siliconflow_configured": is_configured_api_key(SILICONFLOW_API_KEY),
@@ -281,7 +316,8 @@ async def check_status():
         "total_chunks": vector_store.total_chunks,
         "index_snapshot_id": vector_store.snapshot_id,
         "min_relevance_score": MIN_RELEVANCE_SCORE,
-        "version": __version__
+        "version": __version__,
+        **index_status,
     }
 
 

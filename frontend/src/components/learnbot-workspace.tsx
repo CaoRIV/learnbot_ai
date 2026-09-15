@@ -17,11 +17,15 @@ import {
   ApiError,
   askQuestion,
   type AnswerStatus,
+  type BackupInfo,
+  createBackup,
   deleteDocument,
+  getBackups,
   getDocuments,
   getProviderLabel,
   getSystemStatus,
   rebuildIndex,
+  restoreBackup,
   type Provider,
   type StructuredCitation,
   type SystemStatus,
@@ -63,6 +67,11 @@ function readableError(error: unknown) {
   return "Không thể kết nối với backend. Hãy kiểm tra FastAPI đang chạy.";
 }
 
+function backupLabel(backup: BackupInfo) {
+  const kind = backup.kind === "manual" ? "Thủ công" : "Trước phục hồi";
+  return `${new Date(backup.created_at).toLocaleString("vi-VN")} · ${kind}`;
+}
+
 export function LearnBotWorkspace() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -78,12 +87,19 @@ export function LearnBotWorkspace() {
   const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null);
   const [isRebuilding, setIsRebuilding] = useState(false);
   const [rebuildMessage, setRebuildMessage] = useState("");
+  const [backups, setBackups] = useState<BackupInfo[]>([]);
+  const [selectedBackupId, setSelectedBackupId] = useState("");
+  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+  const [restoringBackupId, setRestoringBackupId] = useState<string | null>(null);
+  const [backupMessage, setBackupMessage] = useState("");
+  const [backupMessageIsError, setBackupMessageIsError] = useState(false);
   const [isAsking, setIsAsking] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [composerError, setComposerError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageScrollRef = useRef<HTMLElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const isMaintaining = isRebuilding || isCreatingBackup || restoringBackupId !== null;
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -115,13 +131,29 @@ export function LearnBotWorkspace() {
     }
   }, []);
 
+  const refreshBackups = useCallback(async () => {
+    try {
+      const storedBackups = await getBackups();
+      setBackups(storedBackups);
+      setSelectedBackupId((current) =>
+        storedBackups.some((backup) => backup.backup_id === current)
+          ? current
+          : (storedBackups[0]?.backup_id ?? ""),
+      );
+    } catch (error) {
+      setBackupMessageIsError(true);
+      setBackupMessage(readableError(error));
+    }
+  }, []);
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("learnbot-theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     setTheme(savedTheme === "dark" || (!savedTheme && prefersDark) ? "dark" : "light");
     void refreshStatus();
     void refreshDocuments();
-  }, [refreshDocuments, refreshStatus]);
+    void refreshBackups();
+  }, [refreshBackups, refreshDocuments, refreshStatus]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;

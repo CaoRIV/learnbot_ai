@@ -79,6 +79,26 @@ export type IndexRebuildResult = {
   total_chunks: number;
 };
 
+export type BackupInfo = {
+  backup_id: string;
+  created_at: string;
+  kind: "manual" | "pre_restore";
+  document_count: number;
+  chunk_count: number;
+  snapshot_id: string | null;
+  size_bytes: number;
+};
+
+export type BackupRestoreResult = {
+  status: "success";
+  message: string;
+  backup_id: string;
+  safety_backup_id: string;
+  document_count: number;
+  chunk_count: number;
+  snapshot_id: string | null;
+};
+
 export type AnswerResult = {
   answer: string;
   answer_status: AnswerStatus;
@@ -141,6 +161,29 @@ export async function rebuildIndex() {
     method: "POST",
   });
   return parseResponse<IndexRebuildResult>(response);
+}
+
+export async function getBackups(signal?: AbortSignal) {
+  const response = await fetch(`${API_BASE_URL}/api/backups`, {
+    signal,
+    cache: "no-store",
+  });
+  return parseResponse<BackupInfo[]>(response);
+}
+
+export async function createBackup() {
+  const response = await fetch(`${API_BASE_URL}/api/backups`, {
+    method: "POST",
+  });
+  return parseResponse<BackupInfo>(response);
+}
+
+export async function restoreBackup(backupId: string) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/backups/${encodeURIComponent(backupId)}/restore`,
+    { method: "POST" },
+  );
+  return parseResponse<BackupRestoreResult>(response);
 }
 
 export async function uploadDocument(file: File) {

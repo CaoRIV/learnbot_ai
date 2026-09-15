@@ -2,6 +2,7 @@
 
 import asyncio
 from contextlib import asynccontextmanager
+from dataclasses import asdict
 import logging
 import os
 import tempfile
@@ -22,6 +23,7 @@ from config import (
     SILICONFLOW_API_KEY,
     is_configured_api_key,
 )
+from core.backup import BackupError, BackupManager, BackupNotFoundError
 from core.generator import AnswerStatus, query_answer_result
 from core.index_snapshot import restore_indexes
 from core.ingestion import (
@@ -42,6 +44,7 @@ logger = logging.getLogger("rag-api")
 MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 UPLOAD_COPY_CHUNK_SIZE = 1024 * 1024
 document_repository = SQLiteRepository()
+backup_manager = BackupManager(repository=document_repository)
 
 
 class ProgressCallback:
@@ -135,6 +138,26 @@ class IndexRebuildResponse(BaseModel):
     total_chunks: int
 
 
+class BackupResponse(BaseModel):
+    backup_id: str
+    created_at: str
+    kind: Literal["manual", "pre_restore"]
+    document_count: int
+    chunk_count: int
+    snapshot_id: Optional[str] = None
+    size_bytes: int
+
+
+class BackupRestoreResponse(BaseModel):
+    status: Literal["success"]
+    message: str
+    backup_id: str
+    safety_backup_id: str
+    document_count: int
+    chunk_count: int
+    snapshot_id: Optional[str] = None
+
+
 @app.get("/api/documents", response_model=List[DocumentResponse])
 async def list_documents():
     """Trả về các tài liệu đã lưu để khôi phục danh sách trên giao diện."""
@@ -198,6 +221,57 @@ async def rebuild_index():
             500,
             "Không thể xây lại chỉ mục; snapshot hiện tại được giữ nguyên",
         ) from exc
+
+
+@app.get("/api/backups", response_model=List[BackupResponse])
+async def list_backups():
+    """Liệt kê các bản sao lưu cục bộ còn hợp lệ."""
+    try:
+        backups = await asyncio.to_thread(backup_manager.list_backups)
+        return [asdict(backup) for backup in backups]
+    except Exception as exc:
+        logger.error("Không thể tải danh sách backup: %s", exc)
+        raise HTTPException(500, "Không thể tải danh sách bản sao lưu") from exc
+
+
+@app.post("/api/backups", response_model=BackupResponse)
+async def create_backup():
+    """Tạo backup thủ công cho SQLite và active snapshot."""
+    try:
+        backup = await asyncio.to_thread(backup_manager.create_backup)
+        return asdict(backup)
+    except BackupError as exc:
+        logger.warning("Không thể tạo backup: %s", exc)
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        logger.error("Không thể tạo backup: %s", exc)
+        raise HTTPException(500, "Không thể tạo bản sao lưu") from exc
+
+
+@app.post(
+    "/api/backups/{backup_id}/restore",
+    response_model=BackupRestoreResponse,
+)
+async def restore_backup(backup_id: str):
+    """Khôi phục backup sau khi tự tạo bản an toàn của trạng thái hiện tại."""
+    try:
+        result = await asyncio.to_thread(
+            backup_manager.restore_backup,
+            backup_id,
+        )
+        return {
+            "status": "success",
+            "message": "Đã khôi phục bản sao lưu.",
+            **asdict(result),
+        }
+    except BackupNotFoundError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except BackupError as exc:
+        logger.warning("Không thể khôi phục backup %s: %s", backup_id, exc)
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        logger.error("Không thể khôi phục backup %s: %s", backup_id, exc)
+        raise HTTPException(500, "Không thể khôi phục bản sao lưu") from exc
 
 
 @app.post("/api/upload", response_model=FileProcessResult)

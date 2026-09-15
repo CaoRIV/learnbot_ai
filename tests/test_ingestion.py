@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 import pytest
 from fastapi import HTTPException
@@ -504,6 +505,179 @@ def test_rebuild_publish_failure_restores_active_snapshot_and_runtime(
     assert runtime_bm25.doc_mapping == {0: "chunk-active"}
     assert runtime_bm25.snapshot_id == "snapshot-active"
     assert [path.name for path in (tmp_path / "indexes").iterdir()] == []
+
+
+def test_rebuild_publish_failure_does_not_require_second_database_activation(
+    tmp_path, monkeypatch, repository
+):
+    repository.initialize()
+    _store_ready_document(
+        repository,
+        "doc-current",
+        "hien-tai.txt",
+        "chunk-current",
+        "Nội dung hiện tại.",
+    )
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Dữ liệu đang hoạt động."],
+        ["chunk-active"],
+        [{"source": "active.txt", "doc_id": "doc-active", "page": 1}],
+    )
+    runtime_vector.snapshot_id = "snapshot-active"
+    runtime_bm25.snapshot_id = "snapshot-active"
+    repository.activate_snapshot(
+        snapshot_id="snapshot-active",
+        embedding_model="model-a",
+        snapshot_path=str(tmp_path / "indexes" / "snapshot-active"),
+        chunk_count=1,
+    )
+    snapshot_store = IndexSnapshotStore(tmp_path / "indexes")
+    original_activation = repository.activate_snapshot_if_chunks_match
+    activation_attempts = 0
+
+    def fail_if_activated_twice(*args, **kwargs):
+        nonlocal activation_attempts
+        activation_attempts += 1
+        if activation_attempts > 1:
+            raise OSError("Không thể kích hoạt lần hai")
+        return original_activation(*args, **kwargs)
+
+    monkeypatch.setattr(
+        repository,
+        "activate_snapshot_if_chunks_match",
+        fail_if_activated_twice,
+    )
+    monkeypatch.setattr(
+        ingestion_module,
+        "encode_texts",
+        lambda chunks, show_progress=False: np.ones(
+            (len(chunks), 384), dtype=np.float32
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_bm25,
+        "replace_with",
+        lambda candidate: (_ for _ in ()).throw(OSError("publish failed")),
+    )
+
+    with pytest.raises(OSError, match="publish failed"):
+        ingestion_module.rebuild_indexes_from_storage(
+            repository=repository,
+            snapshot_store=snapshot_store,
+            target_vector_store=runtime_vector,
+            target_bm25_manager=runtime_bm25,
+        )
+
+    assert repository.get_active_snapshot()["id"] == "snapshot-active"
+    assert runtime_vector.id_order == ["chunk-active"]
+    assert runtime_vector.snapshot_id == "snapshot-active"
+    assert runtime_bm25.doc_mapping == {0: "chunk-active"}
+    assert runtime_bm25.snapshot_id == "snapshot-active"
+    assert [path.name for path in (tmp_path / "indexes").iterdir()] == []
+
+
+def test_rebuild_commit_failure_restores_active_snapshot_and_runtime(
+    tmp_path, monkeypatch, repository
+):
+    repository.initialize()
+    _store_ready_document(
+        repository,
+        "doc-current",
+        "hien-tai.txt",
+        "chunk-current",
+        "Nội dung hiện tại.",
+    )
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Dữ liệu đang hoạt động."],
+        ["chunk-active"],
+        [{"source": "active.txt", "doc_id": "doc-active", "page": 1}],
+    )
+    runtime_vector.snapshot_id = "snapshot-active"
+    runtime_bm25.snapshot_id = "snapshot-active"
+    repository.activate_snapshot(
+        snapshot_id="snapshot-active",
+        embedding_model="model-a",
+        snapshot_path=str(tmp_path / "indexes" / "snapshot-active"),
+        chunk_count=1,
+    )
+    snapshot_store = IndexSnapshotStore(tmp_path / "indexes")
+    original_connection = repository.connection
+
+    @contextmanager
+    def fail_transaction_after_callback():
+        with original_connection() as connection:
+            yield connection
+            if connection.in_transaction:
+                raise OSError("commit failed")
+
+    monkeypatch.setattr(repository, "connection", fail_transaction_after_callback)
+    monkeypatch.setattr(
+        ingestion_module,
+        "encode_texts",
+        lambda chunks, show_progress=False: np.ones(
+            (len(chunks), 384), dtype=np.float32
+        ),
+    )
+
+    with pytest.raises(OSError, match="commit failed"):
+        ingestion_module.rebuild_indexes_from_storage(
+            repository=repository,
+            snapshot_store=snapshot_store,
+            target_vector_store=runtime_vector,
+            target_bm25_manager=runtime_bm25,
+        )
+
+    monkeypatch.setattr(repository, "connection", original_connection)
+    assert repository.get_active_snapshot()["id"] == "snapshot-active"
+    assert runtime_vector.id_order == ["chunk-active"]
+    assert runtime_vector.snapshot_id == "snapshot-active"
+    assert runtime_bm25.doc_mapping == {0: "chunk-active"}
+    assert runtime_bm25.snapshot_id == "snapshot-active"
+    assert [path.name for path in (tmp_path / "indexes").iterdir()] == []
+
+
+def test_empty_rebuild_commit_failure_restores_snapshot_and_runtime(
+    tmp_path, monkeypatch, repository
+):
+    repository.initialize()
+    runtime_vector, runtime_bm25 = _build_runtime_indexes(
+        ["Dữ liệu đang hoạt động."],
+        ["chunk-active"],
+        [{"source": "active.txt", "doc_id": "doc-active", "page": 1}],
+    )
+    runtime_vector.snapshot_id = "snapshot-active"
+    runtime_bm25.snapshot_id = "snapshot-active"
+    repository.activate_snapshot(
+        snapshot_id="snapshot-active",
+        embedding_model="model-a",
+        snapshot_path=str(tmp_path / "indexes" / "snapshot-active"),
+        chunk_count=1,
+    )
+    original_connection = repository.connection
+
+    @contextmanager
+    def fail_transaction_after_callback():
+        with original_connection() as connection:
+            yield connection
+            if connection.in_transaction:
+                raise OSError("commit failed")
+
+    monkeypatch.setattr(repository, "connection", fail_transaction_after_callback)
+
+    with pytest.raises(OSError, match="commit failed"):
+        ingestion_module.rebuild_indexes_from_storage(
+            repository=repository,
+            snapshot_store=IndexSnapshotStore(tmp_path / "indexes"),
+            target_vector_store=runtime_vector,
+            target_bm25_manager=runtime_bm25,
+        )
+
+    monkeypatch.setattr(repository, "connection", original_connection)
+    assert repository.get_active_snapshot()["id"] == "snapshot-active"
+    assert runtime_vector.id_order == ["chunk-active"]
+    assert runtime_vector.snapshot_id == "snapshot-active"
+    assert runtime_bm25.doc_mapping == {0: "chunk-active"}
+    assert runtime_bm25.snapshot_id == "snapshot-active"
 
 
 def test_rebuild_rejects_content_change_that_keeps_same_chunk_id(

@@ -177,41 +177,67 @@ def _publish_candidate_indexes(
     candidate_bm25_manager: BM25IndexManager,
     target_vector_store: VectorStore,
     target_bm25_manager: BM25IndexManager,
+    previous_state: tuple[tuple, tuple] | None = None,
 ) -> None:
     """Publish hai index như một bundle và khôi phục runtime nếu có lỗi."""
-    previous_vector_state = (
-        target_vector_store.index,
-        target_vector_store.contents_map,
-        target_vector_store.metadatas_map,
-        target_vector_store.id_order,
-        target_vector_store.snapshot_id,
-    )
-    previous_bm25_state = (
-        target_bm25_manager.bm25_index,
-        target_bm25_manager.doc_mapping,
-        target_bm25_manager.tokenized_corpus,
-        target_bm25_manager.raw_corpus,
-        target_bm25_manager.snapshot_id,
+    runtime_state = previous_state or _capture_runtime_index_state(
+        target_vector_store,
+        target_bm25_manager,
     )
     try:
         target_vector_store.replace_with(candidate_vector_store)
         target_bm25_manager.replace_with(candidate_bm25_manager)
     except Exception:
+        _restore_runtime_index_state(
+            runtime_state,
+            target_vector_store,
+            target_bm25_manager,
+        )
+        raise
+
+
+def _capture_runtime_index_state(
+    target_vector_store: VectorStore,
+    target_bm25_manager: BM25IndexManager,
+) -> tuple[tuple, tuple]:
+    return (
         (
             target_vector_store.index,
             target_vector_store.contents_map,
             target_vector_store.metadatas_map,
             target_vector_store.id_order,
             target_vector_store.snapshot_id,
-        ) = previous_vector_state
+        ),
         (
             target_bm25_manager.bm25_index,
             target_bm25_manager.doc_mapping,
             target_bm25_manager.tokenized_corpus,
             target_bm25_manager.raw_corpus,
             target_bm25_manager.snapshot_id,
-        ) = previous_bm25_state
-        raise
+        ),
+    )
+
+
+def _restore_runtime_index_state(
+    previous_state: tuple[tuple, tuple],
+    target_vector_store: VectorStore,
+    target_bm25_manager: BM25IndexManager,
+) -> None:
+    previous_vector_state, previous_bm25_state = previous_state
+    (
+        target_vector_store.index,
+        target_vector_store.contents_map,
+        target_vector_store.metadatas_map,
+        target_vector_store.id_order,
+        target_vector_store.snapshot_id,
+    ) = previous_vector_state
+    (
+        target_bm25_manager.bm25_index,
+        target_bm25_manager.doc_mapping,
+        target_bm25_manager.tokenized_corpus,
+        target_bm25_manager.raw_corpus,
+        target_bm25_manager.snapshot_id,
+    ) = previous_bm25_state
 
 
 def rebuild_indexes_from_storage(
@@ -235,46 +261,63 @@ def rebuild_indexes_from_storage(
         chunk_fingerprint = calculate_ready_chunks_fingerprint(stored_chunks)
 
         if not stored_chunks:
+            empty_vector_store = VectorStore()
+            empty_bm25_manager = BM25IndexManager()
+            previous_runtime_state = _capture_runtime_index_state(
+                target_vector_store,
+                target_bm25_manager,
+            )
             storage.activate_snapshot_if_chunks_match(
                 None,
                 expected_chunk_ids=chunk_ids,
                 expected_chunk_fingerprint=chunk_fingerprint,
+                on_activation=lambda: _publish_candidate_indexes(
+                    empty_vector_store,
+                    empty_bm25_manager,
+                    target_vector_store,
+                    target_bm25_manager,
+                    previous_runtime_state,
+                ),
+                on_activation_rollback=lambda: _restore_runtime_index_state(
+                    previous_runtime_state,
+                    target_vector_store,
+                    target_bm25_manager,
+                ),
             )
-            target_vector_store.clear()
-            target_bm25_manager.clear()
             return IndexRebuildResult(snapshot_id=None, chunk_count=0)
 
         candidate_vector_store, candidate_bm25_manager = (
             _build_candidate_indexes(stored_chunks)
         )
-        previous_snapshot = storage.get_active_snapshot()
         candidate_snapshot = None
         try:
             candidate_snapshot = snapshots.write_snapshot(
                 candidate_vector_store,
                 candidate_bm25_manager,
             )
+            candidate_vector_store.snapshot_id = candidate_snapshot.snapshot_id
+            candidate_bm25_manager.snapshot_id = candidate_snapshot.snapshot_id
+            previous_runtime_state = _capture_runtime_index_state(
+                target_vector_store,
+                target_bm25_manager,
+            )
             storage.activate_snapshot_if_chunks_match(
                 candidate_snapshot.as_storage_record(),
                 expected_chunk_ids=chunk_ids,
                 expected_chunk_fingerprint=chunk_fingerprint,
-            )
-            candidate_vector_store.snapshot_id = candidate_snapshot.snapshot_id
-            candidate_bm25_manager.snapshot_id = candidate_snapshot.snapshot_id
-            try:
-                _publish_candidate_indexes(
+                on_activation=lambda: _publish_candidate_indexes(
                     candidate_vector_store,
                     candidate_bm25_manager,
                     target_vector_store,
                     target_bm25_manager,
-                )
-            except Exception:
-                storage.activate_snapshot_if_chunks_match(
-                    previous_snapshot,
-                    expected_chunk_ids=chunk_ids,
-                    expected_chunk_fingerprint=chunk_fingerprint,
-                )
-                raise
+                    previous_runtime_state,
+                ),
+                on_activation_rollback=lambda: _restore_runtime_index_state(
+                    previous_runtime_state,
+                    target_vector_store,
+                    target_bm25_manager,
+                ),
+            )
         except Exception:
             if candidate_snapshot is not None:
                 snapshots.remove_snapshot(candidate_snapshot)

@@ -160,6 +160,21 @@ def test_create_backup_rejects_chunks_without_active_snapshot(tmp_path):
     assert not backup_root.exists() or list(backup_root.iterdir()) == []
 
 
+def test_create_backup_rejects_path_like_live_snapshot_id_before_copy(tmp_path):
+    manager, repository, _, _ = _build_manager(tmp_path)
+    with repository.connection() as connection:
+        connection.execute(
+            "UPDATE index_snapshots SET id = ? WHERE status = 'active'",
+            ("../../escaped",),
+        )
+
+    with pytest.raises(BackupError, match="Mã snapshot"):
+        manager.create_backup()
+
+    backup_root = tmp_path / "backups"
+    assert not backup_root.exists() or list(backup_root.iterdir()) == []
+
+
 def test_list_backups_ignores_backup_with_changed_checksum(tmp_path):
     manager, _, _, _ = _build_manager(tmp_path)
     info = manager.create_backup()
@@ -172,6 +187,53 @@ def test_list_backups_ignores_backup_with_changed_checksum(tmp_path):
         / BM25_FILENAME
     )
     bm25_path.write_text("dữ liệu đã bị sửa", encoding="utf-8")
+
+    assert manager.list_backups() == []
+
+
+def test_list_backups_ignores_manifest_with_non_object_database_record(tmp_path):
+    manager, _, _, _ = _build_manager(tmp_path)
+    info = manager.create_backup()
+    manifest_path = tmp_path / "backups" / info.backup_id / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["database"] = ["không hợp lệ"]
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    assert manager.list_backups() == []
+
+
+def test_list_backups_ignores_manifest_with_non_object_checksum_record(tmp_path):
+    manager, _, _, _ = _build_manager(tmp_path)
+    info = manager.create_backup()
+    manifest_path = tmp_path / "backups" / info.backup_id / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["snapshot"]["files"][BM25_FILENAME] = []
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    assert manager.list_backups() == []
+
+
+def test_list_backups_ignores_path_like_snapshot_id(tmp_path):
+    manager, _, _, _ = _build_manager(tmp_path)
+    info = manager.create_backup()
+    backup_path = tmp_path / "backups" / info.backup_id
+    (backup_path / "indexes" / "nested").mkdir()
+    manifest_path = backup_path / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    path_like_id = f"nested/../{info.snapshot_id}"
+    manifest["snapshot_id"] = path_like_id
+    manifest["snapshot"]["snapshot_id"] = path_like_id
+    manifest["snapshot"]["directory"] = f"indexes/{path_like_id}"
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
     assert manager.list_backups() == []
 

@@ -143,6 +143,22 @@ dưới từng câu trả lời và trong panel nguồn gần nhất.
 - Câu hỏi ngoài phạm vi không tạo câu trả lời khẳng định vô căn cứ.
 - API và Gradio trả về cùng quy tắc citation.
 
+### Giai đoạn 4 — Quản lý và bảo vệ dữ liệu
+
+**Tiến độ:** Hoàn tất Phase 4A, 4B, 4C và 4D. Hệ thống có danh sách tài liệu
+bền vững, xóa an toàn, xây lại chỉ mục chủ động và sao lưu/phục hồi đồng thời
+SQLite với active FAISS/BM25 snapshot.
+
+**Hạng mục Phase 4D đã hoàn tất:**
+
+- [x] Tạo và liệt kê backup cục bộ có manifest cùng checksum SHA-256.
+- [x] Chỉ giữ 10 backup hợp lệ mới nhất.
+- [x] Validate toàn bộ backup trước khi thay đổi dữ liệu đang hoạt động.
+- [x] Tự tạo backup `pre_restore` và rollback khi phục hồi thất bại.
+- [x] Cung cấp REST API và điều khiển responsive trong giao diện Next.js.
+
+Phase 4D không thêm scheduler, ZIP, upload/download hoặc lưu trữ đám mây.
+
 ## 5. Cách triển khai SQLite
 
 - Đường dẫn database chỉ đọc từ cấu hình; file database không được commit vào Git.

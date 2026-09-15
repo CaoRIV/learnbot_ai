@@ -34,6 +34,7 @@ DEFAULT_MAX_BACKUPS = 10
 BACKUP_ID_PATTERN = re.compile(
     r"backup_\d{8}T\d{12}Z_[0-9a-f]{8}"
 )
+SNAPSHOT_ID_PATTERN = re.compile(r"snapshot_[0-9a-f]{32}")
 SNAPSHOT_FILENAMES = (MANIFEST_FILENAME, FAISS_FILENAME, BM25_FILENAME)
 
 
@@ -242,7 +243,9 @@ class BackupManager:
         ):
             raise BackupError("Số lượng tài liệu hoặc phân đoạn không hợp lệ.")
 
-        database = manifest.get("database") or {}
+        database = manifest.get("database")
+        if not isinstance(database, dict):
+            raise BackupError("Thông tin tệp SQLite trong manifest không hợp lệ.")
         if database.get("filename") != BACKUP_DATABASE_FILENAME:
             raise BackupError("Tên tệp SQLite trong manifest không hợp lệ.")
         database_path = backup_path / BACKUP_DATABASE_FILENAME
@@ -256,7 +259,10 @@ class BackupManager:
             if chunk_count != 0 or snapshot is not None:
                 raise BackupError("Backup rỗng có thông tin snapshot không hợp lệ.")
         else:
-            if not isinstance(snapshot_id, str) or not snapshot_id:
+            if (
+                not isinstance(snapshot_id, str)
+                or SNAPSHOT_ID_PATTERN.fullmatch(snapshot_id) is None
+            ):
                 raise BackupError("Mã snapshot backup không hợp lệ.")
             if not isinstance(snapshot, dict):
                 raise BackupError("Backup thiếu thông tin active snapshot.")
@@ -294,6 +300,8 @@ class BackupManager:
 
     @staticmethod
     def _validate_file_record(path: Path, record: dict) -> None:
+        if not isinstance(record, dict):
+            raise BackupError("Thông tin checksum tệp backup không hợp lệ.")
         if record.get("size_bytes") != path.stat().st_size:
             raise BackupError("Kích thước tệp backup không khớp manifest.")
         if record.get("sha256") != _sha256_file(path):
@@ -339,6 +347,11 @@ class BackupManager:
                 snapshot_id = None
                 if active_snapshot is not None:
                     snapshot_id = active_snapshot["id"]
+                    if (
+                        not isinstance(snapshot_id, str)
+                        or SNAPSHOT_ID_PATTERN.fullmatch(snapshot_id) is None
+                    ):
+                        raise BackupError("Mã snapshot đang hoạt động không hợp lệ.")
                     source_snapshot = self._live_snapshot_path(
                         active_snapshot["snapshot_path"]
                     )

@@ -28,6 +28,7 @@ Local PDF Chat RAG is an educational and reference implementation for developers
 - **Persistent document list**: restores saved document names, states, and chunk counts when the interface opens.
 - **Safe document deletion**: asks for confirmation, then keeps SQLite and the rebuilt FAISS/BM25 snapshot synchronized.
 - **Index maintenance**: reports persisted document/chunk counts and index consistency, and can safely rebuild FAISS/BM25 from SQLite without replacing a working snapshot on failure.
+- **Local backup and restore**: backs up SQLite with the active FAISS/BM25 snapshot, validates SHA-256 checksums, creates a safety backup before restore, and retains the 10 newest valid backups.
 - **Structured citations**: returns document, page, chunk ID, and retrieval score from indexed metadata.
 - **Evidence threshold**: only chunks meeting `MIN_RELEVANCE_SCORE` are passed to the LLM and returned as citations.
 - **Deterministic refusal**: skips answer generation when no eligible evidence remains and returns a machine-readable `answer_status`.
@@ -103,6 +104,9 @@ Main endpoints:
 - `GET /api/documents`: list persisted documents and chunk counts;
 - `DELETE /api/documents/{document_id}`: delete a document and rebuild retrieval indexes;
 - `POST /api/index/rebuild`: rebuild FAISS/BM25 from persisted SQLite chunks;
+- `GET /api/backups`: list valid local backups, newest first;
+- `POST /api/backups`: back up SQLite and the active FAISS/BM25 snapshot;
+- `POST /api/backups/{backup_id}/restore`: validate and restore a backup;
 - `POST /api/upload`: upload and process a document;
 - `POST /api/ask`: ask a question against processed documents.
 
@@ -112,6 +116,11 @@ LLM-generated prose. Its `answer_status` is one of `answered`,
 `insufficient_evidence`, `empty_knowledge_base`, or `error`.
 The Next.js interface renders document, page, chunk ID, relevance score, and
 safe HTTP/HTTPS web links directly from `citations`.
+
+Backups are managed only inside `BACKUP_DIRECTORY` on the backend host. A
+`pre_restore` safety backup is created before each restore so the previous state
+can be recovered if applying the selected backup fails. This release does not
+include scheduling, archive upload, or backup download.
 
 ## Repository layout
 
@@ -193,12 +202,14 @@ See [`example.env`](example.env) for the complete example. Common variables incl
 | `MIN_RELEVANCE_SCORE` | Minimum 0–1 rerank score for local evidence; defaults to `0.35` |
 | `DATABASE_PATH` | SQLite file path; defaults to `data/learnbot.db` |
 | `INDEX_DIRECTORY` | FAISS/BM25 snapshot directory; defaults to `data/indexes` |
+| `BACKUP_DIRECTORY` | Local SQLite and index backup directory; defaults to `data/backups` |
 
 ## Known limitations
 
 - PDF extraction reads the text layer and does not provide general-purpose OCR.
 - Excel and PowerPoint extraction focuses on text rather than visual layout.
 - Inactive snapshots are retained for manual recovery, so the index directory can grow after many ingestion runs.
+- Backups are local-only and limited to the 10 newest valid copies; scheduling, upload/download, and cloud storage are not included.
 - Embedding and reranking models may be downloaded on first use.
 - Cloud model and web-search requests send the relevant query to third-party services; review your data boundary first.
 - The initial benchmark is a small regression dataset and is not representative of every production document domain.

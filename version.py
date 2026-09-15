@@ -1,3 +1,3 @@
 """Project version shared by the UI, API, and release tooling."""
 
-__version__ = "2.10.0"
+__version__ = "2.11.0"

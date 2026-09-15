@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here.
 
+## [2.11.0] - 2026-09-15
+
+### Added
+
+- Local SQLite and active FAISS/BM25 snapshot backups with SHA-256 integrity validation and retention of the 10 newest valid backups.
+- Typed backup endpoints: `GET /api/backups`, `POST /api/backups`, and `POST /api/backups/{backup_id}/restore`.
+- Vietnamese backup and restore controls in the Next.js interface.
+
+### Changed
+
+- Restore now creates a `pre_restore` safety backup and attempts rollback if applying the selected backup fails.
+- Backup storage remains local-only; this release does not add scheduling, archive upload, or backup download.
+
 ## [2.10.0] - 2026-09-11
 
 ### Added

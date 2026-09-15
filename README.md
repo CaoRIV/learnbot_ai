@@ -32,6 +32,7 @@ Dự án được phát triển từ [weiwill88/Local_Pdf_Chat_RAG](https://gith
 - **Danh sách tài liệu bền vững**: giao diện tự tải lại tên, trạng thái và số phân đoạn của tài liệu đã lưu khi mở ứng dụng.
 - **Xóa tài liệu an toàn**: yêu cầu xác nhận trước khi xóa, sau đó đồng bộ SQLite với snapshot FAISS/BM25 mới.
 - **Bảo trì chỉ mục**: xem số tài liệu/phân đoạn và trạng thái đồng bộ; có thể chủ động xây lại FAISS/BM25 từ dữ liệu SQLite mà không làm mất snapshot đang hoạt động nếu quá trình thất bại.
+- **Sao lưu và phục hồi cục bộ**: tạo, kiểm tra checksum và phục hồi đồng thời SQLite cùng active FAISS/BM25 snapshot; hệ thống tự tạo bản an toàn trước khi phục hồi và chỉ giữ 10 bản hợp lệ mới nhất.
 - **Đo chất lượng retrieval**: benchmark tiếng Việt có nhãn, đo Recall@5, MRR và độ trễ mà không gọi LLM API.
 - **Tối ưu cho tiếng Việt**: BM25 tách từ bằng `underthesea` thay vì tokenizer tiếng Trung.
 - **Xếp hạng lại kết quả**: hỗ trợ CrossEncoder hoặc chấm điểm liên quan qua LLM API.
@@ -167,6 +168,9 @@ Các endpoint chính:
 | `GET` | `/api/documents` | Liệt kê tài liệu đã lưu và số phân đoạn |
 | `DELETE` | `/api/documents/{document_id}` | Xóa tài liệu và cập nhật lại chỉ mục retrieval |
 | `POST` | `/api/index/rebuild` | Xây lại FAISS/BM25 từ các phân đoạn trong SQLite |
+| `GET` | `/api/backups` | Liệt kê các bản sao lưu cục bộ hợp lệ, mới nhất trước |
+| `POST` | `/api/backups` | Tạo bản sao lưu SQLite và active FAISS/BM25 snapshot |
+| `POST` | `/api/backups/{backup_id}/restore` | Kiểm tra toàn vẹn rồi phục hồi một bản sao lưu |
 | `POST` | `/api/upload` | Tải lên và xử lý tài liệu |
 | `POST` | `/api/ask` | Đặt câu hỏi dựa trên tài liệu đã xử lý |
 
@@ -180,6 +184,11 @@ LLM sinh ra mà lấy trực tiếp từ metadata của kết quả retrieval:
 Giao diện Next.js dùng trực tiếp `citations` để hiển thị nguồn dưới từng câu trả
 lời và trong panel nguồn gần nhất. Nguồn web chỉ mở liên kết HTTP/HTTPS; nguồn
 cục bộ hiển thị trang, chunk ID và điểm liên quan để người dùng đối chiếu.
+
+Các bản sao lưu nằm trong `BACKUP_DIRECTORY` và chỉ được quản lý trên máy chạy
+backend. Trước mỗi lần phục hồi, hệ thống tạo một bản `pre_restore` để có thể
+rollback nếu áp dụng dữ liệu thất bại. Phiên bản này không có lịch sao lưu tự
+động, tải file backup lên hoặc tải backup xuống.
 
 ```json
 {
@@ -319,6 +328,7 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 | `MIN_RELEVANCE_SCORE` | Ngưỡng điểm rerank 0–1 để đưa bằng chứng cục bộ vào context, mặc định `0.35` |
 | `DATABASE_PATH` | Đường dẫn file SQLite, mặc định `data/learnbot.db` |
 | `INDEX_DIRECTORY` | Thư mục snapshot FAISS/BM25, mặc định `data/indexes` |
+| `BACKUP_DIRECTORY` | Thư mục sao lưu SQLite và chỉ mục, mặc định `data/backups` |
 
 Ứng dụng không yêu cầu `OLLAMA_HOST` và không gọi Ollama.
 
@@ -327,6 +337,7 @@ Xem đầy đủ tại [`example.env`](example.env). Các biến thường dùng
 - PDF chỉ được đọc từ lớp văn bản, chưa tích hợp OCR tổng quát; tài liệu scan cần được OCR trước.
 - Việc đọc Excel và PowerPoint tập trung vào nội dung chữ, không giữ nguyên bố cục trực quan.
 - Các snapshot không còn hoạt động hiện được giữ lại để phục hồi thủ công, nên thư mục chỉ mục có thể tăng dần sau nhiều lần nhập tài liệu.
+- Backup chỉ lưu cục bộ và giữ tối đa 10 bản hợp lệ; chưa có scheduler, upload/download hoặc lưu trữ đám mây.
 - Mô hình embedding hoặc reranker cục bộ có thể cần tải dữ liệu trong lần chạy đầu tiên.
 - Câu hỏi gửi tới LLM và dịch vụ tìm kiếm web có thể được chuyển cho bên thứ ba; cần xem xét phạm vi dữ liệu trước khi sử dụng tài liệu nhạy cảm.
 - Máy có 8 GB RAM nên xử lý từng nhóm tài liệu nhỏ để tránh sử dụng quá nhiều bộ nhớ.

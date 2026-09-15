@@ -485,26 +485,34 @@ class SQLiteRepository:
         expected_chunk_ids: Iterable[str],
         expected_chunk_fingerprint: str | None = None,
         on_activation: Callable[[], None] | None = None,
+        on_activation_rollback: Callable[[], None] | None = None,
     ) -> dict[str, Any] | None:
         """Chuyển snapshot và publish runtime trong cùng biên transaction."""
-        with self.connection() as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            self._validate_chunk_ids(
-                connection,
-                expected_chunk_ids,
-                expected_chunk_fingerprint,
-            )
-            if snapshot is None:
-                connection.execute(
-                    "UPDATE index_snapshots SET status = 'inactive' "
-                    "WHERE status = 'active'"
+        activation_started = False
+        try:
+            with self.connection() as connection:
+                connection.execute("BEGIN IMMEDIATE")
+                self._validate_chunk_ids(
+                    connection,
+                    expected_chunk_ids,
+                    expected_chunk_fingerprint,
                 )
-                result = None
-            else:
-                row = self._activate_snapshot_on_connection(connection, snapshot)
-                result = dict(row)
-            if on_activation is not None:
-                on_activation()
+                if snapshot is None:
+                    connection.execute(
+                        "UPDATE index_snapshots SET status = 'inactive' "
+                        "WHERE status = 'active'"
+                    )
+                    result = None
+                else:
+                    row = self._activate_snapshot_on_connection(connection, snapshot)
+                    result = dict(row)
+                if on_activation is not None:
+                    activation_started = True
+                    on_activation()
+        except Exception:
+            if activation_started and on_activation_rollback is not None:
+                on_activation_rollback()
+            raise
         return result
 
     def get_active_snapshot(self) -> dict[str, Any] | None:

@@ -37,6 +37,7 @@ output/playwright/
 data/*.db
 data/*.db-*
 data/indexes/
+data/backups/
 
 # Frontend Next.js
 frontend/node_modules/

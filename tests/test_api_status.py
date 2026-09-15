@@ -5,6 +5,7 @@ import pytest
 
 import api_router
 from api_router import QuestionRequest, ask_question, check_status
+from core.backup import BackupError, BackupInfo, BackupNotFoundError, BackupRestoreResult
 from core.evidence import Citation
 from core.generator import AnswerResult
 from core.index_snapshot import RestoreResult
@@ -164,6 +165,106 @@ def test_rebuild_endpoint_returns_new_snapshot_and_chunk_count(monkeypatch):
         "snapshot_id": "snapshot-new",
         "total_chunks": 5,
     }
+
+
+def test_openapi_exposes_backup_contracts():
+    schema = api_router.app.openapi()
+
+    list_schema = schema["paths"]["/api/backups"]["get"]["responses"]["200"][
+        "content"
+    ]["application/json"]["schema"]
+    create_schema = schema["paths"]["/api/backups"]["post"]["responses"]["200"][
+        "content"
+    ]["application/json"]["schema"]
+    restore_schema = schema["paths"]["/api/backups/{backup_id}/restore"]["post"][
+        "responses"
+    ]["200"]["content"]["application/json"]["schema"]
+
+    assert list_schema["type"] == "array"
+    assert list_schema["items"]["$ref"].endswith("/BackupResponse")
+    assert create_schema["$ref"].endswith("/BackupResponse")
+    assert restore_schema["$ref"].endswith("/BackupRestoreResponse")
+
+
+def test_backup_endpoints_return_typed_results(monkeypatch):
+    backup = BackupInfo(
+        backup_id="backup_20260915T140000000000Z_1234abcd",
+        created_at="2026-09-15T14:00:00Z",
+        kind="manual",
+        document_count=2,
+        chunk_count=7,
+        snapshot_id="snapshot-source",
+        size_bytes=4096,
+    )
+    restored = BackupRestoreResult(
+        backup_id=backup.backup_id,
+        safety_backup_id="backup_20260915T140100000000Z_5678abcd",
+        document_count=2,
+        chunk_count=7,
+        snapshot_id="snapshot-restored",
+    )
+    monkeypatch.setattr(api_router.backup_manager, "list_backups", lambda: [backup])
+    monkeypatch.setattr(api_router.backup_manager, "create_backup", lambda: backup)
+    monkeypatch.setattr(
+        api_router.backup_manager,
+        "restore_backup",
+        lambda backup_id: restored,
+    )
+
+    assert asyncio.run(api_router.list_backups()) == [
+        {
+            "backup_id": backup.backup_id,
+            "created_at": "2026-09-15T14:00:00Z",
+            "kind": "manual",
+            "document_count": 2,
+            "chunk_count": 7,
+            "snapshot_id": "snapshot-source",
+            "size_bytes": 4096,
+        }
+    ]
+    assert asyncio.run(api_router.create_backup()) == {
+        "backup_id": backup.backup_id,
+        "created_at": "2026-09-15T14:00:00Z",
+        "kind": "manual",
+        "document_count": 2,
+        "chunk_count": 7,
+        "snapshot_id": "snapshot-source",
+        "size_bytes": 4096,
+    }
+    assert asyncio.run(api_router.restore_backup(backup.backup_id)) == {
+        "status": "success",
+        "message": "Đã khôi phục bản sao lưu.",
+        "backup_id": backup.backup_id,
+        "safety_backup_id": restored.safety_backup_id,
+        "document_count": 2,
+        "chunk_count": 7,
+        "snapshot_id": "snapshot-restored",
+    }
+
+
+@pytest.mark.parametrize(
+    ("error", "expected_status"),
+    [
+        (BackupNotFoundError("Không tìm thấy bản sao lưu."), 404),
+        (BackupError("Checksum backup không hợp lệ."), 409),
+    ],
+)
+def test_restore_backup_maps_expected_errors(monkeypatch, error, expected_status):
+    monkeypatch.setattr(
+        api_router.backup_manager,
+        "restore_backup",
+        lambda backup_id: (_ for _ in ()).throw(error),
+    )
+
+    with pytest.raises(api_router.HTTPException) as exc_info:
+        asyncio.run(
+            api_router.restore_backup(
+                "backup_20260915T140000000000Z_1234abcd"
+            )
+        )
+
+    assert exc_info.value.status_code == expected_status
+    assert exc_info.value.detail == str(error)
 
 
 def test_delete_endpoint_returns_remaining_chunk_count(monkeypatch):

@@ -41,6 +41,17 @@ def resolve_index_directory(value=None):
 INDEX_DIRECTORY = resolve_index_directory()
 
 
+def resolve_backup_directory(value=None):
+    """Chuẩn hóa thư mục backup tương đối theo thư mục gốc dự án."""
+    configured_path = Path(value or os.getenv("BACKUP_DIRECTORY", "data/backups"))
+    if not configured_path.is_absolute():
+        configured_path = PROJECT_ROOT / configured_path
+    return configured_path.resolve()
+
+
+BACKUP_DIRECTORY = resolve_backup_directory()
+
+
 def is_configured_api_key(api_key):
     """Kiểm tra API key có phải là giá trị người dùng đã cấu hình hay không."""
     return bool(
